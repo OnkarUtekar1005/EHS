@@ -3,9 +3,7 @@ package com.ehs.elearning.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
 
 import java.util.UUID;
 
@@ -50,5 +48,12 @@ public class Domain {
 	public void setDescription(String description) {
 		this.description = description;
 	}
+	public Domain(UUID id, @NotBlank @Size(max = 100) String name, @Size(max = 500) String description) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.description = description;
+	}
+
     
 }

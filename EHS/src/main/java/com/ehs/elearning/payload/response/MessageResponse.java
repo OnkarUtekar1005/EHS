@@ -1,10 +1,8 @@
 package com.ehs.elearning.payload.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
 
 
-@AllArgsConstructor
+
 public class MessageResponse {
     private String message;
 
@@ -19,6 +17,9 @@ public class MessageResponse {
 	public MessageResponse(String message) {
 		super();
 		this.message = message;
+	}
+	public MessageResponse() {
+		
 	}
     
 }

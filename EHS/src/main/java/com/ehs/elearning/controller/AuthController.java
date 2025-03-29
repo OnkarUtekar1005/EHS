@@ -1,5 +1,19 @@
 package com.ehs.elearning.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.ehs.elearning.model.Role;
 import com.ehs.elearning.model.Users;
 import com.ehs.elearning.payload.request.LoginRequest;
@@ -9,15 +23,8 @@ import com.ehs.elearning.payload.response.MessageResponse;
 import com.ehs.elearning.repository.UserRepository;
 import com.ehs.elearning.security.JwtTokenProvider;
 import com.ehs.elearning.security.UserDetailsImpl;
+
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -104,7 +111,8 @@ public class AuthController {
                 .map(item -> item.getAuthority().replace("ROLE_", ""))
                 .orElse("");
                 
-        return ResponseEntity.ok(new JwtResponse(
+        return ResponseEntity.ok(new JwtResponse
+        		(
             null,
             userDetails.getId(),
             userDetails.getUsername(),
