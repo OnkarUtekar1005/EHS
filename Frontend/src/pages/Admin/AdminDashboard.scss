@@ -1,0 +1,113 @@
+// src/pages/Admin/AdminDashboardPage.scss
+@import '../../styles/variables.scss';
+@import '../../styles/mixins.scss';
+
+.admin-dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    
+    h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+    
+    .btn-primary {
+      padding: 8px 16px;
+      background-color: $primary-color;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      text-decoration: none;
+      
+      &:hover {
+        background-color: darken($primary-color, 10%);
+        text-decoration: none;
+      }
+    }
+  }
+}
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+  
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.stat-card {
+  background-color: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  
+  h3 {
+    font-size: 14px;
+    color: $text-muted;
+    margin-bottom: 8px;
+  }
+  
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: $text-dark;
+    margin: 0;
+  }
+}
+
+.section {
+  margin-bottom: 32px;
+  
+  h2 {
+    margin-bottom: 16px;
+    font-size: 20px;
+  }
+}
+
+.table-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  th, td {
+    padding: 16px;
+    text-align: left;
+  }
+  
+  th {
+    background-color: $bg-light;
+    color: $text-muted;
+    font-weight: 500;
+    font-size: 14px;
+    border-bottom: 1px solid $border-color;
+  }
+  
+  td {
+    border-bottom: 1px solid $border-color;
+  }
+  
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+  
+  tbody tr:hover {
+    background-color: rgba($primary-color, 0.03);
+  }
+}

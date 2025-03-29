@@ -1,0 +1,30 @@
+@import '../../assets/styles/variables.scss';
+
+.dashboard-container {
+  min-height: 100vh;
+  
+  .dashboard-content {
+    display: flex;
+    min-height: calc(100vh - 64px); // Adjust for header height
+  }
+  
+  .trainings-section {
+    width: 100%;
+    padding: $spacing-lg;
+    
+    h2 {
+      margin-bottom: $spacing-md;
+    }
+    
+    h3 {
+      margin-bottom: $spacing-lg;
+      color: $text-secondary;
+    }
+    
+    .trainings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: $spacing-lg;
+    }
+  }
+}

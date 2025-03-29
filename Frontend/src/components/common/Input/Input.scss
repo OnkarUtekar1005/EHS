@@ -1,0 +1,117 @@
+// src/components/common/Input/Input.scss
+@import '../../../styles/variables.scss';
+@import '../../../styles/mixins.scss';
+
+.input-wrapper {
+  margin-bottom: 16px;
+}
+
+.input-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-dark;
+  margin-bottom: 6px;
+}
+
+.input-required {
+  color: $danger-color;
+  margin-left: 4px;
+}
+
+.input-container {
+  position: relative;
+  
+  &.has-icon {
+    &.icon-left .input-field {
+      padding-left: 40px;
+    }
+    
+    &.icon-right .input-field {
+      padding-right: 40px;
+    }
+  }
+  
+  .input-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    color: $text-muted;
+    
+    &:first-child {
+      left: 12px;
+    }
+    
+    &:last-child {
+      right: 12px;
+    }
+  }
+}
+
+.input-field {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  font-size: 16px;
+  border: 1px solid $border-color;
+  border-radius: 6px;
+  background-color: white;
+  transition: all 0.2s ease;
+  color: $text-dark;
+  
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+    box-shadow: 0 0 0 3px rgba($primary-color, 0.15);
+  }
+  
+  &:disabled {
+    background-color: $bg-disabled;
+    color: $text-muted;
+    cursor: not-allowed;
+  }
+  
+  &.input-error {
+    border-color: $danger-color;
+    
+    &:focus {
+      box-shadow: 0 0 0 3px rgba($danger-color, 0.15);
+    }
+  }
+  
+  &::placeholder {
+    color: $text-placeholder;
+  }
+}
+
+.input-error-message {
+  font-size: 14px;
+  color: $danger-color;
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.input-help-text {
+  font-size: 14px;
+  color: $text-muted;
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+// Specific input types
+
+// Checkbox
+input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+// Style for select
+select.input-field {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8.825L1.175 4 2.05 3.125 6 7.075 9.95 3.125 10.825 4 6 8.825z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 30px;
+}

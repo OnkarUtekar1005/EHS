@@ -1,0 +1,352 @@
+// src/pages/Assessment/LearningModulePage.scss
+@import '../../styles/variables.scss';
+@import '../../styles/mixins.scss';
+
+.learning-module-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: $spacing-md;
+  
+  @include breakpoint(md) {
+    padding: $spacing-lg;
+  }
+  
+  .error-message {
+    background-color: rgba($danger-color, 0.1);
+    color: $danger-color;
+    padding: $spacing-md;
+    border-radius: $border-radius-md;
+    margin-bottom: $spacing-lg;
+  }
+  
+  .learning-header {
+    margin-bottom: $spacing-lg;
+    
+    h1 {
+      font-size: $font-size-xl;
+      color: $text-dark;
+      margin-bottom: $spacing-xs;
+    }
+    
+    .module-description {
+      color: $text-muted;
+      font-size: $font-size-base;
+      margin-bottom: $spacing-md;
+    }
+    
+    .progress-tracker {
+      .progress-text {
+        font-size: $font-size-sm;
+        color: $text-muted;
+        margin-bottom: $spacing-xs;
+      }
+      
+      .progress-bar {
+        height: 6px;
+        background-color: #e6e6e6;
+        border-radius: 3px;
+        overflow: hidden;
+        
+        .progress-fill {
+          height: 100%;
+          background-color: $primary-color;
+          border-radius: 3px;
+          transition: width 0.3s ease;
+        }
+      }
+    }
+  }
+  
+  .learning-content {
+    display: flex;
+    flex-direction: column;
+    
+    @include breakpoint(md) {
+      flex-direction: row;
+      gap: $spacing-lg;
+    }
+    
+    .content-sidebar {
+      width: 100%;
+      margin-bottom: $spacing-lg;
+      
+      @include breakpoint(md) {
+        width: 250px;
+        flex-shrink: 0;
+        margin-bottom: 0;
+      }
+      
+      .slide-list {
+        background-color: $bg-white;
+        border-radius: $border-radius-md;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: $spacing-md;
+        
+        h3 {
+          font-size: $font-size-base;
+          color: $text-dark;
+          margin-bottom: $spacing-md;
+          padding-bottom: $spacing-sm;
+          border-bottom: 1px solid $border-color;
+        }
+        
+        ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        
+        .slide-item {
+          display: flex;
+          align-items: center;
+          padding: $spacing-sm;
+          margin-bottom: $spacing-xs;
+          border-radius: $border-radius-sm;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+          
+          &:hover {
+            background-color: rgba($primary-color, 0.05);
+          }
+          
+          &.active {
+            background-color: rgba($primary-color, 0.1);
+            font-weight: 500;
+          }
+          
+          &.completed {
+            .slide-title {
+              color: $text-dark;
+            }
+          }
+          
+          .slide-indicator {
+            flex-shrink: 0;
+            margin-right: $spacing-sm;
+          }
+          
+          .slide-title {
+            font-size: $font-size-sm;
+            color: $text-muted;
+            @include text-truncate;
+          }
+        }
+      }
+    }
+    
+    .content-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      
+      .slide-content {
+        background-color: $bg-white;
+        border-radius: $border-radius-md;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: $spacing-lg;
+        margin-bottom: $spacing-lg;
+        min-height: 400px;
+        
+        .slide-title {
+          margin-bottom: $spacing-lg;
+          
+          h2 {
+            font-size: $font-size-lg;
+            color: $text-dark;
+          }
+        }
+        
+        .no-content {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 300px;
+          color: $text-muted;
+          font-style: italic;
+        }
+        
+        .video-container {
+          width: 100%;
+          
+          .video-player {
+            width: 100%;
+            max-height: 500px;
+            border-radius: $border-radius-sm;
+          }
+        }
+        
+        .image-container {
+          display: flex;
+          justify-content: center;
+          margin: $spacing-lg 0;
+          
+          .slide-image {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: $border-radius-sm;
+          }
+        }
+        
+        .text-container {
+          .slide-text {
+            line-height: 1.6;
+            font-size: $font-size-base;
+            color: $text-dark;
+            
+            h1, h2, h3, h4, h5, h6 {
+              margin: $spacing-md 0 $spacing-sm 0;
+              color: $text-dark;
+            }
+            
+            p {
+              margin-bottom: $spacing-md;
+            }
+            
+            ul, ol {
+              margin-bottom: $spacing-md;
+              padding-left: $spacing-lg;
+            }
+            
+            a {
+              color: $primary-color;
+              text-decoration: none;
+              
+              &:hover {
+                text-decoration: underline;
+              }
+            }
+            
+            img {
+              max-width: 100%;
+              border-radius: $border-radius-sm;
+              margin: $spacing-md 0;
+            }
+            
+            blockquote {
+              border-left: 4px solid $primary-color;
+              padding-left: $spacing-md;
+              margin: $spacing-md 0;
+              font-style: italic;
+              color: $text-muted;
+            }
+            
+            code {
+              font-family: monospace;
+              background-color: $bg-light;
+              padding: 2px 4px;
+              border-radius: 3px;
+            }
+            
+            pre {
+              background-color: $bg-light;
+              padding: $spacing-md;
+              border-radius: $border-radius-sm;
+              overflow-x: auto;
+              margin: $spacing-md 0;
+              
+              code {
+                background-color: transparent;
+                padding: 0;
+              }
+            }
+            
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: $spacing-md 0;
+              
+              th, td {
+                padding: $spacing-sm;
+                border: 1px solid $border-color;
+                text-align: left;
+              }
+              
+              th {
+                background-color: $bg-light;
+                font-weight: 600;
+              }
+              
+              tr:nth-child(even) {
+                background-color: rgba($bg-light, 0.5);
+              }
+            }
+          }
+        }
+        
+        .pdf-container {
+          width: 100%;
+          height: 600px;
+          
+          .pdf-viewer {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: $border-radius-sm;
+          }
+        }
+      }
+      
+      .navigation-controls {
+        display: flex;
+        justify-content: space-between;
+        
+        .nav-button {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: $spacing-sm $spacing-md;
+          border-radius: $border-radius-sm;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          border: none;
+          cursor: pointer;
+          
+          &.previous {
+            background-color: $bg-light;
+            color: $text-dark;
+            
+            svg {
+              margin-right: $spacing-xs;
+            }
+            
+            &:hover {
+              background-color: darken($bg-light, 5%);
+            }
+            
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
+            }
+          }
+          
+          &.next {
+            background-color: $primary-color;
+            color: $bg-white;
+            
+            svg {
+              margin-left: $spacing-xs;
+            }
+            
+            &:hover {
+              background-color: darken($primary-color, 10%);
+            }
+          }
+          
+          &.complete {
+            background-color: $success-color;
+            color: $bg-white;
+            
+            &:hover {
+              background-color: darken($success-color, 10%);
+            }
+            
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
+            }
+          }
+        }
+      }
+    }
+  }
+}

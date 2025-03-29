@@ -1,0 +1,82 @@
+// src/components/activity/ActivityFeed/ActivityFeed.scss
+@import '../../../styles/variables.scss';
+@import '../../../styles/mixins.scss';
+
+.activity-feed {
+  width: 100%;
+  
+  .activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .activity-item {
+    display: flex;
+    padding: $spacing-md;
+    border-bottom: 1px solid $border-color;
+    position: relative;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    &:hover {
+      background-color: rgba($bg-light, 0.5);
+    }
+    
+    .activity-icon {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      margin-right: $spacing-md;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      &.module-started {
+        background-color: rgba($primary-color, 0.1);
+        color: $primary-color;
+      }
+      
+      &.module-completed {
+        background-color: rgba($success-color, 0.1);
+        color: $success-color;
+      }
+      
+      &.assessment-completed {
+        background-color: rgba($warning-color, 0.1);
+        color: $warning-color;
+      }
+      
+      &.default {
+        background-color: rgba($text-muted, 0.1);
+        color: $text-muted;
+      }
+    }
+    
+    .activity-content {
+      flex: 1;
+      
+      .activity-title {
+        margin: 0 0 4px 0;
+        font-size: $font-size-sm;
+        font-weight: 600;
+        color: $text-dark;
+      }
+      
+      .activity-description {
+        margin: 0 0 4px 0;
+        font-size: $font-size-sm;
+        color: $text-muted;
+      }
+      
+      .activity-time {
+        font-size: $font-size-xs;
+        color: $text-muted;
+        font-style: italic;
+      }
+    }
+  }
+}

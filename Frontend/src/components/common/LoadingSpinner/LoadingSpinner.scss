@@ -1,0 +1,59 @@
+// src/components/common/LoadingSpinner/LoadingSpinner.scss
+@import '../../../styles/variables.scss';
+@import '../../../styles/mixins.scss';
+
+.loading-spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xl;
+  min-height: 200px;
+  
+  .loading-spinner {
+    position: relative;
+    
+    &.spinner-small {
+      width: 24px;
+      height: 24px;
+    }
+    
+    &.spinner-medium {
+      width: 48px;
+      height: 48px;
+    }
+    
+    &.spinner-large {
+      width: 64px;
+      height: 64px;
+    }
+    
+    .spinner-circle {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 3px solid rgba($primary-blue, 0.2);  // Changed from lavender to primary-blue
+      border-top-color: $primary-blue;  // Changed from lavender to primary-blue
+      animation: spinner-rotate 1s infinite linear;
+    }
+  }
+  
+  .spinner-message {
+    margin-top: $spacing-md;
+    color: $text-muted;
+    font-size: $font-size-sm;
+    text-align: center;
+  }
+}
+
+@keyframes spinner-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

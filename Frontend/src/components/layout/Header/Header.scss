@@ -1,0 +1,208 @@
+// src/components/layout/Header/Header.scss
+@import '../../../styles/variables.scss';
+@import '../../../styles/mixins.scss';
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $header-height;
+  padding: 0 $spacing-lg;
+  background-color: $light-blue; // Changed from lavender to light blue
+  box-shadow: 0 1px 10px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  
+  .header-left {
+    display: flex;
+    align-items: center;
+    
+    .menu-toggle {
+      background: none;
+      border: none;
+      color: $text-muted;
+      cursor: pointer;
+      padding: 8px;
+      margin-right: $spacing-md;
+      border-radius: $border-radius-sm;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        color: $primary-blue; // Changed from deep-lavender to primary-blue
+        background-color: rgba($primary-blue, 0.1); // Changed color
+      }
+      
+      &.active {
+        color: $primary-blue; // Changed from deep-lavender to primary-blue
+      }
+    }
+    
+    .current-domain {
+      font-weight: 600;
+      color: $text-dark;
+      
+      .domain-name {
+        position: relative;
+        padding-bottom: 2px;
+        
+        &::after {
+          content: "";
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 2px;
+          background: linear-gradient(90deg, $primary-blue, $deep-blue); // Changed gradient colors
+          border-radius: 2px;
+        }
+      }
+    }
+  }
+  
+  .header-right {
+    display: flex;
+    align-items: center;
+    
+    .notifications {
+      margin-right: $spacing-md;
+      position: relative;
+      
+      .notifications-button {
+        background: none;
+        border: none;
+        color: $text-muted;
+        padding: $spacing-xs;
+        border-radius: $border-radius-full;
+        transition: all 0.2s ease;
+        position: relative;
+        
+        &:hover {
+          color: $primary-blue; // Changed from deep-lavender to primary-blue
+          background-color: rgba($primary-blue, 0.1); // Changed color
+        }
+      }
+      
+      .notification-badge {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background-color: $danger-color;
+        color: white;
+        font-size: 10px;
+        font-weight: 600;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+    }
+    
+    .user-menu {
+      position: relative;
+      
+      .user-button {
+        display: flex;
+        align-items: center;
+        background: none;
+        border: none;
+        padding: $spacing-xs $spacing-sm;
+        border-radius: $border-radius-md;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        
+        &:hover {
+          background-color: rgba($primary-blue, 0.1); // Changed from deep-lavender to primary-blue
+        }
+        
+        .user-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, $primary-blue, $deep-blue); // Changed gradient colors
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 600;
+          margin-right: $spacing-sm;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .user-name {
+          font-weight: 500;
+          color: $text-dark;
+          margin-right: $spacing-xs;
+          
+          @media (max-width: 767px) {
+            display: none;
+          }
+        }
+        
+        .dropdown-arrow {
+          color: $text-muted;
+          transition: transform 0.2s ease;
+          
+          &.open {
+            transform: rotate(180deg);
+          }
+        }
+      }
+      
+      .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 5px);
+        right: 0;
+        min-width: 180px;
+        background-color: white;
+        border-radius: $border-radius-md;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        padding: $spacing-xs 0;
+        z-index: 101;
+        border: 1px solid rgba($primary-blue, 0.1); // Changed color
+        
+        .dropdown-item {
+          display: flex;
+          align-items: center;
+          padding: $spacing-sm $spacing-md;
+          color: $text-dark;
+          text-decoration: none;
+          transition: all 0.2s ease;
+          font-size: $font-size-sm;
+          
+          svg {
+            margin-right: $spacing-sm;
+            color: $primary-blue; // Changed from deep-lavender to primary-blue
+          }
+          
+          &:hover {
+            background-color: rgba($primary-blue, 0.05); // Changed color
+            color: $primary-blue; // Changed from deep-lavender to primary-blue
+          }
+        }
+        
+        .dropdown-divider {
+          height: 1px;
+          background-color: $border-color;
+          margin: $spacing-xs 0;
+        }
+        
+        .logout {
+          color: $danger-color;
+          
+          svg {
+            color: $danger-color;
+          }
+          
+          &:hover {
+            background-color: rgba($danger-color, 0.05);
+            color: $danger-color;
+          }
+        }
+      }
+    }
+  }
+}

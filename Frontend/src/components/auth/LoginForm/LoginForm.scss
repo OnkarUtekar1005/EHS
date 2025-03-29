@@ -1,0 +1,30 @@
+@import '../../../assets/styles/variables.scss';
+
+.login-form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: $spacing-lg;
+  background-color: $bg-light;
+  
+  .login-form {
+    width: 100%;
+    max-width: 400px;
+    background-color: $bg-white;
+    border-radius: $border-radius;
+    padding: $spacing-xl;
+    box-shadow: $shadow-lg;
+    
+    h2 {
+      text-align: center;
+      margin-bottom: $spacing-xl;
+      color: $primary;
+    }
+    
+    .login-button {
+      width: 100%;
+      margin-top: $spacing-lg;
+    }
+  }
+}
