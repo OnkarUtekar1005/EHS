@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
@@ -20,10 +19,6 @@ import org.springframework.util.StringUtils;
 import javax.crypto.SecretKey;
 import java.util.Base64;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -44,7 +39,7 @@ public class JwtTokenProvider {
 
     private SecretKey secretKey;
     @Autowired
-    private UserDetailsService userDetailsService;
+    private  UserDetailsService userDetailsService;
 
     @PostConstruct
     protected void init() {
@@ -57,22 +52,9 @@ public class JwtTokenProvider {
         
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
-        
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("id", userPrincipal.getId().toString());
-        
-        // Add roles to the token
-        String roles = userPrincipal.getAuthorities().stream()
-            .map(GrantedAuthority::getAuthority)
-            .collect(Collectors.joining(","));
-        claims.put("roles", roles);
-        
-        // Add email to the token
-        claims.put("email", userPrincipal.getEmail());
 
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(userPrincipal.getUsername())
+                .setSubject((userPrincipal.getUsername()))
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(secretKey, SignatureAlgorithm.HS512)
@@ -87,38 +69,19 @@ public class JwtTokenProvider {
                 .getBody()
                 .getSubject();
     }
-    
-    public UUID getUserIdFromToken(String token) {
-        String id = Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .get("id", String.class);
-        return UUID.fromString(id);
-    }
-    
-    public String getRolesFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .get("roles", String.class);
-    }
 
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
             return true;
         } catch (SecurityException | MalformedJwtException e) {
-
+          
         } catch (ExpiredJwtException e) {
-    
+       
         } catch (UnsupportedJwtException e) {
-  
+   
         } catch (IllegalArgumentException e) {
-      
+        
         }
         return false;
     }

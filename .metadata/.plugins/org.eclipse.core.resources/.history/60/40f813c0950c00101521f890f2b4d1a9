@@ -18,8 +18,8 @@ import java.io.IOException;
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JwtTokenProvider jwtTokenProvider;
+	@Autowired
+    private  JwtTokenProvider jwtTokenProvider;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -28,16 +28,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = jwtTokenProvider.resolveToken(request);
             if (jwt != null && jwtTokenProvider.validateToken(jwt)) {
                 Authentication auth = jwtTokenProvider.getAuthentication(jwt);
-                
-                // Set authentication in context
                 SecurityContextHolder.getContext().setAuthentication(auth);
-                
-                // Optional: You can also add token claims as request attributes for easier access in controllers
-                request.setAttribute("userId", jwtTokenProvider.getUserIdFromToken(jwt));
-                request.setAttribute("userRoles", jwtTokenProvider.getRolesFromToken(jwt));
             }
         } catch (Exception e) {
-           
+         
         }
 
         filterChain.doFilter(request, response);

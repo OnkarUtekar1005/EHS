@@ -37,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 request.setAttribute("userRoles", jwtTokenProvider.getRolesFromToken(jwt));
             }
         } catch (Exception e) {
-           
+            log.error("Cannot set user authentication: {}", e.getMessage());
         }
 
         filterChain.doFilter(request, response);
