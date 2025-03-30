@@ -1,13 +1,10 @@
 package com.ehs.elearning.payload.request;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 
-@AllArgsConstructor
-@NoArgsConstructor
+
+
 public class LoginRequest {
    
 	public String getUsername() {
@@ -31,4 +28,16 @@ public class LoginRequest {
 
     @NotBlank
     private String password;
+
+	public LoginRequest(@NotBlank String username, @NotBlank String password) {
+		super();
+		this.username = username;
+		this.password = password;
+	}
+
+	public LoginRequest() {
+		super();
+	}
+    
+    
 }

@@ -26,18 +26,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String jwt = jwtTokenProvider.resolveToken(request);
-            if (jwt != null && jwtTokenProvider.validateToken(jwt)) {
-                Authentication auth = jwtTokenProvider.getAuthentication(jwt);
+            
+            // Debug token resolution process
+            if (jwt != null) {
+                log.info("JWT filter: Token found in request");
                 
-                // Set authentication in context
-                SecurityContextHolder.getContext().setAuthentication(auth);
-                
-                // Optional: You can also add token claims as request attributes for easier access in controllers
-                request.setAttribute("userId", jwtTokenProvider.getUserIdFromToken(jwt));
-                request.setAttribute("userRoles", jwtTokenProvider.getRolesFromToken(jwt));
+                if (jwtTokenProvider.validateToken(jwt)) {
+                    Authentication auth = jwtTokenProvider.getAuthentication(jwt);
+                    
+                    // Set authentication in context
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                    
+                    // Optional: You can also add token claims as request attributes for easier access in controllers
+                    request.setAttribute("userId", jwtTokenProvider.getUserIdFromToken(jwt));
+                    request.setAttribute("userRoles", jwtTokenProvider.getRolesFromToken(jwt));
+                    
+                    log.info("JWT filter: Valid token, user authenticated");
+                } else {
+                    log.warn("JWT filter: Token validation failed");
+                }
+            } else {
+                // Only log for non-OPTIONS requests to reduce noise
+                if (!request.getMethod().equals("OPTIONS")) {
+                    log.debug("JWT filter: No token found in request to {}", request.getRequestURI());
+                }
             }
         } catch (Exception e) {
-           
+            log.error("JWT Authentication error: " + e.getMessage(), e);
         }
 
         filterChain.doFilter(request, response);

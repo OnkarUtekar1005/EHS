@@ -4,11 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -21,8 +16,6 @@ import java.util.UUID;
         @UniqueConstraint(columnNames = "email")
     })
 
-@NoArgsConstructor
-@AllArgsConstructor
 public class Users {
     
     @Id
