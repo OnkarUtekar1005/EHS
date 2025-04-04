@@ -1,34 +1,35 @@
-// src/pages/Profile.js
+// src/pages/admin/AdminProfile.js
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Container,
-  Box,
-  Typography,
-  Paper,
-  Avatar,
-  Grid,
-  TextField,
-  Button,
+import { 
+  Container, 
+  Typography, 
+  Paper, 
+  Grid, 
+  Box, 
+  Avatar, 
+  TextField, 
+  Button, 
+  FormControlLabel, 
+  Checkbox,
+  Alert,
+  Snackbar,
+  CircularProgress,
   Tab,
   Tabs,
-  Alert,
   InputAdornment,
   IconButton,
-  CircularProgress,
-  Chip,
-  Snackbar
+  Divider
 } from '@mui/material';
-import {
-  AccountCircle as AccountCircleIcon,
+import { 
+  AdminPanelSettings as AdminIcon,
   Edit as EditIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
   Visibility,
-  VisibilityOff,
-  Domain as DomainIcon
+  VisibilityOff
 } from '@mui/icons-material';
-import { userService, authService } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { userService, authService } from '../../services/api';
 
 // TabPanel component for tab content
 function TabPanel(props) {
@@ -48,16 +49,24 @@ function TabPanel(props) {
   );
 }
 
-const Profile = () => {
-  const [tabValue, setTabValue] = useState(0);
+const AdminProfile = () => {
   const { currentUser, updateUserData } = useAuth();
+  const [tabValue, setTabValue] = useState(0);
   
   // Profile Information State
   const [profileData, setProfileData] = useState({
-    username: '',
+    firstName: '',
+    lastName: '',
     email: '',
-    role: '',
-    domains: []
+    username: ''
+  });
+  const [permissions, setPermissions] = useState({
+    moduleManagement: true,
+    userManagement: true,
+    domainConfiguration: true,
+    reportGeneration: true,
+    aiContentGeneration: true,
+    systemConfiguration: true
   });
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -65,7 +74,7 @@ const Profile = () => {
   const [profileSuccess, setProfileSuccess] = useState(false);
   const [profileErrors, setProfileErrors] = useState({});
   const [profileFetched, setProfileFetched] = useState(false);
-
+  
   // Password Change State
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -81,7 +90,7 @@ const Profile = () => {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordErrors, setPasswordErrors] = useState({});
-
+  
   // Memoized function to fetch user profile
   const fetchUserProfile = useCallback(async () => {
     // Skip if we've already fetched the profile
@@ -93,19 +102,19 @@ const Profile = () => {
       
       // Get user ID - first try from currentUser, then from localStorage
       const userId = currentUser?.id || 
-                     JSON.parse(localStorage.getItem('user') || '{}')?.id;
+                    JSON.parse(localStorage.getItem('user') || '{}')?.id;
       
       if (!userId) {
         throw new Error('User ID not found');
       }
       
-      console.log("Fetching user profile for ID:", userId);
+      console.log("Fetching admin profile for ID:", userId);
       
       // Make the API call to get user details
       const response = await userService.getById(userId);
       const userData = response.data;
       
-      console.log("User data received:", userData);
+      console.log("Admin data received:", userData);
       
       // Update auth context only if the data is different
       if (JSON.stringify(currentUser) !== JSON.stringify(userData)) {
@@ -114,11 +123,16 @@ const Profile = () => {
       
       // Update profile data with API response
       setProfileData({
-        username: userData.username || '',
+        firstName: userData.firstName || '',
+        lastName: userData.lastName || '',
         email: userData.email || '',
-        role: userData.role || '',
-        domains: userData.domains || []
+        username: userData.username || ''
       });
+      
+      // Set permissions if available
+      if (userData.permissions) {
+        setPermissions(userData.permissions);
+      }
       
       // Mark profile as fetched to prevent duplicate calls
       setProfileFetched(true);
@@ -138,11 +152,16 @@ const Profile = () => {
     // If we have current user data, use it to initialize the form
     if (currentUser) {
       setProfileData({
-        username: currentUser.username || '',
+        firstName: currentUser.firstName || '',
+        lastName: currentUser.lastName || '',
         email: currentUser.email || '',
-        role: currentUser.role || '',
-        domains: currentUser.domains || []
+        username: currentUser.username || ''
       });
+      
+      // If user has permissions data, set it
+      if (currentUser.permissions) {
+        setPermissions(currentUser.permissions);
+      }
     }
     
     // Always fetch the latest profile data from the API
@@ -152,14 +171,13 @@ const Profile = () => {
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
-
-  // Profile Edit Handlers
-  const handleProfileChange = (e) => {
+  
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setProfileData(prev => ({
-      ...prev,
+    setProfileData({
+      ...profileData,
       [name]: value
-    }));
+    });
     
     // Clear field error if user is typing
     if (profileErrors[name]) {
@@ -169,16 +187,26 @@ const Profile = () => {
       }));
     }
   };
-
+  
+  const handlePermissionChange = (e) => {
+    const { name, checked } = e.target;
+    setPermissions({
+      ...permissions,
+      [name]: checked
+    });
+  };
+  
   const validateProfileForm = () => {
     const errors = {};
     
-    // Username is required
-    if (!profileData.username.trim()) {
-      errors.username = 'Username is required';
+    if (!profileData.firstName.trim()) {
+      errors.firstName = 'First name is required';
     }
     
-    // Email is required and must be valid
+    if (!profileData.lastName.trim()) {
+      errors.lastName = 'Last name is required';
+    }
+    
     if (!profileData.email.trim()) {
       errors.email = 'Email is required';
     } else {
@@ -191,7 +219,7 @@ const Profile = () => {
     setProfileErrors(errors);
     return Object.keys(errors).length === 0;
   };
-
+  
   const handleStartEditing = () => {
     setIsEditingProfile(true);
     setProfileError('');
@@ -202,10 +230,10 @@ const Profile = () => {
     // Reset to original data
     if (currentUser) {
       setProfileData({
-        username: currentUser.username || '',
+        firstName: currentUser.firstName || '',
+        lastName: currentUser.lastName || '',
         email: currentUser.email || '',
-        role: currentUser.role || '',
-        domains: currentUser.domains || []
+        username: currentUser.username || ''
       });
     }
     setIsEditingProfile(false);
@@ -213,7 +241,7 @@ const Profile = () => {
     setProfileError('');
     setProfileSuccess(false);
   };
-
+  
   const handleSaveProfile = async () => {
     if (!validateProfileForm()) return;
     
@@ -221,52 +249,44 @@ const Profile = () => {
       setProfileLoading(true);
       setProfileError('');
       
-      if (!currentUser || !currentUser.id) {
-        throw new Error('User information not available');
+      // Only update if we have a user ID
+      if (!currentUser?.id) {
+        throw new Error('User ID not found');
       }
       
-      console.log("Saving profile for user ID:", currentUser.id);
-      console.log("Profile data to save:", profileData);
-      
-      // Only include editable fields in the update request
+      // Prepare update data
       const updateData = {
-        username: profileData.username,
-        email: profileData.email
+        ...profileData,
+        permissions
       };
       
-      // Make the actual API call to update user profile
+      // Call API to update user
       const response = await userService.update(currentUser.id, updateData);
-      const updatedUserData = response.data;
       
-      console.log("Updated user data:", updatedUserData);
-      
-      // Update the auth context with the response from the API
+      // Update user in context
       updateUserData({
         ...currentUser,
-        ...updatedUserData
+        ...response.data
       });
       
       setIsEditingProfile(false);
       setProfileSuccess(true);
       
-      // Refresh the profile data from the API to ensure we have the latest
+      // Refresh profile data
       setProfileFetched(false);
       fetchUserProfile();
-    } catch (error) {
-      console.error("Profile update error:", error);
-      setProfileError(
-        error.response?.data?.message || 
-        'Failed to update profile. Please try again.'
-      );
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      setProfileError(err.response?.data?.message || 'Failed to update profile');
     } finally {
       setProfileLoading(false);
     }
   };
-
+  
   const handleCloseSnackbar = () => {
     setProfileSuccess(false);
   };
-
+  
   // Password Change Handlers
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
@@ -345,14 +365,8 @@ const Profile = () => {
       setPasswordLoading(false);
     }
   };
-
-  // Format the role for display
-  const formatRole = (role) => {
-    if (!role) return '';
-    return role.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  if (profileLoading && !profileData.username) {
+  
+  if (profileLoading && !profileData.firstName) {
     return (
       <Container maxWidth="md" sx={{ mt: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
@@ -361,39 +375,36 @@ const Profile = () => {
       </Container>
     );
   }
-
+  
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        My Profile
-      </Typography>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Typography variant="h4" gutterBottom>Admin Profile</Typography>
       
       <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={tabValue} onChange={handleTabChange} aria-label="profile tabs">
             <Tab label="Profile Information" id="profile-tab-0" />
-            <Tab label="Change Password" id="profile-tab-1" />
+            <Tab label="Admin Permissions" id="profile-tab-1" />
+            <Tab label="Change Password" id="profile-tab-2" />
           </Tabs>
         </Box>
         
         {/* Profile Information Tab */}
         <TabPanel value={tabValue} index={0}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <Avatar 
-              sx={{ width: 100, height: 100, mr: 3, bgcolor: 'primary.main' }}
-            >
-              {profileData.username ? 
-                profileData.username[0].toUpperCase() : 
-                <AccountCircleIcon fontSize="large" />
-              }
+            <Avatar sx={{ width: 100, height: 100, mr: 3, bgcolor: 'primary.main' }}>
+              <AdminIcon fontSize="large" />
             </Avatar>
             
             <Box>
               <Typography variant="h5">
-                {profileData.username || 'User'}
+                {profileData.firstName} {profileData.lastName || 'Administrator'}
               </Typography>
               <Typography variant="body1" color="textSecondary">
-                {formatRole(profileData.role) || 'No role assigned'}
+                Administrator
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Last Login: {currentUser?.lastLogin || 'March 30, 2025 09:45 AM'}
               </Typography>
             </Box>
             
@@ -419,10 +430,43 @@ const Profile = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
+                label="First Name"
+                name="firstName"
+                value={profileData.firstName}
+                onChange={handleInputChange}
+                variant="outlined"
+                disabled={!isEditingProfile || profileLoading}
+                error={!!profileErrors.firstName}
+                helperText={profileErrors.firstName}
+                InputProps={{
+                  readOnly: !isEditingProfile,
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Last Name"
+                name="lastName"
+                value={profileData.lastName}
+                onChange={handleInputChange}
+                variant="outlined"
+                disabled={!isEditingProfile || profileLoading}
+                error={!!profileErrors.lastName}
+                helperText={profileErrors.lastName}
+                InputProps={{
+                  readOnly: !isEditingProfile,
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
                 label="Username"
                 name="username"
-                value={profileData.username || ''}
-                onChange={handleProfileChange}
+                value={profileData.username}
+                onChange={handleInputChange}
+                variant="outlined"
                 disabled={!isEditingProfile || profileLoading}
                 error={!!profileErrors.username}
                 helperText={profileErrors.username}
@@ -437,8 +481,9 @@ const Profile = () => {
                 label="Email"
                 name="email"
                 type="email"
-                value={profileData.email || ''}
-                onChange={handleProfileChange}
+                value={profileData.email}
+                onChange={handleInputChange}
+                variant="outlined"
                 disabled={!isEditingProfile || profileLoading}
                 error={!!profileErrors.email}
                 helperText={profileErrors.email}
@@ -446,36 +491,6 @@ const Profile = () => {
                   readOnly: !isEditingProfile,
                 }}
               />
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="subtitle1" gutterBottom>
-                Role
-              </Typography>
-              <Typography variant="body1" color={profileData.role ? 'textPrimary' : 'textSecondary'}>
-                {formatRole(profileData.role) || 'No role assigned'}
-              </Typography>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Typography variant="subtitle1" gutterBottom>
-                Assigned Domains
-              </Typography>
-              {profileData.domains && profileData.domains.length > 0 ? (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {profileData.domains.map((domain) => (
-                    <Chip 
-                      key={domain.id} 
-                      icon={<DomainIcon />} 
-                      label={domain.name} 
-                      variant="outlined" 
-                    />
-                  ))}
-                </Box>
-              ) : (
-                <Typography variant="body1" color="textSecondary">
-                  No domains assigned
-                </Typography>
-              )}
             </Grid>
             
             {isEditingProfile && (
@@ -495,9 +510,120 @@ const Profile = () => {
                     onClick={handleSaveProfile}
                     disabled={profileLoading}
                   >
-                    {profileLoading ? 
-                      <><CircularProgress size={20} sx={{ mr: 1 }} /> Saving...</> : 
-                      'Save Changes'}
+                    {profileLoading ? <CircularProgress size={24} /> : 'Save Changes'}
+                  </Button>
+                </Box>
+              </Grid>
+            )}
+          </Grid>
+        </TabPanel>
+        
+        {/* Permissions Tab */}
+        <TabPanel value={tabValue} index={1}>
+          <Typography variant="h6" gutterBottom>Administrative Permissions</Typography>
+          <Alert severity="info" sx={{ mb: 3 }}>
+            These permissions control what actions this administrator can perform in the system.
+          </Alert>
+          
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel 
+                control={
+                  <Checkbox 
+                    checked={permissions.moduleManagement} 
+                    onChange={handlePermissionChange}
+                    name="moduleManagement"
+                    disabled={!isEditingProfile || profileLoading}
+                  />
+                } 
+                label="Module Management" 
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel 
+                control={
+                  <Checkbox 
+                    checked={permissions.userManagement} 
+                    onChange={handlePermissionChange}
+                    name="userManagement"
+                    disabled={!isEditingProfile || profileLoading}
+                  />
+                } 
+                label="User Management" 
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel 
+                control={
+                  <Checkbox 
+                    checked={permissions.domainConfiguration} 
+                    onChange={handlePermissionChange}
+                    name="domainConfiguration"
+                    disabled={!isEditingProfile || profileLoading}
+                  />
+                } 
+                label="Domain Configuration" 
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel 
+                control={
+                  <Checkbox 
+                    checked={permissions.reportGeneration} 
+                    onChange={handlePermissionChange}
+                    name="reportGeneration"
+                    disabled={!isEditingProfile || profileLoading}
+                  />
+                } 
+                label="Report Generation" 
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel 
+                control={
+                  <Checkbox 
+                    checked={permissions.aiContentGeneration} 
+                    onChange={handlePermissionChange}
+                    name="aiContentGeneration"
+                    disabled={!isEditingProfile || profileLoading}
+                  />
+                } 
+                label="AI Content Generation" 
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel 
+                control={
+                  <Checkbox 
+                    checked={permissions.systemConfiguration} 
+                    onChange={handlePermissionChange}
+                    name="systemConfiguration"
+                    disabled={!isEditingProfile || profileLoading}
+                  />
+                } 
+                label="System Configuration" 
+              />
+            </Grid>
+            
+            {isEditingProfile && (
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<CancelIcon />}
+                    onClick={handleCancelEditing}
+                    disabled={profileLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={handleSaveProfile}
+                    disabled={profileLoading}
+                  >
+                    {profileLoading ? <CircularProgress size={24} /> : 'Save Changes'}
                   </Button>
                 </Box>
               </Grid>
@@ -506,7 +632,7 @@ const Profile = () => {
         </TabPanel>
         
         {/* Change Password Tab */}
-        <TabPanel value={tabValue} index={1}>
+        <TabPanel value={tabValue} index={2}>
           {passwordError && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {passwordError}
@@ -630,4 +756,4 @@ const Profile = () => {
   );
 };
 
-export default Profile;
+export default AdminProfile;

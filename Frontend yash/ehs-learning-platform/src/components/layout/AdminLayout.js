@@ -1,4 +1,4 @@
-// src/components/layout/MainLayout.js
+// src/components/layout/AdminLayout.js
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { 
@@ -9,7 +9,6 @@ import {
   IconButton,
   Typography,
   Drawer,
-  Divider,
   List,
   ListItem,
   ListItemIcon,
@@ -19,7 +18,8 @@ import {
   Avatar,
   Menu,
   MenuItem,
-  Container
+  Container,
+  Divider
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
@@ -28,25 +28,20 @@ import { useAuth } from '../../contexts/AuthContext';
 // Icons
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import SchoolIcon from '@mui/icons-material/School';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import PeopleIcon from '@mui/icons-material/People';
+import CategoryIcon from '@mui/icons-material/Category';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import SecurityIcon from '@mui/icons-material/Security';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import DomainIcon from '@mui/icons-material/Domain';
+import SettingsIcon from '@mui/icons-material/Settings';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 
-// Drawer width
 const drawerWidth = 240;
 
-// Domain mock data - replace with API data in production
-const DOMAINS = [
-  { id: 1, name: 'Fire Safety', icon: <SecurityIcon /> },
-  { id: 2, name: 'OSHA', icon: <DomainIcon /> },
-  { id: 3, name: 'First Aid', icon: <LocalHospitalIcon /> },
-];
-
-const MainLayout = () => {
+const AdminLayout = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -86,10 +81,10 @@ const MainLayout = () => {
   // Handle profile navigation
   const handleProfile = () => {
     handleMenuClose();
-    navigate('/profile');
+    navigate('/admin/profile');
   };
 
-  // Drawer content - matches your design in Image 2
+  // Admin Sidebar content
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {isMobile && (
@@ -105,8 +100,8 @@ const MainLayout = () => {
         <ListItem disablePadding>
           <ListItemButton
             component={Link}
-            to="/"
-            selected={location.pathname === '/'}
+            to="/admin"
+            selected={location.pathname === '/admin'}
             className="sidebar-list-item"
           >
             <ListItemIcon>
@@ -119,22 +114,50 @@ const MainLayout = () => {
         <ListItem disablePadding>
           <ListItemButton
             component={Link}
-            to="/my-courses"
-            selected={location.pathname === '/my-courses'}
+            to="/admin/modules"
+            selected={location.pathname.startsWith('/admin/modules')}
             className="sidebar-list-item"
           >
             <ListItemIcon>
-              <SchoolIcon />
+              <MenuBookIcon />
             </ListItemIcon>
-            <ListItemText primary="My Courses" />
+            <ListItemText primary="Modules" />
           </ListItemButton>
         </ListItem>
         
         <ListItem disablePadding>
           <ListItemButton
             component={Link}
-            to="/reports"
-            selected={location.pathname === '/reports'}
+            to="/admin/users"
+            selected={location.pathname.startsWith('/admin/users')}
+            className="sidebar-list-item"
+          >
+            <ListItemIcon>
+              <PeopleIcon />
+            </ListItemIcon>
+            <ListItemText primary="Users" />
+          </ListItemButton>
+        </ListItem>
+        
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to="/admin/domains"
+            selected={location.pathname.startsWith('/admin/domains')}
+            className="sidebar-list-item"
+          >
+            <ListItemIcon>
+              <CategoryIcon />
+            </ListItemIcon>
+            <ListItemText primary="Domains" />
+          </ListItemButton>
+        </ListItem>
+        
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to="/admin/reports"
+            selected={location.pathname.startsWith('/admin/reports')}
             className="sidebar-list-item"
           >
             <ListItemIcon>
@@ -143,36 +166,73 @@ const MainLayout = () => {
             <ListItemText primary="Reports" />
           </ListItemButton>
         </ListItem>
+        
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to="/admin/settings"
+            selected={location.pathname.startsWith('/admin/settings')}
+            className="sidebar-list-item"
+          >
+            <ListItemIcon>
+              <SettingsIcon />
+            </ListItemIcon>
+            <ListItemText primary="Settings" />
+          </ListItemButton>
+        </ListItem>
       </List>
       
       <Divider sx={{ my: 2 }} />
       
-      <Box className="domain-header">
+      <Box sx={{ px: 2 }}>
         <Typography
           variant="subtitle2"
           color="text.secondary"
           sx={{ fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.08em' }}
         >
-          DOMAINS
+          QUICK ACTIONS
         </Typography>
       </Box>
       
       <List>
-        {DOMAINS.map((domain) => (
-          <ListItem key={domain.id} disablePadding>
-            <ListItemButton
-              component={Link}
-              to={`/domains/${domain.id}`}
-              selected={location.pathname === `/domains/${domain.id}`}
-              className="sidebar-list-item"
-            >
-              <ListItemIcon>
-                {domain.icon}
-              </ListItemIcon>
-              <ListItemText primary={domain.name} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to="/admin/modules/create"
+            className="sidebar-list-item"
+          >
+            <ListItemIcon>
+              <AddCircleOutlineIcon />
+            </ListItemIcon>
+            <ListItemText primary="New Module" />
+          </ListItemButton>
+        </ListItem>
+        
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to="/admin/users/new"
+            className="sidebar-list-item"
+          >
+            <ListItemIcon>
+              <PersonAddIcon />
+            </ListItemIcon>
+            <ListItemText primary="New User" />
+          </ListItemButton>
+        </ListItem>
+        
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to="/admin/reports/generate"
+            className="sidebar-list-item"
+          >
+            <ListItemIcon>
+              <BarChartIcon />
+            </ListItemIcon>
+            <ListItemText primary="Run Reports" />
+          </ListItemButton>
+        </ListItem>
       </List>
     </Box>
   );
@@ -181,7 +241,7 @@ const MainLayout = () => {
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <CssBaseline />
       
-      {/* App Bar - Always spans the full width */}
+      {/* App Bar */}
       <AppBar 
         position="fixed" 
         sx={{ 
@@ -201,7 +261,7 @@ const MainLayout = () => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            EHS E-Learning Platform
+            EHS E-Learning Platform - Admin Dashboard
           </Typography>
           <IconButton
             size="large"
@@ -244,7 +304,7 @@ const MainLayout = () => {
         <MenuItem onClick={handleLogout}>Logout</MenuItem>
       </Menu>
       
-      {/* Sidebar Drawer - Either overlay or permanent */}
+      {/* Sidebar Drawer */}
       <Drawer
         variant={isMobile ? "temporary" : "persistent"}
         open={open}
@@ -255,7 +315,7 @@ const MainLayout = () => {
           [`& .MuiDrawer-paper`]: { 
             width: drawerWidth, 
             boxSizing: 'border-box',
-            top: '64px', // Height of AppBar
+            top: '64px',
             height: 'calc(100% - 64px)',
             backgroundColor: '#FFFFFF',
             borderRight: '1px solid rgba(0, 0, 0, 0.12)'
@@ -265,32 +325,31 @@ const MainLayout = () => {
         {drawer}
       </Drawer>
       
-      {/* Main content - Responsive container with dynamic maxWidth */}
+      {/* Main content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          pt: 3, // top padding
-          px: { xs: 2, sm: 3 }, // horizontal padding - smaller on mobile
+          pt: 3,
+          px: { xs: 2, sm: 3 },
           width: '100%',
-          mt: '64px', // Height of AppBar
+          mt: '64px',
           transition: theme.transitions.create(['padding', 'margin'], {
             easing: theme.transitions.easing.easeOut,
             duration: theme.transitions.duration.enteringScreen,
           }),
           display: 'flex',
-          justifyContent: 'center', // Center content horizontally
+          justifyContent: 'center',
         }}
       >
-        {/* Responsive container - adjusts max-width based on sidebar state */}
         <Container 
           sx={{ 
             maxWidth: {
               xs: '100%',
-              sm: open ? 'md' : 'lg', // Narrower when sidebar is open, wider when closed
+              sm: open ? 'md' : 'lg',
               md: open ? 'lg' : 'xl',
             },
-            px: 0, // Remove default horizontal padding from container
+            px: 0,
             transition: theme.transitions.create('max-width', {
               easing: theme.transitions.easing.easeOut,
               duration: theme.transitions.duration.enteringScreen,
@@ -304,4 +363,4 @@ const MainLayout = () => {
   );
 };
 
-export default MainLayout;
+export default AdminLayout;

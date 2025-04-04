@@ -11,18 +11,33 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './styles/global.css';
 import './styles/layout.css';
 
-// Layout
+// Layouts
 import MainLayout from './components/layout/MainLayout';
+import AdminLayout from './components/layout/AdminLayout';
 
-// Pages
+// User Pages
 import Dashboard from './pages/Dashboard';
 import MyCourses from './pages/MyCourses';
 import Reports from './pages/Reports';
 import DomainView from './pages/DomainView';
+import ModuleView from './pages/ModuleView';
+import Profile from './pages/Profile';
+
+// Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard';
+import ModuleManagement from './pages/admin/ModuleManagement';
+import ModuleCreator from './pages/admin/ModuleCreator';
+import AssessmentCreator from './pages/admin/AssessmentCreator';
+import UserManagement from './pages/admin/UserManagement';
+import DomainManagement from './pages/admin/DomainManagement';
+import AdminReports from './pages/admin/AdminReports';
+import AdminSettings from './pages/admin/AdminSettings';
+import AdminProfile from './pages/admin/AdminProfile';
+
+// Auth Pages
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 
 // Create theme
@@ -85,9 +100,9 @@ const theme = createTheme({
   },
 });
 
-// Protected route wrapper using AuthContext
-const ProtectedRoute = ({ children }) => {
-  const { currentUser, loading } = useAuth();
+// Protected route wrapper with role checking
+const ProtectedRoute = ({ children, requireAdmin }) => {
+  const { currentUser, loading, isAdmin } = useAuth();
   
   // Show loading state while auth check is in progress
   if (loading) {
@@ -97,6 +112,11 @@ const ProtectedRoute = ({ children }) => {
   // Redirect to login if not authenticated
   if (!currentUser) {
     return <Navigate to="/login" replace />;
+  }
+  
+  // Require admin but user is not admin
+  if (requireAdmin && !isAdmin()) {
+    return <Navigate to="/" replace />;
   }
   
   return children;
@@ -111,11 +131,11 @@ function AppContent() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         
-        {/* Protected routes */}
+        {/* User routes */}
         <Route 
           path="/" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireAdmin={false}>
               <MainLayout />
             </ProtectedRoute>
           }
@@ -124,7 +144,28 @@ function AppContent() {
           <Route path="/my-courses" element={<MyCourses />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/domains/:domainId" element={<DomainView />} />
+          <Route path="/modules/:moduleId" element={<ModuleView />} />
           <Route path="/profile" element={<Profile />} />
+        </Route>
+        
+        {/* Admin routes */}
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute requireAdmin={true}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="/admin/modules" element={<ModuleManagement />} />
+          <Route path="/admin/modules/create" element={<ModuleCreator />} />
+          <Route path="/admin/modules/edit/:moduleId" element={<ModuleCreator />} />
+          <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin/domains" element={<DomainManagement />} />
+          <Route path="/admin/reports" element={<AdminReports />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
+          <Route path="/admin/profile" element={<AdminProfile />} />
         </Route>
         
         {/* 404 page */}

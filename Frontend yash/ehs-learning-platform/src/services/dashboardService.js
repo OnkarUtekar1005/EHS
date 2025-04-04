@@ -1,5 +1,5 @@
 // src/services/dashboardService.js
-import { api } from './authService';
+import api from './api';
 
 export const dashboardService = {
   // Get dashboard summary data - This endpoint exists in your backend

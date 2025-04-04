@@ -2,27 +2,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/api';
 
-// Create the auth context
 const AuthContext = createContext();
 
-// Custom hook to use the auth context
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);
 
-// Provider component
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Function to login a user
   const login = async (credentials) => {
     try {
       setError(null);
       const response = await authService.login(credentials);
-      
-      // Store user from response
       setCurrentUser(response.data);
       return response;
     } catch (err) {
@@ -31,30 +23,45 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Function to logout a user
   const logout = async () => {
+    // Clear user state FIRST - this is critical
+    setCurrentUser(null);
+    
+    // Then clear localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Try the API call in the background
     try {
-      await authService.logout();
-      setCurrentUser(null);
+      authService.logout().catch(err => {
+        console.warn('Background logout request error:', err);
+      });
     } catch (err) {
-      console.error('Logout error:', err);
-      // Even if server logout fails, we clear local state
-      setCurrentUser(null);
+      console.warn('Error initiating logout request:', err);
     }
   };
 
-  // Function to update user data
   const updateUserData = (userData) => {
-    // Update context state
     setCurrentUser(userData);
-    
-    // Update localStorage if needed
     if (localStorage.getItem('user')) {
       localStorage.setItem('user', JSON.stringify(userData));
     }
   };
+  
+  const isAdmin = () => {
+    if (!currentUser) {
+      return false;
+    }
+    
+    return Boolean(
+      currentUser.roles?.includes('ADMIN') || 
+      currentUser.role === 'ADMIN' ||
+      currentUser.userType === 'ADMIN' ||
+      currentUser.isAdmin === true
+    );
+  };
 
-  // Check if user is already logged in on mount
+  // Initialize auth state from localStorage
   useEffect(() => {
     const fetchCurrentUser = async () => {
       const token = localStorage.getItem('token');
@@ -64,25 +71,20 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        // Try to get current user from the API
         const response = await authService.getCurrentUser();
         setCurrentUser(response.data);
       } catch (err) {
         console.error('Error fetching current user:', err);
-        // If API fails, try to get user from localStorage
+        
         const userStr = localStorage.getItem('user');
         if (userStr) {
           try {
-            const userData = JSON.parse(userStr);
-            setCurrentUser(userData);
+            setCurrentUser(JSON.parse(userStr));
           } catch (e) {
-            console.error('Failed to parse user data from localStorage', e);
-            // Clear invalid user data
             localStorage.removeItem('user');
             localStorage.removeItem('token');
           }
         } else {
-          // Clear token if no user data found
           localStorage.removeItem('token');
         }
       } finally {
@@ -93,14 +95,14 @@ export const AuthProvider = ({ children }) => {
     fetchCurrentUser();
   }, []);
 
-  // Context value
   const value = {
     currentUser,
     loading,
     error,
     login,
     logout,
-    updateUserData
+    updateUserData,
+    isAdmin
   };
 
   return (
@@ -109,5 +111,3 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
-export default AuthContext;

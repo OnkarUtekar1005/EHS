@@ -20,7 +20,7 @@ import { useAuth } from '../contexts/AuthContext';
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, currentUser } = useAuth();
+  const { login, currentUser, isAdmin } = useAuth();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -34,9 +34,17 @@ const Login = () => {
   // If already logged in, redirect to home
   useEffect(() => {
     if (currentUser) {
-      navigate('/');
+      // Check user role and redirect accordingly
+      console.log("Current user detected:", currentUser);
+      console.log("Is admin?", isAdmin());
+      
+      if (isAdmin()) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, isAdmin]);
   
   // Handle form input changes
   const handleChange = (e) => {
@@ -95,11 +103,25 @@ const Login = () => {
       setLoginError('');
       
       // Call login from AuthContext
-      await login(formData);
+      const response = await login(formData);
       
-      // Redirect to dashboard or the page they were trying to access
-      const from = location.state?.from?.pathname || '/';
-      navigate(from);
+      // Extra debugging to check user data
+      console.log("Login successful, user data:", response.data);
+      
+      // Manual check if user is admin for immediate redirect
+      const userData = response.data;
+      const adminUser = userData.roles?.includes('admin') || 
+                        userData.role === 'admin' || 
+                        userData.userType === 'admin';
+      
+      // Immediate redirect based on role
+      if (adminUser) {
+        navigate('/admin');
+      } else {
+        // Redirect to dashboard or the page they were trying to access
+        const from = location.state?.from?.pathname || '/';
+        navigate(from);
+      }
       
     } catch (error) {
       console.error('Login error:', error);
