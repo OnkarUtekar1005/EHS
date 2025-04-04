@@ -155,7 +155,8 @@ export const userService = {
   assignDomains: (userId, domains) => api.put(`/users/${userId}/domains`, domains),
 };
 
-// Domain services
+// Update to src/services/api.js - Add search method to domainService
+
 export const domainService = {
   getAll: () => api.get('/domains'),
   getById: (id) => api.get(`/domains/${id}`),
@@ -163,6 +164,7 @@ export const domainService = {
   update: (id, domainData) => api.put(`/domains/${id}`, domainData),
   delete: (id) => api.delete(`/domains/${id}`),
   getModules: (domainId) => api.get(`/domains/${domainId}/modules`),
+  search: (query) => api.get('/domains/search', { params: { query } }),
 };
 
 // Module services

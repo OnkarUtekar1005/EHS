@@ -2,9 +2,18 @@
 import React from 'react';
 import { Box, Button, Container, Typography } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const NotFound = () => {
+  const { isAdmin } = useAuth();
+  const navigate = useNavigate();
+  
+  const handleGoToDashboard = () => {
+    const dashboardPath = isAdmin() ? "/admin" : "/";
+    navigate(dashboardPath);
+  };
+  
   return (
     <Container maxWidth="md">
       <Box
@@ -34,8 +43,7 @@ const NotFound = () => {
         
         <Button 
           variant="contained" 
-          component={RouterLink} 
-          to="/"
+          onClick={handleGoToDashboard}
           sx={{ mt: 3 }}
         >
           Go to Dashboard

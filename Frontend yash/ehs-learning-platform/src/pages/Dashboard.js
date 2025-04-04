@@ -9,14 +9,26 @@ import {
   CircularProgress,
   Card,
   CardContent,
-  Button
+  Button,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  LinearProgress
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { 
+  BarChart as BarChartIcon,
+  CheckCircle as CheckCircleIcon,
+  Timeline as TimelineIcon
+} from '@mui/icons-material';
 import DomainQuickAccess from '../components/dashboard/DomainQuickAccess';
 import PerformanceCharts from '../components/dashboard/PerformanceCharts';
 import dashboardService from '../services/dashboardService';
 
 const Dashboard = () => {
+  const { currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState({
@@ -120,7 +132,7 @@ const Dashboard = () => {
   // Helper to calculate module progress
   const calculateProgress = (progressData) => {
     // Basic calculation - replace with more accurate if you have component data
-    return Math.random() * 100; // Placeholder
+    return progressData.percentComplete || Math.floor(Math.random() * 100); // Fallback to random for demo
   };
   
   // Create performance data for charts
@@ -144,6 +156,18 @@ const Dashboard = () => {
       { month: 'Apr', preAssessment: 63, postAssessment: 90 },
       { month: 'May', preAssessment: 68, postAssessment: 87 }
     ];
+  };
+
+  // Format date string
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Recently';
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch (e) {
+      return 'Recently';
+    }
   };
 
   // Loading state
@@ -173,62 +197,138 @@ const Dashboard = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Typography variant="h4" gutterBottom>Dashboard</Typography>
       <Grid container spacing={3}>
         {/* Summary Cards */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>In Progress</Typography>
-              <Typography variant="h3" component="div" color="primary">
-                {dashboardData.summary.inProgressCount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Active modules
-              </Typography>
-            </CardContent>
-          </Card>
+        <Grid item xs={12} sm={6}>
+          <Paper sx={{ p: 2, height: '100%' }}>
+            <Typography variant="h6" gutterBottom>
+              In Progress ({dashboardData.summary.inProgressCount})
+            </Typography>
+            <Box sx={{ mb: 2 }}>
+              {dashboardData.inProgressModules.length === 0 ? (
+                <Typography color="textSecondary">No modules in progress</Typography>
+              ) : (
+                dashboardData.inProgressModules.slice(0, 3).map((module, index) => (
+                  <Box key={module.id} sx={{ mb: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                      <Typography variant="subtitle2" component={RouterLink} to={`/modules/${module.id}`} sx={{ textDecoration: 'none' }}>
+                        {module.title}
+                      </Typography>
+                      <Typography variant="body2">
+                        {Math.round(module.progress)}%
+                      </Typography>
+                    </Box>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={module.progress} 
+                      sx={{ height: 8, borderRadius: 1, mb: 1 }}
+                    />
+                    <Typography variant="caption" color="textSecondary">
+                      {module.domain} • Last accessed: {formatDate(module.lastAccessed)}
+                    </Typography>
+                  </Box>
+                ))
+              )}
+            </Box>
+            {dashboardData.inProgressModules.length > 3 && (
+              <Button 
+                component={RouterLink} 
+                to="/my-courses" 
+                size="small"
+                sx={{ mt: 1 }}
+              >
+                View all ({dashboardData.inProgressModules.length})
+              </Button>
+            )}
+          </Paper>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>Completed</Typography>
-              <Typography variant="h3" component="div" color="success.main">
-                {dashboardData.summary.completedCount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Finished modules
-              </Typography>
-            </CardContent>
-          </Card>
+        <Grid item xs={12} sm={6}>
+          <Paper sx={{ p: 2, height: '100%' }}>
+            <Typography variant="h6" gutterBottom>
+              Completed ({dashboardData.summary.completedCount})
+            </Typography>
+            <Box sx={{ mb: 2 }}>
+              {dashboardData.completedModules.length === 0 ? (
+                <Typography color="textSecondary">No completed modules</Typography>
+              ) : (
+                dashboardData.completedModules.slice(0, 3).map((module, index) => (
+                  <Box key={module.id} sx={{ mb: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5, alignItems: 'center' }}>
+                      <Typography variant="subtitle2" component={RouterLink} to={`/modules/${module.id}`} sx={{ textDecoration: 'none' }}>
+                        {module.title}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <CheckCircleIcon color="success" fontSize="small" sx={{ mr: 0.5 }} />
+                        <Typography variant="body2" color="success.main">
+                          {module.score}%
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Typography variant="caption" color="textSecondary">
+                      {module.domain} • Completed: {formatDate(module.completedAt)}
+                    </Typography>
+                  </Box>
+                ))
+              )}
+            </Box>
+            {dashboardData.completedModules.length > 3 && (
+              <Button 
+                component={RouterLink} 
+                to="/my-courses" 
+                size="small"
+                sx={{ mt: 1 }}
+              >
+                View all ({dashboardData.completedModules.length})
+              </Button>
+            )}
+          </Paper>
         </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>Avg. Score</Typography>
-              <Typography variant="h3" component="div">
-                {dashboardData.summary.averageScore.toFixed(1)}%
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Post-assessment average
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>Improvement</Typography>
-              <Typography variant="h3" component="div" color="info.main">
-                +{dashboardData.summary.improvementRate.toFixed(1)}%
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Average score increase
-              </Typography>
-            </CardContent>
-          </Card>
+
+        {/* Recent Activity */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>Recent Activity</Typography>
+            
+            {dashboardData.recentActivity.length === 0 ? (
+              <Typography color="textSecondary">No recent activity</Typography>
+            ) : (
+              <List disablePadding>
+                {dashboardData.recentActivity.slice(0, 5).map((activity, index) => (
+                  <ListItem 
+                    key={index} 
+                    disablePadding 
+                    sx={{ 
+                      pb: 1, 
+                      pt: 1,
+                      borderBottom: index < dashboardData.recentActivity.length - 1 ? '1px solid #eee' : 'none'
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Typography variant="subtitle2" component={RouterLink} to={`/modules/${activity.moduleId}`} sx={{ textDecoration: 'none' }}>
+                          {activity.title}
+                        </Typography>
+                      }
+                      secondary={
+                        <>
+                          <Typography variant="body2" color="textSecondary" component="span">
+                            {activity.state === 'COMPLETED' 
+                              ? 'Completed' 
+                              : `${activity.percentComplete || 0}% complete`}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary" component="span" sx={{ ml: 1 }}>
+                            • {formatDate(activity.lastAccessedAt)}
+                          </Typography>
+                        </>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Paper>
         </Grid>
 
         {/* Domain Quick Access */}
@@ -239,139 +339,16 @@ const Dashboard = () => {
           </Paper>
         </Grid>
 
-        {/* Performance Charts */}
-        <Grid item xs={12} md={8}>
-          <PerformanceCharts 
-            data={dashboardData.performanceData} 
-            loading={false} 
-            error={null} 
-          />
-        </Grid>
-
-        {/* Recent Activity */}
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>Recent Activity</Typography>
-              
-              {dashboardData.recentActivity.length === 0 ? (
-                <Typography color="textSecondary">No recent activity</Typography>
-              ) : (
-                <Box>
-                  {dashboardData.recentActivity.map((activity, index) => (
-                    <Box 
-                      key={index} 
-                      sx={{ 
-                        mb: 2, 
-                        pb: 1, 
-                        borderBottom: index < dashboardData.recentActivity.length - 1 ? '1px solid #eee' : 'none' 
-                      }}
-                    >
-                      <Typography variant="subtitle2" component={RouterLink} to={`/domains/${activity.moduleId}`} sx={{ textDecoration: 'none' }}>
-                        {activity.title}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        {activity.state === 'COMPLETED' 
-                          ? 'Completed' 
-                          : `${activity.percentComplete || 0}% complete`}
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        {activity.lastAccessedAt || 'Recently'}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* In Progress Modules */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>In Progress</Typography>
-              
-              {dashboardData.inProgressModules.length === 0 ? (
-                <Typography color="textSecondary">No modules in progress</Typography>
-              ) : (
-                <Box>
-                  {dashboardData.inProgressModules.slice(0, 3).map((module, index) => (
-                    <Box 
-                      key={module.id} 
-                      sx={{ 
-                        mb: 2, 
-                        pb: 1, 
-                        borderBottom: index < 2 ? '1px solid #eee' : 'none' 
-                      }}
-                    >
-                      <Typography variant="subtitle2" component={RouterLink} to={`/modules/${module.id}`} sx={{ textDecoration: 'none' }}>
-                        {module.title}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        {module.domain} • {Math.round(module.progress || 0)}% complete
-                      </Typography>
-                    </Box>
-                  ))}
-                  
-                  {dashboardData.inProgressModules.length > 3 && (
-                    <Button 
-                      component={RouterLink} 
-                      to="/my-courses" 
-                      size="small"
-                      sx={{ mt: 1 }}
-                    >
-                      View all ({dashboardData.inProgressModules.length})
-                    </Button>
-                  )}
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Completed Modules */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>Completed</Typography>
-              
-              {dashboardData.completedModules.length === 0 ? (
-                <Typography color="textSecondary">No completed modules</Typography>
-              ) : (
-                <Box>
-                  {dashboardData.completedModules.slice(0, 3).map((module, index) => (
-                    <Box 
-                      key={module.id} 
-                      sx={{ 
-                        mb: 2, 
-                        pb: 1, 
-                        borderBottom: index < 2 ? '1px solid #eee' : 'none' 
-                      }}
-                    >
-                      <Typography variant="subtitle2" component={RouterLink} to={`/modules/${module.id}`} sx={{ textDecoration: 'none' }}>
-                        {module.title}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        {module.domain} • Score: {module.score}%
-                      </Typography>
-                    </Box>
-                  ))}
-                  
-                  {dashboardData.completedModules.length > 3 && (
-                    <Button 
-                      component={RouterLink} 
-                      to="/my-courses" 
-                      size="small"
-                      sx={{ mt: 1 }}
-                    >
-                      View all ({dashboardData.completedModules.length})
-                    </Button>
-                  )}
-                </Box>
-              )}
-            </CardContent>
-          </Card>
+        {/* Performance Summary */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>Performance Summary</Typography>
+            <PerformanceCharts 
+              data={dashboardData.performanceData} 
+              loading={false} 
+              error={null} 
+            />
+          </Paper>
         </Grid>
       </Grid>
     </Container>
