@@ -220,4 +220,7 @@ public class ModuleComponentController {
         
         return ResponseEntity.ok(new MessageResponse("Components reordered successfully."));
     }
+    
+    
 }
+

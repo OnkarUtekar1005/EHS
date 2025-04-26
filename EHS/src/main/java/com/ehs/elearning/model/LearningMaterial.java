@@ -4,20 +4,57 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 import java.util.UUID;
-
+import com.fasterxml.jackson.annotation.JsonInclude;
 @Entity
 @Table(name = "learning_materials")
 public class LearningMaterial {
     
+	@Transient
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private Integer progress;
+
+	@Transient
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private Integer timeSpent;
+
+	@Transient
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private Boolean completed;
+
+	// Add these getter and setter methods
+	public Integer getProgress() {
+	    return progress;
+	}
+
+	public void setProgress(Integer progress) {
+	    this.progress = progress;
+	}
+
+	public Integer getTimeSpent() {
+	    return timeSpent;
+	}
+
+	public void setTimeSpent(Integer timeSpent) {
+	    this.timeSpent = timeSpent;
+	}
+
+	public Boolean getCompleted() {
+	    return completed;
+	}
+
+	public void setCompleted(Boolean completed) {
+	    this.completed = completed;
+	}
     @Id
     @GeneratedValue
     private UUID id;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "component_id", nullable = false)
+    @JsonIgnore
     private ModuleComponent component;
     
     @NotBlank

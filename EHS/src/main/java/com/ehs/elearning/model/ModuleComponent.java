@@ -3,7 +3,7 @@ package com.ehs.elearning.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.UUID;
 
 @Entity
@@ -16,6 +16,7 @@ public class ModuleComponent {
     
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "module_id", nullable = false)
+    @JsonIgnore
     private TrainingModule trainingModule;
     
     private Integer sequenceOrder;

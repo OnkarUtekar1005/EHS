@@ -142,6 +142,8 @@ public class SecurityConfig {
                     .requestMatchers("/api/materials/reorder").authenticated()  // Reorder materials
                     .requestMatchers("/api/components/{id}/materials/track").authenticated()  // Track material progress
                     .requestMatchers("/api/components/{id}/progress").authenticated()  // Get user progress
+                 // Add this to your security configuration
+                    .requestMatchers("/api/components/learning/materials/upload").authenticated()
                     
                     // Progress tracking endpoints
                     .requestMatchers(HttpMethod.GET, "/api/progress/user/{userId}").authenticated()  // View user progress

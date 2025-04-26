@@ -1,10 +1,10 @@
 package com.ehs.elearning.payload.request;
 
-import com.ehs.elearning.model.ModuleStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
 import java.util.UUID;
 
 public class ModuleRequest {
@@ -19,12 +19,14 @@ public class ModuleRequest {
     @NotNull
     private UUID domainId;
     
-    private Integer requiredCompletionScore;
-    
     private Integer estimatedDuration;
     
-    private ModuleStatus status;
+    private Integer requiredCompletionScore;
     
+    private String status;
+    
+    private List<ComponentRequest> components;
+
     // Getters and Setters
     public String getTitle() {
         return title;
@@ -50,14 +52,6 @@ public class ModuleRequest {
         this.domainId = domainId;
     }
 
-    public Integer getRequiredCompletionScore() {
-        return requiredCompletionScore;
-    }
-
-    public void setRequiredCompletionScore(Integer requiredCompletionScore) {
-        this.requiredCompletionScore = requiredCompletionScore;
-    }
-
     public Integer getEstimatedDuration() {
         return estimatedDuration;
     }
@@ -66,11 +60,27 @@ public class ModuleRequest {
         this.estimatedDuration = estimatedDuration;
     }
 
-    public ModuleStatus getStatus() {
+    public Integer getRequiredCompletionScore() {
+        return requiredCompletionScore;
+    }
+
+    public void setRequiredCompletionScore(Integer requiredCompletionScore) {
+        this.requiredCompletionScore = requiredCompletionScore;
+    }
+
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(ModuleStatus status) {
+    public void setStatus(String status) {
         this.status = status;
+    }
+
+    public List<ComponentRequest> getComponents() {
+        return components;
+    }
+
+    public void setComponents(List<ComponentRequest> components) {
+        this.components = components;
     }
 }

@@ -1,6 +1,7 @@
 package com.ehs.elearning.model;
 
 public enum Role {
-    EMPLOYEE,
-    ADMIN
+    USER,
+    ADMIN,
+    EMPLOYEE  // You can keep this if needed or remove it
 }

@@ -29,7 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             
             // Debug token resolution process
             if (jwt != null) {
-                log.info("JWT filter: Token found in request");
+               
                 
                 if (jwtTokenProvider.validateToken(jwt)) {
                     Authentication auth = jwtTokenProvider.getAuthentication(jwt);
@@ -41,18 +41,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     request.setAttribute("userId", jwtTokenProvider.getUserIdFromToken(jwt));
                     request.setAttribute("userRoles", jwtTokenProvider.getRolesFromToken(jwt));
                     
-                    log.info("JWT filter: Valid token, user authenticated");
+                
                 } else {
-                    log.warn("JWT filter: Token validation failed");
+                  
                 }
             } else {
                 // Only log for non-OPTIONS requests to reduce noise
                 if (!request.getMethod().equals("OPTIONS")) {
-                    log.debug("JWT filter: No token found in request to {}", request.getRequestURI());
+                
                 }
             }
         } catch (Exception e) {
-            log.error("JWT Authentication error: " + e.getMessage(), e);
+     
         }
 
         filterChain.doFilter(request, response);

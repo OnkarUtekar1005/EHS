@@ -85,14 +85,15 @@ public class AuthController {
         );
 
         // Set role
+  
         String strRole = registerRequest.getRole();
         if (strRole == null || strRole.isEmpty()) {
-            user.setRole(Role.EMPLOYEE);
+            user.setRole(Role.USER);
         } else {
             try {
                 user.setRole(Role.valueOf(strRole.toUpperCase()));
             } catch (IllegalArgumentException e) {
-                user.setRole(Role.EMPLOYEE);
+                user.setRole(Role.USER); // Default to USER if invalid role
             }
         }
 

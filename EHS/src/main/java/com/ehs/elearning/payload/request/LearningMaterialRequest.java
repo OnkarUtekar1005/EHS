@@ -1,9 +1,11 @@
 package com.ehs.elearning.payload.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+/**
+ * Request DTO for learning material operations
+ */
 public class LearningMaterialRequest {
     
     @NotBlank
@@ -13,16 +15,15 @@ public class LearningMaterialRequest {
     @Size(max = 500)
     private String description;
     
-    @NotNull
-    private String fileType; // e.g., PDF, VIDEO, PRESENTATION, HTML
+    private String fileType;
     
-    private String content; // Direct HTML content
+    private String content;
     
-    private String externalUrl; // External resource URL
+    private String externalUrl;
     
     private Integer sequenceOrder;
     
-    private Integer estimatedDuration; // in seconds
+    private Integer estimatedDuration;
     
     // Getters and Setters
     public String getTitle() {

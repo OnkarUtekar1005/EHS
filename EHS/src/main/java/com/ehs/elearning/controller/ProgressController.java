@@ -1,23 +1,29 @@
 package com.ehs.elearning.controller;
 
-import com.ehs.elearning.model.*;
-import com.ehs.elearning.payload.request.ComponentCompletionRequest;
-import com.ehs.elearning.payload.response.DashboardResponse;
+import com.ehs.elearning.model.ModuleComponent;
+import com.ehs.elearning.model.TrainingModule;
+import com.ehs.elearning.model.UserProgress;
+import com.ehs.elearning.model.Users;
 import com.ehs.elearning.payload.response.MessageResponse;
-import com.ehs.elearning.repository.*;
+import com.ehs.elearning.repository.ModuleComponentRepository;
+import com.ehs.elearning.repository.TrainingModuleRepository;
+import com.ehs.elearning.repository.UserProgressRepository;
+import com.ehs.elearning.repository.UserRepository;
 import com.ehs.elearning.security.UserDetailsImpl;
+import com.ehs.elearning.service.ProgressTrackingService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -25,6 +31,9 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/progress")
 public class ProgressController {
 
+    @Autowired
+    private UserProgressRepository progressRepository;
+    
     @Autowired
     private UserRepository userRepository;
     
@@ -35,408 +44,267 @@ public class ProgressController {
     private ModuleComponentRepository componentRepository;
     
     @Autowired
-    private UserModuleProgressRepository moduleProgressRepository;
+    private ProgressTrackingService progressService;
     
-    @Autowired
-    private UserComponentProgressRepository componentProgressRepository;
+    // Get progress for current user
+    @GetMapping("/user")
+    public ResponseEntity<?> getCurrentUserProgress() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        Map<String, Object> progress = progressService.getUserProgress(userDetails.getId());
+        return ResponseEntity.ok(progress);
+    }
     
-    // Get all module progress for a user
+    // Get progress for specific user (admin only, or self)
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getUserModuleProgress(@PathVariable UUID userId) {
-        Optional<Users> userOpt = userRepository.findById(userId);
-        if (!userOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<?> getUserProgress(@PathVariable UUID userId) {
+        // Get current user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        // Only allow admins or the user themselves to access
+        if (!userDetails.getId().equals(userId)
+                && !userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            return ResponseEntity.status(403).body(new MessageResponse("Not authorized to access this user's progress"));
         }
         
-        List<UserModuleProgress> progress = moduleProgressRepository.findByUser(userOpt.get());
+        Map<String, Object> progress = progressService.getUserProgress(userId);
         return ResponseEntity.ok(progress);
     }
     
-    // Get all user progress for a module
+    // Get progress for a specific module for all users (admin only)
     @GetMapping("/module/{moduleId}")
-    public ResponseEntity<?> getModuleUserProgress(@PathVariable UUID moduleId) {
-        Optional<TrainingModule> moduleOpt = moduleRepository.findById(moduleId);
-        if (!moduleOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getModuleProgress(@PathVariable UUID moduleId) {
+        return moduleRepository.findById(moduleId)
+                .map(module -> {
+                    List<UserProgress> progressList = progressRepository.findByModuleIdOrderByTimestampDesc(moduleId);
+                    
+                    // Group by user
+                    Map<UUID, List<UserProgress>> progressByUser = progressList.stream()
+                            .collect(Collectors.groupingBy(progress -> progress.getUser().getId()));
+                    
+                    // Format response
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("moduleId", moduleId);
+                    response.put("moduleTitle", module.getTitle());
+                    response.put("userCount", progressByUser.size());
+                    response.put("userProgress", progressByUser);
+                    
+                    return ResponseEntity.ok(response);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    // Get progress for a specific user and module
+    @GetMapping("/user/{userId}/module/{moduleId}")
+    public ResponseEntity<?> getUserModuleProgress(@PathVariable UUID userId, @PathVariable UUID moduleId) {
+        // Get current user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        // Only allow admins or the user themselves to access
+        if (!userDetails.getId().equals(userId)
+                && !userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            return ResponseEntity.status(403).body(new MessageResponse("Not authorized to access this user's progress"));
         }
         
-        List<UserModuleProgress> progress = moduleProgressRepository.findByTrainingModule(moduleOpt.get());
+        Map<String, Object> progress = progressService.getUserModuleProgress(userId, moduleId);
         return ResponseEntity.ok(progress);
     }
     
-    // Get specific user-module progress
-    @GetMapping("/user/{userId}/module/{moduleId}")
-    public ResponseEntity<?> getUserModuleProgress(
-            @PathVariable UUID userId, 
-            @PathVariable UUID moduleId) {
-        
-        Optional<Users> userOpt = userRepository.findById(userId);
-        if (!userOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        Optional<TrainingModule> moduleOpt = moduleRepository.findById(moduleId);
-        if (!moduleOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        Users user = userOpt.get();
-        TrainingModule module = moduleOpt.get();
-        
-        Optional<UserModuleProgress> progressOpt = moduleProgressRepository.findByUserAndTrainingModule(user, module);
-        
-        if (progressOpt.isPresent()) {
-            return ResponseEntity.ok(progressOpt.get());
-        } else {
-            return ResponseEntity.ok(new UserModuleProgress(user, module));
-        }
-    }
-    
-    // Start module for current user - FIXED VERSION
+    // Start a module
     @PostMapping("/module/{moduleId}/start")
     public ResponseEntity<?> startModule(@PathVariable UUID moduleId) {
         // Get current user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        UUID userId = userDetails.getId();
         
-        // Find user
-        Optional<Users> userOpt = userRepository.findById(userDetails.getId());
-        if (!userOpt.isPresent()) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: User not found."));
-        }
-        
-        // Find module
-        Optional<TrainingModule> moduleOpt = moduleRepository.findById(moduleId);
-        if (!moduleOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        Users user = userOpt.get();
-        TrainingModule module = moduleOpt.get();
-        
-        // Check if progress already exists
-        Optional<UserModuleProgress> existingProgressOpt = moduleProgressRepository.findByUserAndTrainingModule(user, module);
-        
-        UserModuleProgress progress;
-        if (existingProgressOpt.isPresent()) {
-            progress = existingProgressOpt.get();
-        } else {
-            progress = new UserModuleProgress(user, module);
-        }
-        
-        // Update state if not already started
-        if (progress.getState() == ProgressState.NOT_STARTED) {
-            progress.setState(ProgressState.IN_PROGRESS);
-        }
-        
-        // Find first component if not already set
-        if (progress.getCurrentComponent() == null) {
-            List<ModuleComponent> components = componentRepository.findByTrainingModuleOrderBySequenceOrderAsc(module);
-            
-            if (!components.isEmpty()) {
-                progress.setCurrentComponent(components.get(0));
-                
-                // Create component progress for first component if it doesn't exist
-                Optional<UserComponentProgress> existingComponentProgressOpt = 
-                        componentProgressRepository.findByUserAndComponent(user, components.get(0));
-                
-                if (!existingComponentProgressOpt.isPresent()) {
-                    UserComponentProgress componentProgress = new UserComponentProgress(user, components.get(0));
-                    componentProgressRepository.save(componentProgress);
-                }
-            }
-        }
-        
-        // Save progress
-        UserModuleProgress savedProgress = moduleProgressRepository.save(progress);
-        
-        // Get all component progress for this module
-        List<UserComponentProgress> componentProgresses = 
-                componentProgressRepository.findByModuleAndUser(module, user);
-        
-        Map<UUID, UserComponentProgress> componentProgressMap = 
-                componentProgresses.stream()
-                        .collect(Collectors.toMap(
-                                cp -> cp.getComponent().getId(), 
-                                cp -> cp
-                        ));
-        
-        // Return combined response
-        Map<String, Object> response = new HashMap<>();
-        response.put("moduleProgress", savedProgress);
-        response.put("componentProgress", componentProgressMap);
-        
-        return ResponseEntity.ok(response);
+        return userRepository.findById(userId)
+                .flatMap(user -> moduleRepository.findById(moduleId)
+                        .map(module -> {
+                            // Check if module is already started but not completed
+                            boolean alreadyStarted = progressRepository.existsByUserIdAndModuleIdAndProgressType(
+                                    userId, moduleId, "MODULE_STARTED");
+                            boolean alreadyCompleted = progressRepository.existsByUserIdAndModuleIdAndProgressType(
+                                    userId, moduleId, "MODULE_COMPLETED");
+                            
+                            if (alreadyCompleted) {
+                                return ResponseEntity.ok(new MessageResponse("Module already completed"));
+                            } else if (alreadyStarted) {
+                                return ResponseEntity.ok(new MessageResponse("Module already in progress"));
+                            }
+                            
+                            // Create progress record
+                            UserProgress progress = new UserProgress(user, module, "MODULE_STARTED");
+                            progressRepository.save(progress);
+                            
+                            return ResponseEntity.ok(new MessageResponse("Module started successfully"));
+                        }))
+                .orElse(ResponseEntity.notFound().build());
     }
     
-    // Mark component as complete
+    // Complete a component
     @PostMapping("/module/{moduleId}/component/{componentId}/complete")
-    public ResponseEntity<?> completeComponent(
-            @PathVariable UUID moduleId,
-            @PathVariable UUID componentId,
-            @Valid @RequestBody ComponentCompletionRequest completionRequest) {
-        
+    public ResponseEntity<?> completeComponent(@PathVariable UUID moduleId, @PathVariable UUID componentId,
+                                               @RequestBody(required = false) Map<String, Object> request) {
         // Get current user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        UUID userId = userDetails.getId();
         
-        // Find user
-        Optional<Users> userOpt = userRepository.findById(userDetails.getId());
-        if (!userOpt.isPresent()) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: User not found."));
-        }
+        // Extract parameters and store them in final variables
+        final Integer timeSpentValue = request != null && request.containsKey("timeSpent") ? 
+            (Integer) request.get("timeSpent") : null;
+        final Integer scoreValueFinal = request != null && request.containsKey("scoreValue") ? 
+            (Integer) request.get("scoreValue") : null;
         
-        // Find module
-        Optional<TrainingModule> moduleOpt = moduleRepository.findById(moduleId);
-        if (!moduleOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        // Find component
-        Optional<ModuleComponent> componentOpt = componentRepository.findById(componentId);
-        if (!componentOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        Users user = userOpt.get();
-        TrainingModule module = moduleOpt.get();
-        ModuleComponent component = componentOpt.get();
-        
-        // Verify component belongs to module
-        if (!component.getTrainingModule().getId().equals(module.getId())) {
-            return ResponseEntity.badRequest().body(
-                    new MessageResponse("Component does not belong to the specified module"));
-        }
-        
-        // Update/create component progress
-        Optional<UserComponentProgress> existingComponentProgressOpt = 
-                componentProgressRepository.findByUserAndComponent(user, component);
-        
-        UserComponentProgress componentProgress;
-        if (existingComponentProgressOpt.isPresent()) {
-            componentProgress = existingComponentProgressOpt.get();
-        } else {
-            componentProgress = new UserComponentProgress(user, component);
-        }
-        
-        // Mark as completed
-        componentProgress.setCompleted(true);
-        
-        // Update time spent
-        if (completionRequest.getTimeSpent() != null) {
-            componentProgress.addTimeSpent(completionRequest.getTimeSpent());
-        }
-        
-        // Update score for assessment components
-        if (component.getType() == ComponentType.PRE_ASSESSMENT || 
-                component.getType() == ComponentType.POST_ASSESSMENT) {
-            if (completionRequest.getScore() != null) {
-                componentProgress.setScore(completionRequest.getScore());
-            }
-        }
-        
-        // Save component progress
-        UserComponentProgress savedComponentProgress = 
-                componentProgressRepository.save(componentProgress);
-        
-        // Update module progress
-        Optional<UserModuleProgress> existingModuleProgressOpt = 
-                moduleProgressRepository.findByUserAndTrainingModule(user, module);
-        
-        UserModuleProgress moduleProgress;
-        if (existingModuleProgressOpt.isPresent()) {
-            moduleProgress = existingModuleProgressOpt.get();
-        } else {
-            moduleProgress = new UserModuleProgress(user, module);
-            moduleProgress.setState(ProgressState.IN_PROGRESS);
-        }
-        
-        // Update time spent at module level
-        if (completionRequest.getTimeSpent() != null) {
-            moduleProgress.addTimeSpent(completionRequest.getTimeSpent());
-        }
-        
-        // Store assessment scores
-        if (component.getType() == ComponentType.PRE_ASSESSMENT && completionRequest.getScore() != null) {
-            moduleProgress.setPreAssessmentScore(completionRequest.getScore().floatValue());
-        } else if (component.getType() == ComponentType.POST_ASSESSMENT && completionRequest.getScore() != null) {
-            moduleProgress.setPostAssessmentScore(completionRequest.getScore().floatValue());
-        }
-        
-        // Find next component in sequence
-        List<ModuleComponent> components = 
-                componentRepository.findByTrainingModuleOrderBySequenceOrderAsc(module);
-        
-        int currentIndex = -1;
-        for (int i = 0; i < components.size(); i++) {
-            if (components.get(i).getId().equals(component.getId())) {
-                currentIndex = i;
-                break;
-            }
-        }
-        
-        // If there's a next component, set it as current
-        boolean isLastComponent = currentIndex == components.size() - 1;
-        ModuleComponent nextComponent = null;
-        
-        if (!isLastComponent) {
-            nextComponent = components.get(currentIndex + 1);
-            moduleProgress.setCurrentComponent(nextComponent);
-            
-            // Create component progress for next component if it doesn't exist
-            Optional<UserComponentProgress> nextComponentProgressOpt = 
-                    componentProgressRepository.findByUserAndComponent(user, nextComponent);
-            
-            if (!nextComponentProgressOpt.isPresent()) {
-                UserComponentProgress newComponentProgress = new UserComponentProgress(user, nextComponent);
-                componentProgressRepository.save(newComponentProgress);
-            }
-        }
-        
-        // Check if all components are completed
-        Long completedComponents = 
-                componentProgressRepository.countCompletedComponentsByModule(module, user);
-        Long totalComponents = 
-                componentProgressRepository.countTotalComponentsByModule(module);
-        
-        boolean allCompleted = completedComponents.equals(totalComponents);
-        
-        // Mark module as completed if all components are done
-        if (allCompleted) {
-            moduleProgress.setState(ProgressState.COMPLETED);
-            moduleProgress.setCompletedAt(LocalDateTime.now());
-        }
-        
-        // Save module progress
-        UserModuleProgress savedModuleProgress = 
-                moduleProgressRepository.save(moduleProgress);
-        
-        // Build response
-        Map<String, Object> response = new HashMap<>();
-        response.put("componentProgress", savedComponentProgress);
-        response.put("moduleProgress", savedModuleProgress);
-        response.put("isLastComponent", isLastComponent);
-        response.put("nextComponent", nextComponent);
-        response.put("allComponentsCompleted", allCompleted);
-        
-        return ResponseEntity.ok(response);
+        return userRepository.findById(userId)
+                .flatMap(user -> componentRepository.findById(componentId)
+                        .filter(component -> component.getTrainingModule().getId().equals(moduleId))
+                        .map(component -> {
+                            // Create progress record
+                            UserProgress progress = new UserProgress(user, component.getTrainingModule(), 
+                                                                    component, "COMPONENT_COMPLETED");
+                        
+                            if (timeSpentValue != null) {
+                                progress.setTimeSpent(timeSpentValue);
+                            }
+                            
+                            if (scoreValueFinal != null) {
+                                progress.setScoreValue(scoreValueFinal);
+                            }
+                            
+                            progressRepository.save(progress);
+                            
+                            // Check if all components are completed to mark module as complete
+                            List<ModuleComponent> allComponents = componentRepository
+                                    .findByTrainingModuleOrderBySequenceOrderAsc(component.getTrainingModule());
+                            
+                            long completedCount = progressRepository
+                                    .countCompletedComponentsByUserAndModule(userId, moduleId);
+                            
+                            boolean allCompleted = false;
+                            
+                            // Only count required components
+                            long requiredCount = allComponents.stream()
+                                    .filter(ModuleComponent::getRequiredToAdvance)
+                                    .count();
+                            
+                            if (completedCount >= requiredCount) {
+                                allCompleted = true;
+                                
+                                // Mark module as completed if not already
+                                boolean alreadyCompleted = progressRepository
+                                        .existsByUserIdAndModuleIdAndProgressType(userId, moduleId, "MODULE_COMPLETED");
+                                
+                                if (!alreadyCompleted) {
+                                    UserProgress moduleProgress = new UserProgress(
+                                            user, component.getTrainingModule(), "MODULE_COMPLETED");
+                                    progressRepository.save(moduleProgress);
+                                }
+                            }
+                            
+                            Map<String, Object> response = new HashMap<>();
+                            response.put("status", "success");
+                            response.put("message", "Component completed successfully");
+                            response.put("allComponentsCompleted", allCompleted);
+                            
+                            return ResponseEntity.ok(response);
+                        }))
+                .orElse(ResponseEntity.notFound().build());
     }
     
-    // Get progress summary for dashboard
+    // Track progress on a material
+    @PostMapping("/module/{moduleId}/component/{componentId}/material/{materialId}/track")
+    public ResponseEntity<?> trackMaterialProgress(
+            @PathVariable UUID moduleId, 
+            @PathVariable UUID componentId,
+            @PathVariable UUID materialId,
+            @RequestBody Map<String, Object> request) {
+        
+        // Get current user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        UUID userId = userDetails.getId();
+        
+        Double progressValue = null;
+        Integer timeSpent = null;
+        
+        // Extract parameters
+        if (request.containsKey("progress")) {
+            Object progressObj = request.get("progress");
+            if (progressObj instanceof Double) {
+                progressValue = (Double) progressObj;
+            } else if (progressObj instanceof Integer) {
+                progressValue = ((Integer) progressObj).doubleValue();
+            }
+        }
+        
+        if (request.containsKey("timeSpent")) {
+            timeSpent = (Integer) request.get("timeSpent");
+        }
+        
+        // Validate progress value
+        if (progressValue == null || progressValue < 0 || progressValue > 100) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Invalid progress value. Must be between 0 and 100."));
+        }
+        
+        // Find user, module, component, and material
+        Optional<Users> userOpt = userRepository.findById(userId);
+        Optional<TrainingModule> moduleOpt = moduleRepository.findById(moduleId);
+        Optional<ModuleComponent> componentOpt = componentRepository.findById(componentId);
+        
+        if (userOpt.isPresent() && moduleOpt.isPresent() && componentOpt.isPresent()) {
+            Users user = userOpt.get();
+            TrainingModule module = moduleOpt.get();
+            ModuleComponent component = componentOpt.get();
+            
+            // Validate component belongs to module
+            if (!component.getTrainingModule().getId().equals(moduleId)) {
+                return ResponseEntity.badRequest()
+                        .body(new MessageResponse("Component does not belong to the specified module"));
+            }
+            
+            // Create progress record
+            UserProgress progress = new UserProgress(
+                    user, module, component, null, "MATERIAL_PROGRESS", progressValue);
+            
+            if (timeSpent != null) {
+                progress.setTimeSpent(timeSpent);
+            }
+            
+            progressRepository.save(progress);
+            
+            // Check if progress is 100% to mark material as completed
+            if (progressValue >= 100.0) {
+                UserProgress completionProgress = new UserProgress(
+                        user, module, component, null, "MATERIAL_COMPLETED", 100.0);
+                
+                if (timeSpent != null) {
+                    completionProgress.setTimeSpent(timeSpent);
+                }
+                
+                progressRepository.save(completionProgress);
+            }
+            
+            return ResponseEntity.ok(new MessageResponse("Progress tracked successfully"));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    // Get user dashboard data
     @GetMapping("/user/dashboard")
-    public ResponseEntity<?> getDashboard() {
+    public ResponseEntity<?> getUserDashboard() {
         // Get current user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         
-        Optional<Users> userOpt = userRepository.findById(userDetails.getId());
-        if (!userOpt.isPresent()) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: User not found."));
-        }
-        
-        Users user = userOpt.get();
-        
-        // Get all progress for user
-        List<UserModuleProgress> allProgress = moduleProgressRepository.findByUser(user);
-        
-        // Count by state
-        int inProgressCount = 0;
-        int completedCount = 0;
-        
-        for (UserModuleProgress progress : allProgress) {
-            if (progress.getState() == ProgressState.IN_PROGRESS) {
-                inProgressCount++;
-            } else if (progress.getState() == ProgressState.COMPLETED) {
-                completedCount++;
-            }
-        }
-        
-        // Recent activity (last 5 updated)
-        List<UserModuleProgress> recentProgress = allProgress.stream()
-                .sorted(Comparator.comparing(UserModuleProgress::getLastAccessedAt).reversed())
-                .limit(5)
-                .collect(Collectors.toList());
-        
-        List<Map<String, Object>> recentActivity = new ArrayList<>();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
-        
-        for (UserModuleProgress progress : recentProgress) {
-            Map<String, Object> activity = new HashMap<>();
-            activity.put("moduleId", progress.getTrainingModule().getId());
-            activity.put("title", progress.getTrainingModule().getTitle());
-            activity.put("state", progress.getState());
-            activity.put("lastAccessedAt", progress.getLastAccessedAt().format(formatter));
-            
-            // Calculate percentage complete based on components
-            Long completedComponents = 
-                    componentProgressRepository.countCompletedComponentsByModule(progress.getTrainingModule(), user);
-            Long totalComponents = 
-                    componentProgressRepository.countTotalComponentsByModule(progress.getTrainingModule());
-            
-            int percentComplete = totalComponents > 0 
-                    ? (int) ((completedComponents * 100) / totalComponents) 
-                    : 0;
-            
-            activity.put("percentComplete", percentComplete);
-            activity.put("domainName", progress.getTrainingModule().getDomain().getName());
-            
-            recentActivity.add(activity);
-        }
-        
-        // Upcoming/recommended modules
-        List<TrainingModule> allModules = moduleRepository.findByStatus(ModuleStatus.PUBLISHED);
-        List<UUID> inProgressModuleIds = allProgress.stream()
-                .map(p -> p.getTrainingModule().getId())
-                .collect(Collectors.toList());
-        
-        List<TrainingModule> recommendedModules = allModules.stream()
-                .filter(m -> !inProgressModuleIds.contains(m.getId()))
-                .limit(3)
-                .collect(Collectors.toList());
-        
-        List<Map<String, Object>> upcomingModules = new ArrayList<>();
-        
-        for (TrainingModule module : recommendedModules) {
-            Map<String, Object> upcoming = new HashMap<>();
-            upcoming.put("moduleId", module.getId());
-            upcoming.put("title", module.getTitle());
-            upcoming.put("description", module.getDescription());
-            upcoming.put("estimatedDuration", module.getEstimatedDuration());
-            upcoming.put("domainName", module.getDomain().getName());
-            
-            upcomingModules.add(upcoming);
-        }
-        
-        // Performance summary
-        Map<String, Object> performanceSummary = new HashMap<>();
-        
-        // Average improvement across all completed modules
-        double avgImprovement = allProgress.stream()
-                .filter(p -> p.getImprovementScore() != null)
-                .mapToDouble(p -> p.getImprovementScore())
-                .average()
-                .orElse(0.0);
-        
-        // Average post-assessment score
-        double avgPostScore = allProgress.stream()
-                .filter(p -> p.getPostAssessmentScore() != null)
-                .mapToDouble(p -> p.getPostAssessmentScore())
-                .average()
-                .orElse(0.0);
-        
-        performanceSummary.put("averageImprovement", Math.round(avgImprovement * 10) / 10.0);
-        performanceSummary.put("averagePostScore", Math.round(avgPostScore * 10) / 10.0);
-        performanceSummary.put("totalModulesCompleted", completedCount);
-        
-        // Build response
-        DashboardResponse dashboard = new DashboardResponse();
-        dashboard.setInProgressCount(inProgressCount);
-        dashboard.setCompletedCount(completedCount);
-        dashboard.setTotalModules(allModules.size());
-        dashboard.setRecentActivity(recentActivity);
-        dashboard.setUpcomingModules(upcomingModules);
-        dashboard.setPerformanceSummary(performanceSummary);
-        
+        Map<String, Object> dashboard = progressService.getUserDashboard(userDetails.getId());
         return ResponseEntity.ok(dashboard);
     }
 }
