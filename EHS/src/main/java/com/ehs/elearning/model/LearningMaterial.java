@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 @Entity
 @Table(name = "learning_materials")
 public class LearningMaterial {

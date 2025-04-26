@@ -34,7 +34,8 @@ import {
   Book as BookIcon,
   Done as DoneIcon
 } from '@mui/icons-material';
-import { moduleService, progressService, assessmentService } from '../services/api';
+import { moduleService, progressService, assessmentService, learningMaterialService } from '../services/api';
+import LearningMaterialViewer from '../components/learning/LearningMaterialViewer';
 
 const ModuleView = () => {
   const { moduleId } = useParams();
@@ -539,29 +540,40 @@ const ModuleView = () => {
               )
             )}
             
-            {/* Learning material content */}
-            {activeComponent.type === 'LEARNING_MATERIALS' && (
+                {/* Learning material content */}
+            {(activeComponent.type === 'LEARNING_MATERIALS' || activeComponent.type === 'LEARNING_MATERIAL') && (
               <Box>
-                <Box dangerouslySetInnerHTML={{ __html: activeComponent.content || '<p>No content available for this learning material.</p>' }} />
-                
-                <Box mt={3} display="flex" justifyContent="space-between">
-                  <Button
-                    variant="outlined"
-                    onClick={handlePrevious}
-                    startIcon={<ArrowBackIcon />}
-                    disabled={currentStep === 0}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="contained"
-                    onClick={handleCompleteLearningMaterial}
-                    endIcon={<DoneIcon />}
-                    disabled={componentLoading}
-                  >
-                    {componentLoading ? <CircularProgress size={24} /> : 'Mark as Completed'}
-                  </Button>
-                </Box>
+                {activeComponent.data && activeComponent.data.materials && activeComponent.data.materials.length > 0 ? (
+                  <LearningMaterialViewer
+                    componentId={activeComponent.id}
+                    initialMaterials={activeComponent.data.materials}
+                    onComplete={handleCompleteLearningMaterial}
+                    onBack={() => handlePrevious()}
+                  />
+                ) : (
+                  <Box>
+                    <Box dangerouslySetInnerHTML={{ __html: activeComponent.content || '<p>No content available for this learning material.</p>' }} />
+                    
+                    <Box mt={3} display="flex" justifyContent="space-between">
+                      <Button
+                        variant="outlined"
+                        onClick={handlePrevious}
+                        startIcon={<ArrowBackIcon />}
+                        disabled={currentStep === 0}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="contained"
+                        onClick={handleCompleteLearningMaterial}
+                        endIcon={<DoneIcon />}
+                        disabled={componentLoading}
+                      >
+                        {componentLoading ? <CircularProgress size={24} /> : 'Mark as Completed'}
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
               </Box>
             )}
             

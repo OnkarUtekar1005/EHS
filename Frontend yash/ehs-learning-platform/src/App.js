@@ -21,6 +21,7 @@ import MyCourses from './pages/MyCourses';
 import Reports from './pages/Reports';
 import DomainView from './pages/DomainView';
 import ModuleView from './pages/ModuleView';
+import LearningMaterialsPage from './pages/LearningMaterialsPage';
 import Profile from './pages/Profile';
 
 // Admin Pages
@@ -28,6 +29,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import ModuleManagement from './pages/admin/ModuleManagement';
 import ModuleCreator from './pages/admin/ModuleCreator';
 import AssessmentCreator from './pages/admin/AssessmentCreator';
+import LearningMaterialManagement from './pages/admin/LearningMaterialManagement';
 import UserManagement from './pages/admin/UserManagement';
 import DomainManagement from './pages/admin/DomainManagement';
 import AdminReports from './pages/admin/AdminReports';
@@ -145,6 +147,9 @@ function AppContent() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/domains/:domainId" element={<DomainView />} />
           <Route path="/modules/:moduleId" element={<ModuleView />} />
+          <Route path="/learning-materials" element={<LearningMaterialsPage />} />
+          <Route path="/modules/:moduleId/materials" element={<LearningMaterialsPage />} />
+          <Route path="/modules/:moduleId/components/:componentId/materials" element={<LearningMaterialsPage />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
         
@@ -161,6 +166,7 @@ function AppContent() {
           <Route path="/admin/modules" element={<ModuleManagement />} />
           <Route path="/admin/modules/create" element={<ModuleCreator />} />
           <Route path="/admin/modules/edit/:moduleId" element={<ModuleCreator />} />
+          <Route path="/admin/materials" element={<LearningMaterialManagement />} />
           <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/admin/domains" element={<DomainManagement />} />
           <Route path="/admin/reports" element={<AdminReports />} />

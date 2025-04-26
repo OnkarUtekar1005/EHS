@@ -38,7 +38,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
-
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 const drawerWidth = 240;
 
 const AdminLayout = () => {
@@ -122,6 +122,20 @@ const AdminLayout = () => {
               <MenuBookIcon />
             </ListItemIcon>
             <ListItemText primary="Modules" />
+          </ListItemButton>
+        </ListItem>
+        
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to="/admin/materials"
+            selected={location.pathname.startsWith('/admin/materials')}
+            className="sidebar-list-item"
+          >
+            <ListItemIcon>
+              <span className="material-icons">library_books</span>
+            </ListItemIcon>
+            <ListItemText primary="Learning Materials" />
           </ListItemButton>
         </ListItem>
         

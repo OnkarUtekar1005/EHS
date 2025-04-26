@@ -1,4 +1,3 @@
-// src/pages/admin/ModuleCreator.js
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -42,7 +41,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { moduleService, domainService } from '../../services/api';
 import AssessmentCreator from './AssessmentCreator';
-
+import LearningMaterialCreator from './LearningMaterialCreator';
 const ModuleCreator = () => {
   const navigate = useNavigate();
   const { moduleId } = useParams();
@@ -166,13 +165,42 @@ const ModuleCreator = () => {
     setComponents(items);
   };
   
-  // Open component configuration dialog
-  const handleConfigureComponent = (component) => {
-    setSelectedComponent(component);
-    setDialogType(component.type);
-    setOpenDialog(true);
-  };
+
+
+
+
+// Open component configuration dialog
+const handleConfigureComponent = (component) => {
+  setSelectedComponent(component);
+  setDialogType(component.type);
+  setOpenDialog(true);
   
+  // For learning materials, use the specific handler
+  if (component.type === 'LEARNING_MATERIALS' || component.type === 'LEARNING_MATERIAL') {
+    setDialogType('LEARNING_MATERIALS');
+  }
+};
+
+// Save learning material configuration
+const handleSaveLearningMaterial = (materials) => {
+  // Update the component with the new materials
+  const updatedComponents = components.map(comp => 
+    comp.id === selectedComponent.id
+      ? { 
+          ...comp, 
+          title: comp.title || 'Learning Materials', 
+          configured: true, 
+          data: { 
+            ...comp.data,
+            materials 
+          } 
+        }
+      : comp
+  );
+  
+  setComponents(updatedComponents);
+  setOpenDialog(false);
+};
   // Move component up
   const handleMoveUp = (index) => {
     if (index === 0) return;
@@ -616,6 +644,26 @@ const ModuleCreator = () => {
           )}
         </DialogContent>
       </Dialog>
+      {/* Learning Materials Component Dialog */}
+      <Dialog 
+        open={openDialog && (dialogType === 'LEARNING_MATERIALS' || dialogType === 'LEARNING_MATERIAL')} 
+        onClose={handleCloseDialog}
+        fullWidth
+        maxWidth="lg"
+      >
+        <DialogContent sx={{ p: 0 }}>
+          {selectedComponent && (
+            <LearningMaterialCreator
+              componentId={selectedComponent.id}
+              initialMaterials={selectedComponent.data?.materials || []}
+              onSave={handleSaveLearningMaterial}
+              onCancel={handleCloseDialog}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      
+     
     </Container>
   );
 };
