@@ -1,16 +1,24 @@
 package com.ehs.elearning.controller;
 
+import com.ehs.elearning.model.ComponentType;
 import com.ehs.elearning.model.Domain;
+import com.ehs.elearning.model.ModuleComponent;
 import com.ehs.elearning.model.ModuleStatus;
+import com.ehs.elearning.model.Question;
+import com.ehs.elearning.model.QuestionType;
 import com.ehs.elearning.model.Role;
 import com.ehs.elearning.model.TrainingModule;
 import com.ehs.elearning.model.Users;
+import com.ehs.elearning.payload.request.ComponentRequest;
 import com.ehs.elearning.payload.request.ModuleRequest;
 import com.ehs.elearning.payload.response.MessageResponse;
 import com.ehs.elearning.repository.DomainRepository;
+import com.ehs.elearning.repository.ModuleComponentRepository;
+import com.ehs.elearning.repository.QuestionRepository;
 import com.ehs.elearning.repository.TrainingModuleRepository;
 import com.ehs.elearning.repository.UserRepository;
 import com.ehs.elearning.security.UserDetailsImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -41,6 +49,14 @@ public class TrainingModuleController {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private ModuleComponentRepository componentRepository;
+    
+    // Add this helper method to handle saving assessment questions
+    @Autowired
+    private QuestionRepository questionRepository;
+    
     
     // Get all published modules (for all users)
     @GetMapping("/modules/all")
@@ -379,7 +395,7 @@ public class TrainingModuleController {
         }
     }
     
-    // Create new module
+
     @PostMapping("/modules")
     public ResponseEntity<?> createModule(@Valid @RequestBody ModuleRequest moduleRequest) {
         try {
@@ -416,12 +432,124 @@ public class TrainingModuleController {
                 module.setRequiredCompletionScore(moduleRequest.getRequiredCompletionScore());
             }
             
+            // Save module first to get the ID
             TrainingModule savedModule = moduleRepository.save(module);
+            
+            // Process components if they exist
+            if (moduleRequest.getComponents() != null && !moduleRequest.getComponents().isEmpty()) {
+                int seqOrder = 1;
+                for (ComponentRequest compRequest : moduleRequest.getComponents()) {
+                    ModuleComponent component = new ModuleComponent();
+                    component.setTrainingModule(savedModule);
+                    component.setTitle(compRequest.getTitle());
+                    component.setType(compRequest.getType());
+                    component.setDescription(compRequest.getDescription());
+                    
+                    // Set sequence order either from request or incrementally
+                    if (compRequest.getSequenceOrder() != null) {
+                        component.setSequenceOrder(compRequest.getSequenceOrder());
+                    } else {
+                        component.setSequenceOrder(seqOrder++);
+                    }
+                    
+                    // Set other properties
+                    if (compRequest.getRequiredToAdvance() != null) {
+                        component.setRequiredToAdvance(compRequest.getRequiredToAdvance());
+                    } else {
+                        component.setRequiredToAdvance(true); // Default value
+                    }
+                    
+                    if (compRequest.getEstimatedDuration() != null) {
+                        component.setEstimatedDuration(compRequest.getEstimatedDuration());
+                    }
+                    
+                    // Convert component data to JSON string if necessary
+                    if (compRequest.getData() != null) {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        try {
+                            // Store data as JSON in content field
+                            component.setContent(objectMapper.writeValueAsString(compRequest.getData()));
+                            
+                            // Save the component first to get its ID
+                            ModuleComponent savedComponent = componentRepository.save(component);
+                            
+                            // If this is an assessment component, extract and save questions
+                            if (component.getType() == ComponentType.PRE_ASSESSMENT || 
+                                component.getType() == ComponentType.POST_ASSESSMENT) {
+                                saveAssessmentQuestions(savedComponent, compRequest.getData());
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error serializing component data: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    } else {
+                        // Use content field from request if data is null
+                        component.setContent(compRequest.getContent());
+                        
+                        // Save the component without special processing
+                        componentRepository.save(component);
+                    }
+                }
+            }
+            
             return ResponseEntity.status(HttpStatus.CREATED).body(savedModule);
             
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new MessageResponse("Error creating module: " + e.getMessage()));
+        }
+    }
+
+    private void saveAssessmentQuestions(ModuleComponent component, Map<String, Object> data) {
+        try {
+            if (data == null || !data.containsKey("questions")) {
+                return;
+            }
+            
+            List<Map<String, Object>> questionsList = (List<Map<String, Object>>) data.get("questions");
+            
+            int sequenceOrder = 1;
+            for (Map<String, Object> questionData : questionsList) {
+                Question question = new Question();
+                question.setComponent(component);
+                question.setText((String) questionData.get("text"));
+                question.setType(QuestionType.valueOf((String) questionData.get("type")));
+                question.setSequenceOrder(sequenceOrder++);
+                
+                // Handle points
+                if (questionData.containsKey("points")) {
+                    question.setPoints((Integer) questionData.get("points"));
+                } else {
+                    question.setPoints(1); // Default points
+                }
+                
+                // Handle options
+                if (questionData.containsKey("options")) {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    question.setOptions(objectMapper.writeValueAsString(questionData.get("options")));
+                    
+                    // Find correct answer
+                    List<Map<String, Object>> options = (List<Map<String, Object>>) questionData.get("options");
+                    for (Map<String, Object> option : options) {
+                        if (Boolean.TRUE.equals(option.get("correct"))) {
+                            question.setCorrectAnswer((String) option.get("text"));
+                            break;
+                        }
+                    }
+                }
+                
+                // Handle explanation
+                if (questionData.containsKey("explanation")) {
+                    question.setExplanation((String) questionData.get("explanation"));
+                }
+                
+                // Save the question
+                questionRepository.save(question);
+            }
+        } catch (Exception e) {
+            System.err.println("Error saving assessment questions: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     

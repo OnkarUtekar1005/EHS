@@ -1,0 +1,104 @@
+package com.ehs.elearning.payload.request;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import java.util.UUID;
+import com.ehs.elearning.model.ComponentType;
+
+public class ComponentRequest {
+    
+    private UUID id;
+    
+    @NotBlank
+    @Size(max = 100)
+    private String title;
+    
+    private ComponentType type;
+    
+    @Size(max = 500)
+    private String description;
+    
+    private String content;
+    
+    private Boolean requiredToAdvance = true;
+    
+    private Integer estimatedDuration;
+    
+    private Integer sequenceOrder;
+    
+    // For learning materials, assessments, etc.
+    private Object data;
+    
+    // Getters and setters
+    public UUID getId() {
+        return id;
+    }
+    
+    public void setId(UUID id) {
+        this.id = id;
+    }
+    
+    public String getTitle() {
+        return title;
+    }
+    
+    public void setTitle(String title) {
+        this.title = title;
+    }
+    
+    public ComponentType getType() {
+        return type;
+    }
+    
+    public void setType(ComponentType type) {
+        this.type = type;
+    }
+    
+    public String getDescription() {
+        return description;
+    }
+    
+    public void setDescription(String description) {
+        this.description = description;
+    }
+    
+    public String getContent() {
+        return content;
+    }
+    
+    public void setContent(String content) {
+        this.content = content;
+    }
+    
+    public Boolean getRequiredToAdvance() {
+        return requiredToAdvance;
+    }
+    
+    public void setRequiredToAdvance(Boolean requiredToAdvance) {
+        this.requiredToAdvance = requiredToAdvance;
+    }
+    
+    public Integer getEstimatedDuration() {
+        return estimatedDuration;
+    }
+    
+    public void setEstimatedDuration(Integer estimatedDuration) {
+        this.estimatedDuration = estimatedDuration;
+    }
+    
+    public Integer getSequenceOrder() {
+        return sequenceOrder;
+    }
+    
+    public void setSequenceOrder(Integer sequenceOrder) {
+        this.sequenceOrder = sequenceOrder;
+    }
+    
+    public Object getData() {
+        return data;
+    }
+    
+    public void setData(Object data) {
+        this.data = data;
+    }
+}

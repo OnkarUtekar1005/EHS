@@ -41,3 +41,5 @@ o
 ?src/main/java/com/ehs/elearning/service/FileStorageService.java,5\5\55e10eb1595b65f22892539db6a97cac9be5a37e
 W
 'src/main/resources/application .yml.bak,7\7\77d8a0c2e3c60ad94e753fb96d906185228d5998
+l
+<src/main/java/com/ehs/elearning/security/SecurityConfig.java,c\6\c6dde81422b52b97877564befbdcbd3338d3e479

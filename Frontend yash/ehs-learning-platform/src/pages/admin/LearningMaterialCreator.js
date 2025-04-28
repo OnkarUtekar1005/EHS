@@ -44,17 +44,7 @@ import {
   Upload as UploadIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
-
-// Mock API service - replace with actual API calls
-const learningMaterialService = {
-  getMaterials: (componentId) => Promise.resolve([]),
-  uploadFile: (componentId, file, data) => Promise.resolve({ id: 'new-id', ...data }),
-  createContent: (componentId, data) => Promise.resolve({ id: 'new-id', ...data }),
-  addExternalUrl: (componentId, data) => Promise.resolve({ id: 'new-id', ...data }),
-  updateMaterial: (id, data) => Promise.resolve({ id, ...data }),
-  deleteMaterial: (id) => Promise.resolve(true),
-  reorderMaterials: (componentId, materialOrder) => Promise.resolve(true)
-};
+import { learningMaterialService } from '../../services/api';
 
 // Material type constants - should match backend enum
 const MATERIAL_TYPES = {
@@ -74,7 +64,7 @@ const LearningMaterialCreator = ({
   onCancel 
 }) => {
   // State
-  const [materials, setMaterials] = useState(initialMaterials);
+  const [materials, setMaterials] = useState(initialMaterials || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -105,11 +95,19 @@ const LearningMaterialCreator = ({
   
   const navigate = useNavigate();
   
+  // Check if component is temporary
+  const isTemporaryComponent = () => {
+    return componentId && String(componentId).startsWith('comp-');
+  };
+  
   // Load existing materials if component ID is provided and no initial materials
   useEffect(() => {
-    if (componentId && initialMaterials.length === 0) {
+    console.log("ComponentId:", componentId);
+    console.log("InitialMaterials:", initialMaterials);
+    
+    if (componentId && (!initialMaterials || initialMaterials.length === 0) && !isTemporaryComponent()) {
       fetchMaterials();
-    } else if (initialMaterials.length > 0) {
+    } else if (initialMaterials && initialMaterials.length > 0) {
       setMaterials(initialMaterials);
     }
   }, [componentId, initialMaterials]);
@@ -118,11 +116,19 @@ const LearningMaterialCreator = ({
   const fetchMaterials = async () => {
     try {
       setLoading(true);
-      const response = await learningMaterialService.getMaterials(componentId);
-      setMaterials(response);
+      console.log("Fetching materials for component:", componentId);
+      const response = await learningMaterialService.getMaterialsByComponent(componentId);
+      if (response && response.data) {
+        console.log("Materials fetched:", response.data);
+        setMaterials(response.data);
+      } else {
+        console.log("No materials found or empty response");
+        setMaterials([]);
+      }
     } catch (err) {
       console.error('Error fetching materials:', err);
-      setError('Failed to load learning materials.');
+      setError('Failed to load learning materials. ' + (err.response?.data?.message || err.message));
+      setMaterials([]);
     } finally {
       setLoading(false);
     }
@@ -232,6 +238,12 @@ const LearningMaterialCreator = ({
   
   // Open dialog to edit existing material
   const handleEditMaterial = (material, index) => {
+    if (!material) {
+      console.error("Attempted to edit undefined material");
+      setError("Cannot edit undefined material");
+      return;
+    }
+    
     setCurrentMaterial(material);
     setMaterialData({
       title: material.title || '',
@@ -263,11 +275,17 @@ const LearningMaterialCreator = ({
   
   // Delete material
   const handleDeleteMaterial = async (material, index) => {
+    if (!material) {
+      console.error("Attempted to delete undefined material");
+      setError("Cannot delete undefined material");
+      return;
+    }
+    
     try {
       setLoading(true);
       
-      // If it's a new material that hasn't been saved yet
-      if (!material.id) {
+      // If it's a new material that hasn't been saved yet or a temp material
+      if (!material.id || material.id.toString().startsWith('temp-')) {
         const newMaterials = [...materials];
         newMaterials.splice(index, 1);
         setMaterials(newMaterials);
@@ -284,7 +302,7 @@ const LearningMaterialCreator = ({
       setSuccess('Material deleted successfully');
     } catch (err) {
       console.error('Error deleting material:', err);
-      setError('Failed to delete material');
+      setError('Failed to delete material: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
@@ -293,6 +311,25 @@ const LearningMaterialCreator = ({
   // Close dialog
   const handleCloseDialog = () => {
     setOpenDialog(false);
+  };
+  
+  // Create a temporary material for unsaved components
+  const createTemporaryMaterial = () => {
+    return {
+      id: `temp-material-${Date.now()}`,
+      title: materialData.title,
+      description: materialData.description || '',
+      fileType: materialData.fileType,
+      estimatedDuration: materialData.estimatedDuration || 5,
+      // For file uploads
+      _isTemporary: true,
+      _file: selectedFile || null,
+      _filePath: selectedFile ? selectedFile.name : null,
+      // For external URLs
+      externalUrl: materialData.externalUrl || '',
+      // For HTML content
+      content: materialData.content || ''
+    };
   };
   
   // Save material
@@ -331,41 +368,57 @@ const LearningMaterialCreator = ({
       
       let newMaterial;
       
-      // Handle file upload
-      if (tabValue === 0 && selectedFile) {
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-        formData.append('title', materialData.title);
-        formData.append('description', materialData.description);
-        formData.append('estimatedDuration', materialData.estimatedDuration);
-        
-        if (editingIndex >= 0 && currentMaterial.id) {
-          // Update existing file material is not implemented in this mock
-          // In a real implementation, you would need to handle file replacement
-          newMaterial = await learningMaterialService.updateMaterial(currentMaterial.id, materialData);
-        } else {
-          newMaterial = await learningMaterialService.uploadFile(componentId, selectedFile, materialData);
+      // Check if we're working with a temporary component
+      if (isTemporaryComponent()) {
+        console.log("Using temporary material for unsaved component");
+        newMaterial = createTemporaryMaterial();
+      } else {
+        // Normal flow for saved components
+        // Handle file upload
+        if (tabValue === 0 && selectedFile) {
+          try {
+            console.log("Uploading file for component:", componentId);
+            console.log("File details:", selectedFile.name, selectedFile.type, selectedFile.size);
+            
+            if (editingIndex >= 0 && currentMaterial && currentMaterial.id) {
+              // Update existing file material
+              newMaterial = await learningMaterialService.updateMaterial(currentMaterial.id, materialData);
+            } else {
+              newMaterial = await learningMaterialService.uploadMaterial(componentId, selectedFile, materialData);
+            }
+            
+            console.log("File upload response:", newMaterial);
+          } catch (uploadError) {
+            console.error('File upload error:', uploadError);
+            setError('Failed to upload file: ' + (uploadError.response?.data?.message || uploadError.message));
+            setLoading(false);
+            return;
+          }
+        } 
+        // Handle external URL
+        else if (tabValue === 2) {
+          if (editingIndex >= 0 && currentMaterial && currentMaterial.id) {
+            newMaterial = await learningMaterialService.updateMaterial(currentMaterial.id, materialData);
+          } else {
+            newMaterial = await learningMaterialService.addExternalMaterial(componentId, materialData);
+          }
+        } 
+        // Handle HTML content
+        else if (tabValue === 3) {
+          if (editingIndex >= 0 && currentMaterial && currentMaterial.id) {
+            newMaterial = await learningMaterialService.updateMaterial(currentMaterial.id, materialData);
+          } else {
+            newMaterial = await learningMaterialService.addContentMaterial(componentId, materialData);
+          }
         }
-      } 
-      // Handle external URL
-      else if (tabValue === 2) {
-        if (editingIndex >= 0 && currentMaterial.id) {
+        // For editing existing material without changing file
+        else if (editingIndex >= 0 && currentMaterial && currentMaterial.id) {
           newMaterial = await learningMaterialService.updateMaterial(currentMaterial.id, materialData);
-        } else {
-          newMaterial = await learningMaterialService.addExternalUrl(componentId, materialData);
-        }
-      } 
-      // Handle HTML content
-      else if (tabValue === 3) {
-        if (editingIndex >= 0 && currentMaterial.id) {
-          newMaterial = await learningMaterialService.updateMaterial(currentMaterial.id, materialData);
-        } else {
-          newMaterial = await learningMaterialService.createContent(componentId, materialData);
         }
       }
-      // For editing existing material without changing file
-      else if (editingIndex >= 0 && currentMaterial.id) {
-        newMaterial = await learningMaterialService.updateMaterial(currentMaterial.id, materialData);
+      
+      if (!newMaterial) {
+        throw new Error('Failed to save material - response was empty');
       }
       
       const newMaterials = [...materials];
@@ -381,7 +434,7 @@ const LearningMaterialCreator = ({
       setOpenDialog(false);
     } catch (err) {
       console.error('Error saving material:', err);
-      setError('Failed to save material');
+      setError('Failed to save material: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
@@ -422,17 +475,42 @@ const LearningMaterialCreator = ({
         return;
       }
       
-      // In a real implementation, you would save the order here
-      const materialOrder = materials.map(material => material.id);
-      await learningMaterialService.reorderMaterials(componentId, materialOrder);
+      // For temporary components, just pass the materials back to parent
+      if (isTemporaryComponent()) {
+        console.log("Saving temporary materials for later upload");
+        setSuccess('Materials prepared for saving with module');
+        
+        if (onSave) {
+          onSave(materials);
+        }
+        
+        setLoading(false);
+        return;
+      }
+      
+      // For real components, save the order
+      const materialOrder = materials
+        .map(material => material.id)
+        .filter(id => id && !String(id).startsWith('temp-')); // Filter out temp IDs
+      
+      if (materialOrder.length > 0) {
+        try {
+          await learningMaterialService.reorderMaterials(componentId, materialOrder);
+        } catch (orderError) {
+          console.error('Error reordering materials (continuing):', orderError);
+          // Continue without failing the entire save operation
+        }
+      }
       
       setSuccess('All materials saved successfully');
       
       // Pass the updated materials to parent component
-      onSave(materials);
+      if (onSave) {
+        onSave(materials);
+      }
     } catch (err) {
       console.error('Error saving materials:', err);
-      setError('Failed to save materials');
+      setError('Failed to save materials: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
@@ -440,6 +518,8 @@ const LearningMaterialCreator = ({
   
   // Get icon for material type
   const getMaterialIcon = (type) => {
+    if (!type) return <DocumentIcon />; // Default icon for undefined type
+    
     switch (type) {
       case MATERIAL_TYPES.PDF:
         return <PdfIcon />;
@@ -501,13 +581,19 @@ const LearningMaterialCreator = ({
           </Alert>
         )}
         
+        {isTemporaryComponent() && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            You are adding materials to an unsaved component. The files will be uploaded when the module is saved.
+          </Alert>
+        )}
+        
         {/* Learning Materials List */}
         <Box mb={3}>
           <Typography variant="h6" gutterBottom>
             Material List
           </Typography>
           
-          {materials.length === 0 ? (
+          {!materials || materials.length === 0 ? (
             <Box p={3} textAlign="center" border="1px dashed #ccc" borderRadius={1}>
               <Typography color="textSecondary" paragraph>
                 No learning materials added yet. Add your first material.
@@ -524,73 +610,81 @@ const LearningMaterialCreator = ({
             <>
               <List>
                 {materials.map((material, index) => (
-                  <ListItem key={index} divider={index < materials.length - 1}>
-                    <Card variant="outlined" sx={{ width: '100%' }}>
-                      <CardContent>
-                        <Grid container spacing={2}>
-                          <Grid item xs={1}>
-                            <Box display="flex" alignItems="center" justifyContent="center" height="100%">
-                              <Typography variant="body2" fontWeight="bold">
-                                {index + 1}
-                              </Typography>
-                            </Box>
-                          </Grid>
-                          <Grid item xs={7}>
-                            <Box display="flex" alignItems="center">
-                              {getMaterialIcon(material.fileType)}
-                              <Box ml={2}>
-                                <Typography variant="subtitle1" component="div">
-                                  {material.title}
+                  material ? (
+                    <ListItem key={index} divider={index < materials.length - 1}>
+                      <Card variant="outlined" sx={{ width: '100%' }}>
+                        <CardContent>
+                          <Grid container spacing={2}>
+                            <Grid item xs={1}>
+                              <Box display="flex" alignItems="center" justifyContent="center" height="100%">
+                                <Typography variant="body2" fontWeight="bold">
+                                  {index + 1}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  Type: {material.fileType} • Duration: {material.estimatedDuration} min
-                                </Typography>
-                                {material.description && (
-                                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                                    {material.description}
-                                  </Typography>
-                                )}
                               </Box>
-                            </Box>
-                          </Grid>
-                          <Grid item xs={4}>
-                            <Box display="flex" justifyContent="flex-end">
-                              <Tooltip title="Move Up">
-                                <span>
-                                  <IconButton 
-                                    disabled={index === 0}
-                                    onClick={() => handleMoveUp(index)}
-                                  >
-                                    <span className="material-icons">arrow_upward</span>
+                            </Grid>
+                            <Grid item xs={7}>
+                              <Box display="flex" alignItems="center">
+                                {getMaterialIcon(material.fileType)}
+                                <Box ml={2}>
+                                  <Typography variant="subtitle1" component="div">
+                                    {material.title || "Untitled Material"}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    Type: {material.fileType || "Unknown"} • Duration: {material.estimatedDuration || 0} min
+                                    {material._isTemporary && " • Not yet uploaded"}
+                                  </Typography>
+                                  {material.description && (
+                                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                      {material.description}
+                                    </Typography>
+                                  )}
+                                  {material._filePath && (
+                                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                      File: {material._filePath}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </Box>
+                            </Grid>
+                            <Grid item xs={4}>
+                              <Box display="flex" justifyContent="flex-end">
+                                <Tooltip title="Move Up">
+                                  <span>
+                                    <IconButton 
+                                      disabled={index === 0}
+                                      onClick={() => handleMoveUp(index)}
+                                    >
+                                      <span className="material-icons">arrow_upward</span>
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                                <Tooltip title="Move Down">
+                                  <span>
+                                    <IconButton 
+                                      disabled={index === materials.length - 1}
+                                      onClick={() => handleMoveDown(index)}
+                                    >
+                                      <span className="material-icons">arrow_downward</span>
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                                <Tooltip title="Edit">
+                                  <IconButton onClick={() => handleEditMaterial(material, index)}>
+                                    <span className="material-icons">edit</span>
                                   </IconButton>
-                                </span>
-                              </Tooltip>
-                              <Tooltip title="Move Down">
-                                <span>
-                                  <IconButton 
-                                    disabled={index === materials.length - 1}
-                                    onClick={() => handleMoveDown(index)}
-                                  >
-                                    <span className="material-icons">arrow_downward</span>
+                                </Tooltip>
+                                <Tooltip title="Delete">
+                                  <IconButton onClick={() => handleDeleteMaterial(material, index)}>
+                                    <DeleteIcon />
                                   </IconButton>
-                                </span>
-                              </Tooltip>
-                              <Tooltip title="Edit">
-                                <IconButton onClick={() => handleEditMaterial(material, index)}>
-                                  <span className="material-icons">edit</span>
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Delete">
-                                <IconButton onClick={() => handleDeleteMaterial(material, index)}>
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
+                                </Tooltip>
+                              </Box>
+                            </Grid>
                           </Grid>
-                        </Grid>
-                      </CardContent>
-                    </Card>
-                  </ListItem>
+                        </CardContent>
+                      </Card>
+                    </ListItem>
+                  ) : null // Skip rendering undefined materials
                 ))}
               </List>
               
@@ -727,51 +821,16 @@ const LearningMaterialCreator = ({
                 {/* Video Tab */}
                 {tabValue === 1 && (
                   <Grid item xs={12}>
-                    <Box 
-                      border="2px dashed #ccc"
-                      borderRadius={1}
-                      p={3}
-                      textAlign="center"
-                      sx={{
-                        cursor: 'pointer',
-                        '&:hover': {
-                          borderColor: 'primary.main',
-                        }
-                      }}
-                      component="label"
-                    >
-                      <input
-                        type="file"
-                        hidden
-                        onChange={handleFileSelect}
-                        accept="video/*"
-                      />
-                      <VideoIcon fontSize="large" color="primary" />
-                      <Typography variant="h6" mt={1}>
-                        Upload Video
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Supports MP4, AVI, MOV, and other video formats
-                      </Typography>
-                      
-                      {selectedFile && (
-                        <Box mt={2} p={2} bgcolor="#f5f5f5" borderRadius={1}>
-                          <Typography variant="body2">
-                            Selected file: {selectedFile.name}
-                          </Typography>
-                          <Button 
-                            size="small" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleClearFile();
-                            }}
-                            sx={{ mt: 1 }}
-                          >
-                            Remove
-                          </Button>
-                        </Box>
-                      )}
-                    </Box>
+                    <TextField
+                      fullWidth
+                      label="Video URL"
+                      name="externalUrl"
+                      value={materialData.externalUrl}
+                      onChange={handleInputChange}
+                      placeholder="Enter YouTube, Vimeo, or other video URL"
+                      required
+                      helperText="Enter the URL of the video from YouTube, Vimeo, or other video platforms"
+                    />
                   </Grid>
                 )}
                 
@@ -784,9 +843,9 @@ const LearningMaterialCreator = ({
                       name="externalUrl"
                       value={materialData.externalUrl}
                       onChange={handleInputChange}
-                      placeholder="https://example.com/video"
+                      placeholder="https://..."
                       required
-                      helperText="Enter URL for external content (YouTube, Vimeo, etc.)"
+                      helperText="Enter the URL of the external resource"
                     />
                   </Grid>
                 )}
@@ -794,20 +853,19 @@ const LearningMaterialCreator = ({
                 {/* HTML Content Tab */}
                 {tabValue === 3 && (
                   <Grid item xs={12}>
-                    <Typography variant="subtitle1" gutterBottom>
-                      HTML Content
-                      </Typography>
-                    <Box sx={{ height: 300, mb: 2 }}>
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={10}
-                        value={materialData.content}
-                        onChange={(e) => handleContentChange(e.target.value)}
-                        placeholder="Enter your HTML content here..."
-                        variant="outlined"
-                      />
-                    </Box>
+                    <TextField
+                      fullWidth
+                      label="HTML Content"
+                      name="content"
+                      value={materialData.content}
+                      onChange={handleInputChange}
+                      multiline
+                      rows={10}
+                      required
+                      placeholder="Enter HTML content here..."
+                      variant="outlined"
+                    />
+                    {/* This would ideally be a rich text editor component in a real implementation */}
                   </Grid>
                 )}
               </Grid>
@@ -815,13 +873,20 @@ const LearningMaterialCreator = ({
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button 
-            onClick={handleSaveMaterial}
-            variant="contained"
+            onClick={handleCloseDialog}
+            startIcon={<CancelIcon />}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveMaterial} 
+            variant="contained" 
+            color="primary"
+            startIcon={loading ? <CircularProgress size={16} /> : <SaveIcon />}
             disabled={loading}
           >
-            {loading ? <CircularProgress size={24} /> : 'Save Material'}
+            {editingIndex >= 0 ? 'Update' : 'Save'} Material
           </Button>
         </DialogActions>
       </Dialog>

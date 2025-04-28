@@ -43,7 +43,7 @@ export const learningMaterialService = {
     });
   },
   
-  // Use the new upload endpoint
+  // Use the specialized upload endpoint
   uploadMaterial: (componentId, file, data) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -58,6 +58,7 @@ export const learningMaterialService = {
       formData.append('estimatedDuration', data.estimatedDuration);
     }
     
+    // This endpoint matches your controller's mapping
     return api.post(`/components/learning/materials/upload`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
@@ -122,3 +123,5 @@ export const learningMaterialService = {
     return api.post(`/materials/${materialId}/update-progress`, progressData);
   }
 };
+
+export default learningMaterialService;

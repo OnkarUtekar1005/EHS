@@ -30,6 +30,7 @@ const api = axios.create({
 });
 
 // Request interceptor for adding auth token
+// In src/services/api.js - Update the request interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -38,9 +39,11 @@ api.interceptors.request.use(
     console.log('Adding token to request:', token ? 'Token exists' : 'No token');
     
     if (token) {
-      // Never store the token with 'Bearer ' prefix in localStorage
-      // Always add it here in the interceptor
+      // Make sure the token format is correct
       config.headers.Authorization = `Bearer ${token}`;
+      
+      // Log for debugging
+      console.log('Authorization header:', config.headers.Authorization);
     }
     return config;
   },
@@ -151,9 +154,13 @@ export const userService = {
   create: (userData) => api.post('/users', userData),
   update: (id, userData) => api.put(`/users/${id}`, userData),
   delete: (id) => api.delete(`/users/${id}`),
+  bulkCreate: (usersData) => api.post('/users/bulk', usersData),
+  bulkDelete: (userIds) => api.delete('/users/bulk', { data: userIds }),
   search: (criteria) => api.get('/users/search', { params: criteria }),
   assignDomains: (userId, domains) => api.put(`/users/${userId}/domains`, domains),
+  assignBulkDomains: (data) => api.put('/users/domains/assign', data),
 };
+
 
 // Update to src/services/api.js - Add search method to domainService
 
@@ -179,6 +186,11 @@ export const moduleService = {
   archive: (id) => api.post(`/modules/${id}/archive`),
   clone: (id) => api.post(`/modules/${id}/clone`),
   getStats: (id) => api.get(`/modules/${id}/stats`),
+  
+  // Add the missing methods here
+  getAvailableModules: () => api.get('/modules/available'),
+  getRecommendedModules: () => api.get('/modules/recommended'),
+  getUserProfile: () => api.get('/auth/user'),
 };
 
 // Component services
@@ -210,7 +222,7 @@ export const progressService = {
   getDashboard: () => api.get('/progress/user/dashboard'),
 };
 
-// Learning Material service
+// Learning Material services
 export const learningMaterialService = {
   // Get all learning materials for a component
   getMaterialsByComponent: (componentId) => api.get(`/components/${componentId}/materials`),
@@ -225,25 +237,6 @@ export const learningMaterialService = {
   getMaterialWithProgress: (materialId) => api.get(`/materials/${materialId}/progress`),
   
   // Add file-based learning material
-  uploadFileMaterial: (componentId, file, data) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('title', data.title);
-    
-    if (data.description) {
-      formData.append('description', data.description);
-    }
-    
-    if (data.estimatedDuration) {
-      formData.append('estimatedDuration', data.estimatedDuration);
-    }
-    
-    return api.post(`/components/${componentId}/materials/file`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-  },
   
   // Use the specific material upload endpoint
   uploadMaterial: (componentId, file, data) => {
@@ -260,6 +253,7 @@ export const learningMaterialService = {
       formData.append('estimatedDuration', data.estimatedDuration);
     }
     
+    // Changed from "upload" to "uploads" to match the controller
     return api.post(`/components/learning/materials/upload`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
@@ -324,7 +318,5 @@ export const learningMaterialService = {
     return api.post(`/materials/${materialId}/update-progress`, progressData);
   }
 };
-
-
 
 export default api;

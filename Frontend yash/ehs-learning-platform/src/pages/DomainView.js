@@ -1,201 +1,83 @@
 // src/pages/DomainView.js
 import React, { useState, useEffect } from 'react';
-import { 
-  Container, 
-  Typography, 
-  Grid, 
-  Card, 
-  CardContent, 
-  CardMedia, 
-  CardActionArea, 
-  Box, 
-  Chip, 
-  CircularProgress, 
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Container,
+  Typography,
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Button,
+  LinearProgress,
+  Chip,
   Alert,
-  Breadcrumbs,
-  Link
+  CircularProgress,
+  Paper,
+  Divider
 } from '@mui/material';
-import { useParams, Link as RouterLink } from 'react-router-dom';
-import { domainService, moduleService } from '../services/api';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-
-const getModuleImage = (domainName) => {
-  // In a real app, we would have unique images for each module
-  // For demo purposes, we're using a consistent pattern based on domain
-  
-  const domainColors = {
-    'Fire Safety': '#f44336',
-    'OSHA Compliance': '#2196f3',
-    'First Aid': '#4caf50',
-    'Hazard Communication': '#ff9800',
-    'Construction Safety': '#795548',
-    'Chemical Safety': '#9c27b0'
-  };
-  
-  const color = domainColors[domainName] || '#607d8b'; // default grey if domain not found
-  
-  return `https://via.placeholder.com/400x200/${color.substring(1)}/FFFFFF?text=${encodeURIComponent(domainName)}`;
-};
+import {
+  ArrowBack as ArrowBackIcon,
+  PlayArrow as PlayArrowIcon,
+  CheckCircle as CheckCircleIcon,
+  Schedule as ScheduleIcon,
+  Info as InfoIcon
+} from '@mui/icons-material';
+import { moduleService } from '../services/api';
 
 const DomainView = () => {
   const { domainId } = useParams();
-  const [domain, setDomain] = useState(null);
-  const [modules, setModules] = useState([]);
+  const navigate = useNavigate();
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [domain, setDomain] = useState(null);
+  const [modules, setModules] = useState([]);
   
   useEffect(() => {
-    const fetchDomainData = async () => {
+    const fetchDomainModules = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // In a real app, we would use actual API calls
-        // For now, we're simulating with mock data
+        // Fetch domain details
+        const domainResponse = await moduleService.getDomainById(domainId);
+        const domainData = domainResponse.data;
         
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Mock domain data
-        const domainData = {
-          id: domainId,
-          name: getDomainName(domainId),
-          description: `Comprehensive training modules for ${getDomainName(domainId)} to ensure workplace compliance and employee safety.`,
-          moduleCount: Math.floor(Math.random() * 10) + 5 // Random number between 5-15
-        };
+        // Fetch modules for this domain
+        const modulesResponse = await moduleService.getModulesByDomain(domainId);
+        const modulesData = modulesResponse.data;
         
         setDomain(domainData);
         
-        // Mock modules data
-        const modulesData = generateMockModules(domainData.name, domainData.moduleCount);
-        setModules(modulesData);
+        // Filter modules to show those with access
+        const accessibleModules = modulesData.filter(moduleItem => moduleItem.hasAccess !== false);
+        setModules(accessibleModules.map(moduleItem => moduleItem.module || moduleItem));
+        
       } catch (err) {
         console.error('Error fetching domain data:', err);
-        setError('Failed to load domain data. Please try again later.');
+        setError('Failed to load domain information. Please try again.');
       } finally {
         setLoading(false);
       }
     };
     
-    fetchDomainData();
+    fetchDomainModules();
   }, [domainId]);
   
-  // Helper to get domain name from ID for mock data
-  const getDomainName = (id) => {
-    const domainNames = {
-      '1': 'Fire Safety',
-      '2': 'OSHA Compliance',
-      '3': 'First Aid',
-      '4': 'Hazard Communication',
-      '5': 'Construction Safety',
-      '6': 'Chemical Safety'
-    };
-    
-    return domainNames[id] || 'Unknown Domain';
+  const handleModuleClick = (moduleId) => {
+    navigate(`/modules/${moduleId}`);
   };
   
-  // Generate mock modules for demo
-  const generateMockModules = (domainName, count) => {
-    const modules = [];
-    const difficulties = ['Beginner', 'Intermediate', 'Advanced'];
-    const statuses = ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED'];
-    
-    // Domain-specific module titles
-    const moduleTitles = {
-      'Fire Safety': [
-        'Fire Prevention Basics', 
-        'Emergency Evacuation Procedures', 
-        'Fire Extinguisher Training',
-        'Fire Hazard Identification',
-        'Fire Safety Leadership',
-        'Building Fire Codes',
-        'Electrical Fire Safety',
-        'Workplace Fire Drills'
-      ],
-      'OSHA Compliance': [
-        'OSHA Standards Overview',
-        'Workplace Hazard Assessment',
-        'Personal Protective Equipment',
-        'Recordkeeping Requirements',
-        'OSHA Inspection Preparation',
-        'Employee Rights Under OSHA',
-        'Safety Committee Formation',
-        'Job Hazard Analysis'
-      ],
-      'First Aid': [
-        'Basic First Aid',
-        'CPR Certification',
-        'Emergency Response',
-        'Wound Care',
-        'Handling Medical Emergencies',
-        'AED Training',
-        'Bloodborne Pathogens',
-        'Heat Stroke Prevention'
-      ],
-      'Hazard Communication': [
-        'GHS Labeling System',
-        'Safety Data Sheets',
-        'Chemical Storage Guidelines',
-        'Hazard Communication Program',
-        'Employee Right to Know',
-        'Workplace Labeling',
-        'Hazardous Material Transport',
-        'Chemical Spill Response'
-      ],
-      'Construction Safety': [
-        'Fall Protection',
-        'Scaffolding Safety',
-        'Excavation Safety',
-        'Power Tool Safety',
-        'Confined Space Entry',
-        'Crane Operation Safety',
-        'PPE for Construction',
-        'Heavy Equipment Safety'
-      ],
-      'Chemical Safety': [
-        'Chemical Handling Procedures',
-        'Laboratory Safety',
-        'PPE for Chemical Exposure',
-        'Chemical Storage Requirements',
-        'Chemical Compatibility',
-        'Emergency Chemical Spill Response',
-        'Toxicology Basics',
-        'Chemical Risk Assessment'
-      ]
-    };
-    
-    const titles = moduleTitles[domainName] || [
-      'Basic Training', 
-      'Advanced Concepts', 
-      'Certification Preparation', 
-      'Safety Protocols',
-      'Emergency Procedures',
-      'Compliance Overview',
-      'Risk Management',
-      'Best Practices'
-    ];
-    
-    for (let i = 0; i < count; i++) {
-      const titleIndex = i % titles.length;
-      modules.push({
-        id: `${domainId}-${i + 1}`,
-        title: titles[titleIndex],
-        description: `Learn essential ${domainName} principles and practices to ensure workplace safety and compliance.`,
-        duration: Math.floor(Math.random() * 60) + 15, // 15-75 minutes
-        difficulty: difficulties[Math.floor(Math.random() * difficulties.length)],
-        status: statuses[Math.floor(Math.random() * statuses.length)],
-        progress: Math.floor(Math.random() * 100),
-        image: getModuleImage(domainName)
-      });
-    }
-    
-    return modules;
+  const handleBackToDashboard = () => {
+    navigate('/');
   };
   
-  if (loading && !domain) {
+  if (loading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
           <CircularProgress />
         </Box>
       </Container>
@@ -206,99 +88,191 @@ const DomainView = () => {
     return (
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Alert severity="error">{error}</Alert>
+        <Button 
+          variant="outlined" 
+          onClick={handleBackToDashboard}
+          startIcon={<ArrowBackIcon />}
+          sx={{ mt: 2 }}
+        >
+          Back to Dashboard
+        </Button>
+      </Container>
+    );
+  }
+  
+  if (!domain) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Alert severity="info">Domain not found or not accessible.</Alert>
+        <Button 
+          variant="outlined" 
+          onClick={handleBackToDashboard}
+          startIcon={<ArrowBackIcon />}
+          sx={{ mt: 2 }}
+        >
+          Back to Dashboard
+        </Button>
       </Container>
     );
   }
   
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {/* Breadcrumbs */}
-      <Breadcrumbs 
-        separator={<NavigateNextIcon fontSize="small" />} 
-        aria-label="breadcrumb"
-        sx={{ mb: 3 }}
-      >
-        <Link component={RouterLink} to="/" color="inherit">
-          Dashboard
-        </Link>
-        <Link component={RouterLink} to="/my-courses" color="inherit">
-          Courses
-        </Link>
-        <Typography color="text.primary">{domain?.name}</Typography>
-      </Breadcrumbs>
-      
-      {/* Domain Header */}
-      <Box mb={4}>
-        <Typography variant="h4" gutterBottom>
-          {domain?.name}
+      {/* Back button and title */}
+      <Box display="flex" alignItems="center" mb={3}>
+        <Button 
+          variant="text"
+          onClick={handleBackToDashboard}
+          startIcon={<ArrowBackIcon />}
+        >
+          Back to Dashboard
+        </Button>
+        <Typography variant="h4" sx={{ ml: 2 }}>
+          {domain.name}
         </Typography>
-        <Typography variant="body1" color="textSecondary" paragraph>
-          {domain?.description}
-        </Typography>
-        <Chip 
-          label={`${domain?.moduleCount} modules`} 
-          color="primary" 
-          variant="outlined" 
-        />
       </Box>
       
-      {/* Modules Grid */}
+      {/* Domain description */}
+      {domain.description && (
+        <Paper sx={{ p: 3, mb: 4 }}>
+          <Typography variant="body1">
+            {domain.description}
+          </Typography>
+        </Paper>
+      )}
+      
+      {/* Module list */}
       <Typography variant="h5" gutterBottom>
         Available Modules
       </Typography>
       
-      <Grid container spacing={3}>
-        {modules.map((module) => (
-          <Grid item xs={12} sm={6} md={4} key={module.id}>
-            <Card elevation={2}>
-              <CardActionArea component={RouterLink} to={`/modules/${module.id}`}>
-                <CardMedia
-                  component="img"
-                  height="140"
-                  image={module.image}
-                  alt={module.title}
-                />
-                <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                    <Typography variant="h6" noWrap>
+      {modules.length > 0 ? (
+        <Grid container spacing={3}>
+          {modules.map((module) => (
+            <Grid item xs={12} md={6} key={module.id}>
+              <Card 
+                sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    boxShadow: 3
+                  }
+                }}
+                onClick={() => handleModuleClick(module.id)}
+              >
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
+                    <Typography variant="h6" component="div">
                       {module.title}
                     </Typography>
-                    <Chip 
-                      label={module.difficulty} 
-                      size="small"
-                      color={
-                        module.difficulty === 'Beginner' ? 'success' :
-                        module.difficulty === 'Intermediate' ? 'primary' : 'error'
-                      }
-                    />
+                    {module.status && (
+                      <Chip 
+                        label={module.status} 
+                        size="small" 
+                        color={module.status === 'PUBLISHED' ? 'success' : 'default'} 
+                        variant="outlined" 
+                      />
+                    )}
                   </Box>
                   
-                  <Typography variant="body2" color="textSecondary" paragraph noWrap>
+                  <Typography variant="body2" color="text.secondary" paragraph>
                     {module.description}
                   </Typography>
                   
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body2">
-                      {module.duration} minutes
+                  <Box display="flex" alignItems="center" mb={1}>
+                    <ScheduleIcon fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                      {module.estimatedDuration 
+                        ? `${module.estimatedDuration} min` 
+                        : 'Duration not specified'}
                     </Typography>
-                    <Chip 
-                      label={
-                        module.status === 'NOT_STARTED' ? 'Not Started' :
-                        module.status === 'IN_PROGRESS' ? `${module.progress}% Complete` : 'Completed'
-                      }
-                      size="small"
-                      color={
-                        module.status === 'COMPLETED' ? 'success' :
-                        module.status === 'IN_PROGRESS' ? 'primary' : 'default'
-                      }
-                    />
                   </Box>
+                  
+                  {/* Progress indicator (if available) */}
+                  {module.progress !== undefined && (
+                    <>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Progress:
+                      </Typography>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={module.progress} 
+                        sx={{ height: 8, borderRadius: 5, mb: 1 }} 
+                      />
+                      <Typography variant="body2" align="right" color="text.secondary">
+                        {module.progress}%
+                      </Typography>
+                    </>
+                  )}
+                  
+                  {/* Completion status */}
+                  {module.completed && (
+                    <Box display="flex" alignItems="center" mt={1}>
+                      <CheckCircleIcon fontSize="small" color="success" />
+                      <Typography variant="body2" color="success.main" sx={{ ml: 1 }}>
+                        Completed
+                      </Typography>
+                    </Box>
+                  )}
                 </CardContent>
-              </CardActionArea>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                
+                <Divider />
+                
+                <CardActions>
+                  {module.progress > 0 && !module.completed ? (
+                    <Button 
+                      size="small" 
+                      startIcon={<PlayArrowIcon />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleModuleClick(module.id);
+                      }}
+                    >
+                      Continue
+                    </Button>
+                  ) : module.completed ? (
+                    <Button 
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleModuleClick(module.id);
+                      }}
+                    >
+                      Review
+                    </Button>
+                  ) : (
+                    <Button 
+                      size="small"
+                      startIcon={<PlayArrowIcon />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleModuleClick(module.id);
+                      }}
+                    >
+                      Start
+                    </Button>
+                  )}
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Box display="flex" flexDirection="column" alignItems="center" p={3}>
+            <InfoIcon color="info" fontSize="large" sx={{ mb: 2 }} />
+            <Typography variant="h6" gutterBottom>
+              No modules available
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              There are no training modules available in this domain yet.
+            </Typography>
+          </Box>
+        </Paper>
+      )}
+      
     </Container>
   );
 };

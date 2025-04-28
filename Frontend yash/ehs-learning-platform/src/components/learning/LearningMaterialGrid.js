@@ -1,175 +1,268 @@
 // src/components/learning/LearningMaterialGrid.js
-// src/components/learning/LearningMaterialGrid.js
 import React, { useState } from 'react';
-import {
-  Grid,
-  Typography,
+import { 
+  Grid, 
+  Card, 
+  CardContent, 
+  CardActions, 
+  Typography, 
+  Button,
   Box,
+  Chip,
+  LinearProgress,
   CircularProgress,
   Alert,
   TextField,
   InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Pagination
+  IconButton,
+  Paper,
+  Divider
 } from '@mui/material';
-import { Search as SearchIcon, FilterList as FilterIcon } from '@mui/icons-material';
-import LearningMaterialCard from './LearningMaterialCard';
+import {
+  Search as SearchIcon,
+  OndemandVideo as VideoIcon,
+  Description as DocumentIcon,
+  Link as LinkIcon,
+  Image as ImageIcon,
+  Article as ArticleIcon,
+  Slideshow as PresentationIcon,
+  CheckCircle as CheckCircleIcon,
+  FilterList as FilterListIcon,
+  Timer as TimerIcon
+} from '@mui/icons-material';
 
+/**
+ * Grid display for learning materials with search and filtering capabilities
+ * 
+ * @param {Object[]} materials - Array of learning material objects
+ * @param {Function} onViewMaterial - Function to call when "View" button is clicked
+ * @param {boolean} loading - Whether materials are being loaded
+ * @param {string} error - Error message if loading failed
+ * @param {string} emptyMessage - Message to display when no materials are available
+ */
 const LearningMaterialGrid = ({ 
-  materials, 
-  loading, 
-  error, 
-  onViewMaterial,
-  itemsPerPage = 6,
-  showFilters = true
+  materials = [], 
+  onViewMaterial, 
+  loading = false,
+  error = null,
+  emptyMessage = "No learning materials available." 
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('all');
   
-  // Handle search change
-  const handleSearchChange = (event) => {
-    setSearchTerm(event.target.value);
-    setCurrentPage(1); // Reset to first page on search change
-  };
-  
-  // Handle filter change
-  const handleFilterChange = (event) => {
-    setTypeFilter(event.target.value);
-    setCurrentPage(1); // Reset to first page on filter change
-  };
-  
-  // Handle page change
-  const handlePageChange = (event, value) => {
-    setCurrentPage(value);
-  };
-  
-  // Filter materials based on search and type
-  const filteredMaterials = materials.filter(material => {
-    const matchesSearch = !searchTerm || 
-      material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (material.description && material.description.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Get appropriate icon for material type
+  const getMaterialIcon = (fileType) => {
+    if (!fileType) return <DocumentIcon />;
     
-    const matchesType = !typeFilter || material.fileType === typeFilter;
+    switch(fileType.toUpperCase()) {
+      case 'PDF':
+        return <DocumentIcon />;
+      case 'VIDEO':
+        return <VideoIcon />;
+      case 'PRESENTATION':
+        return <PresentationIcon />;
+      case 'HTML':
+        return <ArticleIcon />;
+      case 'IMAGE':
+        return <ImageIcon />;
+      case 'DOCUMENT':
+        return <DocumentIcon />;
+      case 'EXTERNAL':
+        return <LinkIcon />;
+      default:
+        return <DocumentIcon />;
+    }
+  };
+  
+  // Filter materials based on search query and type filter
+  const filteredMaterials = materials.filter(material => {
+    const matchesSearch = searchQuery === '' || 
+      (material.title && material.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (material.description && material.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const matchesType = filterType === 'all' || 
+      (material.fileType && material.fileType.toLowerCase() === filterType.toLowerCase());
     
     return matchesSearch && matchesType;
   });
   
-  // Paginate materials
-  const paginatedMaterials = filteredMaterials.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Get unique material types for filter
+  const materialTypes = ['all', ...new Set(materials
+    .filter(m => m.fileType)
+    .map(m => m.fileType.toLowerCase())
+  )];
   
-  // Calculate total pages
-  const totalPages = Math.ceil(filteredMaterials.length / itemsPerPage);
+  // Handle search input change
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
+  };
   
-  // If loading
+  // Handle filter change
+  const handleFilterChange = (type) => {
+    setFilterType(type);
+  };
+  
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
         <CircularProgress />
       </Box>
     );
   }
   
-  // If error
   if (error) {
-    return (
-      <Alert severity="error">
-        {error}
-      </Alert>
-    );
+    return <Alert severity="error">{error}</Alert>;
   }
   
-  // If no materials
-  if (!materials || materials.length === 0) {
-    return (
-      <Alert severity="info">
-        No learning materials available.
-      </Alert>
-    );
+  if (materials.length === 0) {
+    return <Alert severity="info">{emptyMessage}</Alert>;
   }
   
   return (
     <Box>
-      {/* Filters Section */}
-      {showFilters && (
-        <Box mb={3} display="flex" flexWrap="wrap" gap={2}>
-          <TextField
-            size="small"
-            label="Search Materials"
-            variant="outlined"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            sx={{ flexGrow: 1, minWidth: '200px' }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              )
-            }}
-          />
-          
-          <FormControl size="small" sx={{ minWidth: '150px' }}>
-            <InputLabel id="type-filter-label">Material Type</InputLabel>
-            <Select
-              labelId="type-filter-label"
-              value={typeFilter}
-              onChange={handleFilterChange}
-              label="Material Type"
-              startAdornment={
-                <InputAdornment position="start">
-                  <FilterIcon fontSize="small" />
-                </InputAdornment>
-              }
-            >
-              <MenuItem value="">All Types</MenuItem>
-              <MenuItem value="PDF">PDF</MenuItem>
-              <MenuItem value="VIDEO">Video</MenuItem>
-              <MenuItem value="PRESENTATION">Presentation</MenuItem>
-              <MenuItem value="DOCUMENT">Document</MenuItem>
-              <MenuItem value="HTML">Web Content</MenuItem>
-              <MenuItem value="IMAGE">Image</MenuItem>
-              <MenuItem value="EXTERNAL">External Link</MenuItem>
-            </Select>
-          </FormControl>
+      {/* Search and filter */}
+      <Box sx={{ display: 'flex', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <TextField
+          placeholder="Search materials..."
+          variant="outlined"
+          size="small"
+          value={searchQuery}
+          onChange={handleSearchChange}
+          sx={{ flexGrow: 1, minWidth: '200px' }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
+        
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {materialTypes.map((type) => (
+            <Chip
+              key={type}
+              label={type.charAt(0).toUpperCase() + type.slice(1)}
+              onClick={() => handleFilterChange(type)}
+              color={filterType === type ? 'primary' : 'default'}
+              variant={filterType === type ? 'filled' : 'outlined'}
+              size="small"
+            />
+          ))}
         </Box>
-      )}
-      
-      {/* Results Summary */}
-      <Box mb={2} display="flex" justifyContent="space-between" alignItems="center">
-        <Typography variant="body2" color="text.secondary">
-          {filteredMaterials.length} materials found
-        </Typography>
       </Box>
       
-      {/* Materials Grid */}
-      <Grid container spacing={3} mb={3}>
-        {paginatedMaterials.map((material) => (
-          <Grid item xs={12} sm={6} md={4} key={material.id}>
-            <LearningMaterialCard
-              material={material}
-              onView={() => onViewMaterial(material)}
-            />
-          </Grid>
-        ))}
-      </Grid>
-      
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Box display="flex" justifyContent="center" mt={3}>
-          <Pagination
-            count={totalPages}
-            page={currentPage}
-            onChange={handlePageChange}
-            color="primary"
-          />
-        </Box>
+      {filteredMaterials.length === 0 ? (
+        <Alert severity="info">No materials match your search criteria.</Alert>
+      ) : (
+        <Grid container spacing={3}>
+          {filteredMaterials.map((material) => (
+            <Grid item xs={12} sm={6} md={4} key={material.id}>
+              <Card 
+                sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    boxShadow: 3
+                  },
+                  position: 'relative'
+                }}
+              >
+                {material.completed && (
+                  <Box 
+                    sx={{ 
+                      position: 'absolute', 
+                      top: 10, 
+                      right: 10, 
+                      zIndex: 1,
+                      bgcolor: 'success.main',
+                      color: 'white',
+                      borderRadius: '50%',
+                      width: 28,
+                      height: 28,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <CheckCircleIcon fontSize="small" />
+                  </Box>
+                )}
+                
+                <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Box display="flex" alignItems="flex-start" mb={1}>
+                    <Box sx={{ mr: 1, mt: 0.5 }}>
+                      {getMaterialIcon(material.fileType)}
+                    </Box>
+                    <Typography variant="h6" component="div" gutterBottom noWrap>
+                      {material.title}
+                    </Typography>
+                  </Box>
+                  
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary" 
+                    sx={{ 
+                      mb: 2, 
+                      flexGrow: 1,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                    }}
+                  >
+                    {material.description || 'No description available'}
+                  </Typography>
+                  
+                  {material.estimatedDuration && (
+                    <Box display="flex" alignItems="center" mb={1}>
+                      <TimerIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {material.estimatedDuration} min
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {/* Progress indicator */}
+                  {typeof material.progress === 'number' && (
+                    <>
+                      <Typography variant="body2" color="text.secondary" mt={1}>
+                        Progress:
+                      </Typography>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={material.progress} 
+                        sx={{ height: 6, borderRadius: 3, mb: 0.5 }} 
+                      />
+                      <Typography variant="body2" align="right" color="text.secondary" fontSize="0.75rem">
+                        {material.progress}%
+                      </Typography>
+                    </>
+                  )}
+                </CardContent>
+                
+                <Divider />
+                
+                <CardActions>
+                  <Button 
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onViewMaterial) onViewMaterial(material);
+                    }}
+                    variant="contained"
+                    fullWidth
+                  >
+                    {material.completed ? 'Review' : 'View Material'}
+                  </Button>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       )}
     </Box>
   );

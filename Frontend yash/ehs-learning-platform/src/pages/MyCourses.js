@@ -1,63 +1,52 @@
 // src/pages/MyCourses.js
 import React, { useState, useEffect } from 'react';
-import {
-  Container,
-  Typography,
-  Box,
-  Grid,
-  Card,
-  CardContent,
-  CardMedia,
-  CardActionArea,
+import { 
+  Container, 
+  Grid, 
+  Paper, 
+  Typography, 
+  Card, 
+  CardContent, 
+  CardActions,
+  Box, 
+  Button,
   Tabs,
   Tab,
-  Chip,
   CircularProgress,
   Alert,
+  Divider,
+  Chip,
+  LinearProgress,
   TextField,
   InputAdornment,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  LinearProgress
+  IconButton
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import { moduleService } from '../services/api';
-
-const getModuleImage = (domainName) => {
-  // In a real app, we would have unique images for each module
-  // For demo purposes, we're using a consistent pattern based on domain
-  
-  const domainColors = {
-    'Fire Safety': '#f44336',
-    'OSHA Compliance': '#2196f3',
-    'First Aid': '#4caf50',
-    'Hazard Communication': '#ff9800',
-    'Construction Safety': '#795548',
-    'Chemical Safety': '#9c27b0'
-  };
-  
-  const color = domainColors[domainName] || '#607d8b'; // default grey if domain not found
-  
-  return `https://via.placeholder.com/400x200/${color.substring(1)}/FFFFFF?text=${encodeURIComponent(domainName)}`;
-};
+import { 
+  Search as SearchIcon,
+  PlayArrow as PlayArrowIcon,
+  CheckCircle as CheckCircleIcon,
+  Schedule as ScheduleIcon,
+  Timer as TimerIcon,
+  FilterList as FilterListIcon,
+  Domain as DomainIcon
+} from '@mui/icons-material';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { moduleService, progressService, authService } from '../services/api';
 
 const MyCourses = () => {
-  const location = useLocation();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const statusFromUrl = queryParams.get('status');
+  const tabParam = queryParams.get('tab');
   
-  // State
-  const [tabValue, setTabValue] = useState(statusFromUrl === 'completed' ? 2 : statusFromUrl === 'not-started' ? 0 : 1);
-  const [modules, setModules] = useState([]);
+  const [activeTab, setActiveTab] = useState(tabParam === 'completed' ? 1 : 0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [availableModules, setAvailableModules] = useState([]);
+  const [inProgressModules, setInProgressModules] = useState([]);
+  const [completedModules, setCompletedModules] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterDomain, setFilterDomain] = useState('');
-  const [domains, setDomains] = useState([]);
+  const [userDomains, setUserDomains] = useState([]);
   
   useEffect(() => {
     const fetchModules = async () => {
@@ -65,138 +54,129 @@ const MyCourses = () => {
         setLoading(true);
         setError(null);
         
-        // Get current tab status
-        const status = tabValue === 0 ? 'NOT_STARTED' : 
-                       tabValue === 1 ? 'IN_PROGRESS' : 'COMPLETED';
+        // 1. Get available modules - use getAll with published status
+        const availableResponse = await moduleService.getAll({ status: 'PUBLISHED' });
         
-        // In a real app, we would fetch from API with filters
-        // For now, we're simulating with mock data
+        // 2. Get user progress - use explicit endpoint that doesn't require a userId
+        const progressResponse = await progressService.getDashboard();
+        const progressData = progressResponse.data;
         
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // 3. Get user profile - use auth service instead
+        const userResponse = await authService.getCurrentUser();
+        const userData = userResponse.data;
         
-        // Mock data
-        const mockModules = generateMockModules(status);
+        // Update state with fetched data
+        setAvailableModules(availableResponse.data);
         
-        // Apply client-side filtering for demo
-        let filteredModules = [...mockModules];
-        
-        if (searchQuery) {
-          filteredModules = filteredModules.filter(
-            module => module.title.toLowerCase().includes(searchQuery.toLowerCase())
-          );
+        if (progressData.inProgressModules) {
+          setInProgressModules(progressData.inProgressModules);
         }
         
-        if (filterDomain) {
-          filteredModules = filteredModules.filter(
-            module => module.domain === filterDomain
-          );
+        if (progressData.completedModules) {
+          setCompletedModules(progressData.completedModules);
         }
         
-        setModules(filteredModules);
+        if (userData.assignedDomains) {
+          setUserDomains(userData.assignedDomains);
+        }
         
-        // Extract unique domains for filter dropdown
-        const uniqueDomains = [...new Set(mockModules.map(module => module.domain))];
-        setDomains(uniqueDomains);
       } catch (err) {
         console.error('Error fetching modules:', err);
-        setError('Failed to load modules. Please try again later.');
+        setError('Failed to load modules. Please try again.');
       } finally {
         setLoading(false);
       }
     };
     
     fetchModules();
-  }, [tabValue, searchQuery, filterDomain]);
+  }, []);
   
   const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-    
-    // Update URL to reflect tab selection
-    const status = newValue === 0 ? 'not-started' : 
-                   newValue === 1 ? 'in-progress' : 'completed';
-    navigate(`/my-courses?status=${status}`);
+    setActiveTab(newValue);
+    // Update URL to reflect current tab
+    if (newValue === 1) {
+      navigate('/my-courses?tab=completed');
+    } else {
+      navigate('/my-courses');
+    }
   };
   
-  const handleSearchChange = (event) => {
+  const handleModuleClick = (moduleId) => {
+    navigate(`/modules/${moduleId}`);
+  };
+  
+  const handleSearch = (event) => {
     setSearchQuery(event.target.value);
   };
   
-  const handleDomainChange = (event) => {
-    setFilterDomain(event.target.value);
-  };
-  
-  // Generate mock modules for demo
-  const generateMockModules = (status) => {
-    const mockModules = [];
-    const domains = ['Fire Safety', 'OSHA Compliance', 'First Aid', 'Hazard Communication', 'Construction Safety', 'Chemical Safety'];
-    const difficulties = ['Beginner', 'Intermediate', 'Advanced'];
+  // Filter modules based on user's assigned domains and search query
+  const filterModules = (modules) => {
+    // First filter by user domains
+    let filteredByDomain = modules;
     
-    // Domain-specific module titles
-    const moduleTitles = {
-      'Fire Safety': [
-        'Fire Prevention Basics', 
-        'Emergency Evacuation Procedures', 
-        'Fire Extinguisher Training',
-        'Fire Hazard Identification'
-      ],
-      'OSHA Compliance': [
-        'OSHA Standards Overview',
-        'Workplace Hazard Assessment',
-        'Personal Protective Equipment',
-        'Recordkeeping Requirements'
-      ],
-      'First Aid': [
-        'Basic First Aid',
-        'CPR Certification',
-        'Emergency Response',
-        'Wound Care'
-      ],
-      'Hazard Communication': [
-        'GHS Labeling System',
-        'Safety Data Sheets',
-        'Chemical Storage Guidelines',
-        'Hazard Communication Program'
-      ],
-      'Construction Safety': [
-        'Fall Protection',
-        'Scaffolding Safety',
-        'Excavation Safety',
-        'Power Tool Safety'
-      ],
-      'Chemical Safety': [
-        'Chemical Handling Procedures',
-        'Laboratory Safety',
-        'PPE for Chemical Exposure',
-        'Chemical Storage Requirements'
-      ]
-    };
-    
-    // Generate 10-15 modules with the requested status
-    const count = Math.floor(Math.random() * 6) + 10; // 10-15
-    
-    for (let i = 0; i < count; i++) {
-      const domain = domains[i % domains.length];
-      const titles = moduleTitles[domain];
-      const title = titles[i % titles.length];
-      
-      mockModules.push({
-        id: `module-${i + 1}`,
-        title: title,
-        description: `Learn essential ${domain} principles and practices to ensure workplace safety and compliance.`,
-        domain: domain,
-        difficulty: difficulties[Math.floor(Math.random() * difficulties.length)],
-        duration: Math.floor(Math.random() * 60) + 15, // 15-75 minutes
-        status: status,
-        progress: status === 'IN_PROGRESS' ? Math.floor(Math.random() * 90) + 10 : 0, // 10-99% for in-progress
-        completedAt: status === 'COMPLETED' ? new Date(Date.now() - Math.floor(Math.random() * 30) * 86400000).toISOString() : null, // random date in last 30 days
-        score: status === 'COMPLETED' ? Math.floor(Math.random() * 30) + 70 : null, // 70-99% score for completed
-        image: getModuleImage(domain)
+    // Only apply domain filtering if userDomains has items
+    if (userDomains && userDomains.length > 0) {
+      filteredByDomain = modules.filter(module => {
+        // If module has no domain, don't show it
+        if (!module.domain) return false;
+        
+        // Handle both domain object and domain ID formats
+        const moduleDomainId = typeof module.domain === 'object' ? 
+          module.domain.id : module.domain;
+        
+        // Check if any of user's domains match the module domain
+        return userDomains.some(userDomain => {
+          const userDomainId = typeof userDomain === 'object' ? 
+            userDomain.id : userDomain;
+          return userDomainId === moduleDomainId;
+        });
       });
     }
     
-    return mockModules;
+    // Then apply search filtering if there's a search query
+    if (!searchQuery) return filteredByDomain;
+    
+    return filteredByDomain.filter(module => 
+      module.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      module.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      module.domain?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
   };
+  
+  // Get modules to display based on active tab
+  const getDisplayModules = () => {
+    switch(activeTab) {
+      case 0: // Available & In Progress
+        return filterModules([...inProgressModules, ...availableModules.filter(m => 
+          !inProgressModules.some(ip => ip.id === m.id) && 
+          !completedModules.some(c => c.id === m.id)
+        )]);
+      case 1: // Completed
+        return filterModules(completedModules);
+      default:
+        return [];
+    }
+  };
+  
+  const displayModules = getDisplayModules();
+  
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
+  
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
+    );
+  }
   
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -204,14 +184,14 @@ const MyCourses = () => {
         My Courses
       </Typography>
       
-      {/* Filters */}
-      <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+      {/* Search and Filter */}
+      <Box sx={{ display: 'flex', mb: 3 }}>
         <TextField
-          label="Search Courses"
+          placeholder="Search courses..."
           variant="outlined"
           fullWidth
           value={searchQuery}
-          onChange={handleSearchChange}
+          onChange={handleSearch}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -219,145 +199,210 @@ const MyCourses = () => {
               </InputAdornment>
             ),
           }}
+          sx={{ maxWidth: 400 }}
         />
         
-        <FormControl variant="outlined" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
-          <InputLabel id="domain-filter-label">Domain</InputLabel>
-          <Select
-            labelId="domain-filter-label"
-            id="domain-filter"
-            value={filterDomain}
-            onChange={handleDomainChange}
-            label="Domain"
-          >
-            <MenuItem value="">
-              <em>All Domains</em>
-            </MenuItem>
-            {domains.map(domain => (
-              <MenuItem key={domain} value={domain}>{domain}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <IconButton sx={{ ml: 1 }}>
+          <FilterListIcon />
+        </IconButton>
       </Box>
       
-      {/* Status Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+      {/* User Domains Indicator */}
+      {userDomains && userDomains.length > 0 && (
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+          <Typography variant="body2" sx={{ mr: 1 }}>
+            Your domains:
+          </Typography>
+          {userDomains.map(domain => (
+            <Chip 
+              key={typeof domain === 'object' ? domain.id : domain}
+              label={typeof domain === 'object' ? domain.name : domain} 
+              size="small" 
+              color="primary" 
+              variant="outlined" 
+              sx={{ mr: 0.5 }}
+            />
+          ))}
+        </Box>
+      )}
+      
+      {/* Tabs */}
+      <Paper sx={{ width: '100%', mb: 3 }}>
         <Tabs 
-          value={tabValue} 
-          onChange={handleTabChange} 
-          aria-label="module status tabs"
-          variant="fullWidth"
+          value={activeTab} 
+          onChange={handleTabChange}
+          indicatorColor="primary"
+          textColor="primary"
+          sx={{ borderBottom: 1, borderColor: 'divider' }}
         >
-          <Tab label="Not Started" />
-          <Tab label="In Progress" />
-          <Tab label="Completed" />
+          <Tab label={`Available (${inProgressModules.length + availableModules.filter(m => 
+            !inProgressModules.some(ip => ip.id === m.id) && 
+            !completedModules.some(c => c.id === m.id)
+          ).length})`} />
+          <Tab label={`Completed (${completedModules.length})`} />
         </Tabs>
-      </Box>
+      </Paper>
       
-      {/* Error Alert */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-      
-      {/* Loading Indicator */}
-      {loading && (
-        <Box sx={{ width: '100%', mb: 3 }}>
-          <LinearProgress />
-        </Box>
-      )}
-      
-      {/* Module Grid */}
-      {!loading && modules.length === 0 ? (
-        <Box textAlign="center" py={5}>
-          <Typography variant="h6" color="textSecondary">
-            No courses found
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Try changing your filters or check back later for new courses
-          </Typography>
-        </Box>
-      ) : (
+      {/* Module List */}
+      {displayModules.length > 0 ? (
         <Grid container spacing={3}>
-          {modules.map((module) => (
-            <Grid item xs={12} sm={6} md={4} key={module.id}>
-              <Card elevation={2}>
-                <CardActionArea component={RouterLink} to={`/modules/${module.id}`}>
-                  <CardMedia
-                    component="img"
-                    height="140"
-                    image={module.image}
-                    alt={module.title}
-                  />
-                  <CardContent>
+          {displayModules.map((module) => {
+            const isInProgress = inProgressModules.some(m => m.id === module.id);
+            const isCompleted = completedModules.some(m => m.id === module.id);
+            
+            return (
+              <Grid item xs={12} md={6} key={module.id}>
+                <Card 
+                  sx={{ 
+                    height: '100%', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    ...(isCompleted && {
+                      border: '1px solid #4caf50',
+                    }),
+                    '&:hover': {
+                      boxShadow: 3
+                    }
+                  }}
+                  onClick={() => handleModuleClick(module.id)}
+                >
+                  {isCompleted && (
+                    <Box 
+                      sx={{ 
+                        position: 'absolute', 
+                        top: 12, 
+                        right: 12, 
+                        bgcolor: 'success.main',
+                        color: 'white',
+                        borderRadius: '50%',
+                        width: 24,
+                        height: 24,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <CheckCircleIcon fontSize="small" />
+                    </Box>
+                  )}
+                  
+                  <CardContent sx={{ flexGrow: 1 }}>
                     <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                      <Typography variant="h6" sx={{ maxWidth: '70%' }} noWrap>
+                      <Typography variant="h6" component="div">
                         {module.title}
                       </Typography>
                       <Chip 
-                        label={module.difficulty} 
-                        size="small"
-                        color={
-                          module.difficulty === 'Beginner' ? 'success' :
-                          module.difficulty === 'Intermediate' ? 'primary' : 'error'
-                        }
+                        label={module.domain?.name || module.domain || 'General'} 
+                        size="small" 
+                        color="primary" 
+                        variant="outlined" 
+                        sx={{ ml: 1 }}
                       />
                     </Box>
                     
-                    <Typography variant="body2" color="textSecondary" paragraph>
-                      {module.domain}
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      {module.description}
                     </Typography>
                     
-                    {module.status === 'IN_PROGRESS' && (
-                      <Box sx={{ mb: 2 }}>
-                        <Box display="flex" justifyContent="space-between">
-                          <Typography variant="body2" color="textSecondary">
-                            Progress
-                          </Typography>
-                          <Typography variant="body2" color="textSecondary">
-                            {module.progress}%
-                          </Typography>
-                        </Box>
+                    <Box display="flex" alignItems="center" mb={1}>
+                      <TimerIcon fontSize="small" color="action" />
+                      <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                        {module.estimatedDuration 
+                          ? `${module.estimatedDuration} min` 
+                          : 'Duration not specified'}
+                      </Typography>
+                    </Box>
+                    
+                    {isInProgress && (
+                      <>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Progress:
+                        </Typography>
                         <LinearProgress 
                           variant="determinate" 
-                          value={module.progress} 
-                          sx={{ height: 6, borderRadius: 3, mt: 0.5 }}
+                          value={module.progress || 0} 
+                          sx={{ height: 8, borderRadius: 5, mb: 1 }} 
                         />
-                      </Box>
-                    )}
-                    
-                    {module.status === 'COMPLETED' && (
-                      <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography variant="body2" color="textSecondary">
-                          Completed {new Date(module.completedAt).toLocaleDateString()}
+                        <Typography variant="body2" align="right" color="text.secondary">
+                          {module.progress || 0}%
                         </Typography>
-                        <Chip 
-                          label={`${module.score}%`} 
-                          size="small" 
-                          color={module.score >= 90 ? "success" : module.score >= 70 ? "primary" : "default"}
-                        />
-                      </Box>
+                      </>
                     )}
                     
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Typography variant="body2">
-                        {module.duration} minutes
+                    {isCompleted && module.completionDate && (
+                      <Typography variant="body2" color="text.secondary">
+                        Completed on: {new Date(module.completionDate).toLocaleDateString()}
                       </Typography>
-                      {module.status === 'NOT_STARTED' && (
-                        <Chip 
-                          label="Start"
-                          size="small"
-                          color="primary"
-                        />
-                      )}
-                    </Box>
+                    )}
+                    
+                    {isCompleted && module.score && (
+                      <Typography variant="body2" color="success.main">
+                        Score: {module.score}%
+                      </Typography>
+                    )}
                   </CardContent>
-                </CardActionArea>
-              </Card>
-            </Grid>
-          ))}
+                  
+                  <Divider />
+                  
+                  <CardActions>
+                    {isInProgress ? (
+                      <Button 
+                        size="small" 
+                        startIcon={<PlayArrowIcon />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleModuleClick(module.id);
+                        }}
+                      >
+                        Continue
+                      </Button>
+                    ) : isCompleted ? (
+                      <Button 
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleModuleClick(module.id);
+                        }}
+                      >
+                        Review
+                      </Button>
+                    ) : (
+                      <Button 
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleModuleClick(module.id);
+                        }}
+                      >
+                        Start
+                      </Button>
+                    )}
+                    
+                    {/* Access indicator */}
+                    {module.hasAccess === false && (
+                      <Chip 
+                        size="small"
+                        label="Requires domain access" 
+                        color="warning"
+                        sx={{ ml: 'auto' }}
+                      />
+                    )}
+                  </CardActions>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
+      ) : (
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Typography variant="h6" color="text.secondary">
+            {activeTab === 0 
+              ? "No available modules found for your domains. Contact your administrator for access." 
+              : "You haven't completed any modules yet."}
+          </Typography>
+        </Paper>
       )}
     </Container>
   );

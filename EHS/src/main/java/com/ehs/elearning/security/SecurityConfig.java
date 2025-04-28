@@ -135,7 +135,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/components/{id}/submit").authenticated()  // Submit assessment answers
                     
                     // Learning Materials endpoints
-                    .requestMatchers(HttpMethod.GET, "/api/components/{id}/materials").authenticated()  // View materials
+                    .requestMatchers(HttpMethod.GET, "/api/components/{id}/materials").permitAll()  // View materials
                     .requestMatchers(HttpMethod.POST, "/api/components/{id}/materials/**").authenticated()  // Add materials
                     .requestMatchers(HttpMethod.PUT, "/api/materials/**").authenticated()  // Update materials
                     .requestMatchers(HttpMethod.DELETE, "/api/materials/**").authenticated()  // Delete materials
@@ -143,7 +143,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/components/{id}/materials/track").authenticated()  // Track material progress
                     .requestMatchers("/api/components/{id}/progress").authenticated()  // Get user progress
                  // Add this to your security configuration
-                    .requestMatchers("/api/components/learning/materials/upload").authenticated()
+                    .requestMatchers(HttpMethod.POST,"/api/components/learning/materials/upload").permitAll()
                     
                     // Progress tracking endpoints
                     .requestMatchers(HttpMethod.GET, "/api/progress/user/{userId}").authenticated()  // View user progress

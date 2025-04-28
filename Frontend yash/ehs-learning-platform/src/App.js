@@ -21,6 +21,7 @@ import MyCourses from './pages/MyCourses';
 import Reports from './pages/Reports';
 import DomainView from './pages/DomainView';
 import ModuleView from './pages/ModuleView';
+import ModuleViewer from './pages/ModuleViewer'; // Added the new component
 import LearningMaterialsPage from './pages/LearningMaterialsPage';
 import Profile from './pages/Profile';
 
@@ -30,7 +31,7 @@ import ModuleManagement from './pages/admin/ModuleManagement';
 import ModuleCreator from './pages/admin/ModuleCreator';
 import AssessmentCreator from './pages/admin/AssessmentCreator';
 import LearningMaterialManagement from './pages/admin/LearningMaterialManagement';
-import UserManagement from './pages/admin/UserManagement';
+import UserManagement from './pages/admin/UserManagement/UserManagement'
 import DomainManagement from './pages/admin/DomainManagement';
 import AdminReports from './pages/admin/AdminReports';
 import AdminSettings from './pages/admin/AdminSettings';
@@ -147,6 +148,7 @@ function AppContent() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/domains/:domainId" element={<DomainView />} />
           <Route path="/modules/:moduleId" element={<ModuleView />} />
+          <Route path="/modules/:moduleId/viewer" element={<ModuleViewer />} /> {/* Added new ModuleViewer route */}
           <Route path="/learning-materials" element={<LearningMaterialsPage />} />
           <Route path="/modules/:moduleId/materials" element={<LearningMaterialsPage />} />
           <Route path="/modules/:moduleId/components/:componentId/materials" element={<LearningMaterialsPage />} />

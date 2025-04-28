@@ -39,9 +39,10 @@ import {
   Visibility as PreviewIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { moduleService, domainService } from '../../services/api';
+import { moduleService, domainService, learningMaterialService } from '../../services/api';
 import AssessmentCreator from './AssessmentCreator';
 import LearningMaterialCreator from './LearningMaterialCreator';
+
 const ModuleCreator = () => {
   const navigate = useNavigate();
   const { moduleId } = useParams();
@@ -164,43 +165,40 @@ const ModuleCreator = () => {
     
     setComponents(items);
   };
+
+  // Open component configuration dialog
+  const handleConfigureComponent = (component) => {
+    setSelectedComponent(component);
+    setDialogType(component.type);
+    setOpenDialog(true);
+    
+    // For learning materials, use the specific handler
+    if (component.type === 'LEARNING_MATERIALS' || component.type === 'LEARNING_MATERIAL') {
+      setDialogType('LEARNING_MATERIALS');
+    }
+  };
+
+  // Save learning material configuration
+  const handleSaveLearningMaterial = (materials) => {
+    // Update the component with the new materials
+    const updatedComponents = components.map(comp => 
+      comp.id === selectedComponent.id
+        ? { 
+            ...comp, 
+            title: comp.title || 'Learning Materials', 
+            configured: true, 
+            data: { 
+              ...comp.data,
+              materials 
+            } 
+          }
+        : comp
+    );
+    
+    setComponents(updatedComponents);
+    setOpenDialog(false);
+  };
   
-
-
-
-
-// Open component configuration dialog
-const handleConfigureComponent = (component) => {
-  setSelectedComponent(component);
-  setDialogType(component.type);
-  setOpenDialog(true);
-  
-  // For learning materials, use the specific handler
-  if (component.type === 'LEARNING_MATERIALS' || component.type === 'LEARNING_MATERIAL') {
-    setDialogType('LEARNING_MATERIALS');
-  }
-};
-
-// Save learning material configuration
-const handleSaveLearningMaterial = (materials) => {
-  // Update the component with the new materials
-  const updatedComponents = components.map(comp => 
-    comp.id === selectedComponent.id
-      ? { 
-          ...comp, 
-          title: comp.title || 'Learning Materials', 
-          configured: true, 
-          data: { 
-            ...comp.data,
-            materials 
-          } 
-        }
-      : comp
-  );
-  
-  setComponents(updatedComponents);
-  setOpenDialog(false);
-};
   // Move component up
   const handleMoveUp = (index) => {
     if (index === 0) return;
@@ -277,6 +275,152 @@ const handleSaveLearningMaterial = (materials) => {
     setOpenDialog(false);
   };
   
+  // Upload temporary learning materials after module is created
+  const uploadTemporaryMaterials = async (createdModule) => {
+    // Find all components with temporary materials
+    const componentsWithTempMaterials = components.filter(comp => 
+      comp.type === 'LEARNING_MATERIALS' && 
+      comp.data && 
+      comp.data.materials && 
+      comp.data.materials.some(m => m._isTemporary)
+    );
+
+    if (componentsWithTempMaterials.length === 0) {
+      return;
+    }
+
+    console.log("Found components with temporary materials:", componentsWithTempMaterials);
+
+    // Map temporary components to real ones
+    const componentIdMap = {};
+    createdModule.components.forEach(createdComp => {
+      // Find the corresponding temporary component
+      const tempComp = components.find(c => 
+        c.type === createdComp.type && 
+        (c.id === createdComp.id || (c.id.startsWith('comp-') && c.title === createdComp.title))
+      );
+      
+      if (tempComp && tempComp.id.startsWith('comp-')) {
+        componentIdMap[tempComp.id] = createdComp.id;
+      }
+    });
+
+    console.log("Component ID mapping:", componentIdMap);
+
+    // Process each component's materials
+    for (const comp of componentsWithTempMaterials) {
+      const realComponentId = componentIdMap[comp.id] || comp.id;
+      
+      if (!realComponentId) {
+        console.error("Could not find real component ID for:", comp.id);
+        continue;
+      }
+
+      console.log(`Processing materials for component ${comp.id} -> ${realComponentId}`);
+
+      // Process each material
+      for (const material of comp.data.materials.filter(m => m._isTemporary)) {
+        try {
+          console.log("Processing temporary material:", material);
+
+          if (material._file) {
+            // File material
+            const fileUploadData = {
+              title: material.title,
+              description: material.description,
+              estimatedDuration: material.estimatedDuration,
+              fileType: material.fileType
+            };
+            
+            await learningMaterialService.uploadMaterial(realComponentId, material._file, fileUploadData);
+          } else if (material.externalUrl) {
+            // External URL material
+            const externalData = {
+              title: material.title,
+              description: material.description,
+              fileType: material.fileType,
+              externalUrl: material.externalUrl,
+              estimatedDuration: material.estimatedDuration
+            };
+            
+            await learningMaterialService.addExternalMaterial(realComponentId, externalData);
+          } else if (material.content) {
+            // HTML content material
+            const contentData = {
+              title: material.title,
+              description: material.description,
+              content: material.content,
+              estimatedDuration: material.estimatedDuration
+            };
+            
+            await learningMaterialService.addContentMaterial(realComponentId, contentData);
+          }
+        } catch (materialErr) {
+          console.error(`Error uploading material "${material.title}":`, materialErr);
+          // Continue with other materials even if one fails
+        }
+      }
+    }
+  };
+  
+  // Properly format the module data for submission
+  const formatModuleDataForSubmission = () => {
+    return {
+      title: moduleData.title,
+      description: moduleData.description,
+      domainId: moduleData.domainId,
+      estimatedDuration: moduleData.estimatedDuration,
+      requiredCompletionScore: moduleData.requiredScore, // Match the server-side name
+      status: moduleData.status,
+      components: components.map((comp, index) => {
+        // Format data correctly for different component types
+        let formattedData = { ...comp.data };
+        
+        // Ensure assessment questions are properly formatted
+        if (comp.type === 'PRE_ASSESSMENT' || comp.type === 'POST_ASSESSMENT') {
+          if (formattedData.questions) {
+            formattedData.questions = formattedData.questions.map(q => ({
+              text: q.text,
+              type: q.type,
+              points: q.points || 1,
+              options: q.options || [],
+              explanation: q.explanation || ''
+            }));
+          }
+        }
+        
+        // For learning materials, exclude temporary files
+        if (comp.type === 'LEARNING_MATERIALS' && formattedData.materials) {
+          // For initial creation, exclude temporary materials
+          formattedData = {
+            ...formattedData,
+            materials: formattedData.materials
+              .filter(m => !m._isTemporary)
+              .map(m => {
+                // Clean up any temporary properties
+                const cleanMaterial = { ...m };
+                delete cleanMaterial._isTemporary;
+                delete cleanMaterial._file;
+                delete cleanMaterial._filePath;
+                return cleanMaterial;
+              })
+          };
+        }
+        
+        return {
+          id: comp.id && comp.id.startsWith('comp-') ? null : comp.id,
+          title: comp.title,
+          type: comp.type,
+          description: comp.description || '',
+          sequenceOrder: index + 1,
+          requiredToAdvance: true,
+          estimatedDuration: comp.estimatedDuration || 30,
+          data: formattedData
+        };
+      })
+    };
+  };
+  
   // Save module
   const handleSaveModule = async () => {
     try {
@@ -286,31 +430,43 @@ const handleSaveLearningMaterial = (materials) => {
       // Validate form
       if (!moduleData.title) {
         setError('Module title is required');
+        setSaveLoading(false);
         return;
       }
       
       if (!moduleData.domainId) {
         setError('Please select a domain');
+        setSaveLoading(false);
         return;
       }
       
-      // Prepare data for API
-      const submitData = {
-        ...moduleData,
-        components: components.map(comp => ({
-          id: comp.id,
-          type: comp.type,
-          title: comp.title,
-          data: comp.data
-        }))
-      };
+      // Flag to check if we have temporary materials
+      const hasTemporaryMaterials = components.some(comp => 
+        comp.type === 'LEARNING_MATERIALS' && 
+        comp.data && 
+        comp.data.materials && 
+        comp.data.materials.some(m => m._isTemporary)
+      );
       
-      // Either create new or update existing
-      let response;
-      if (isEditing) {
-        response = await moduleService.update(moduleId, submitData);
-      } else {
-        response = await moduleService.create(submitData);
+      // Prepare data for API with proper formatting
+      const submitData = formatModuleDataForSubmission();
+      
+      console.log('Submitting module data:', submitData);
+      
+      // Create/update module
+      const response = await moduleService.create(submitData);
+      const createdModule = response.data;
+      
+      // If we have temporary materials, upload them now
+      if (hasTemporaryMaterials && createdModule) {
+        try {
+          await uploadTemporaryMaterials(createdModule);
+        } catch (materialErr) {
+          console.error('Error uploading temporary materials:', materialErr);
+          setError('Module was saved, but some learning materials failed to upload');
+          setSaveLoading(false);
+          return;
+        }
       }
       
       setSuccess('Module saved successfully');
@@ -510,6 +666,14 @@ const handleSaveLearningMaterial = (materials) => {
                                   <Typography variant="body2" color="textSecondary">
                                     Status: {component.configured ? 'Configured' : 'Not configured'}
                                   </Typography>
+                                  {component.type === 'LEARNING_MATERIALS' && 
+                                   component.data?.materials?.length > 0 && (
+                                    <Typography variant="body2" color="textSecondary">
+                                      Materials: {component.data.materials.length}
+                                      {component.data.materials.some(m => m._isTemporary) && 
+                                       " (includes temporary files)"}
+                                    </Typography>
+                                  )}
                                   <Button
                                     variant="outlined"
                                     size="small"
@@ -644,6 +808,7 @@ const handleSaveLearningMaterial = (materials) => {
           )}
         </DialogContent>
       </Dialog>
+      
       {/* Learning Materials Component Dialog */}
       <Dialog 
         open={openDialog && (dialogType === 'LEARNING_MATERIALS' || dialogType === 'LEARNING_MATERIAL')} 
@@ -662,8 +827,6 @@ const handleSaveLearningMaterial = (materials) => {
           )}
         </DialogContent>
       </Dialog>
-      
-     
     </Container>
   );
 };

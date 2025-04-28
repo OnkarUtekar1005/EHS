@@ -1,11 +1,10 @@
 package com.ehs.elearning.payload.request;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-
 import java.util.List;
 import java.util.UUID;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public class ModuleRequest {
     
@@ -16,7 +15,6 @@ public class ModuleRequest {
     @Size(max = 1000)
     private String description;
     
-    @NotNull
     private UUID domainId;
     
     private Integer estimatedDuration;
@@ -27,7 +25,7 @@ public class ModuleRequest {
     
     private List<ComponentRequest> components;
 
-    // Getters and Setters
+    // Getters and setters
     public String getTitle() {
         return title;
     }
