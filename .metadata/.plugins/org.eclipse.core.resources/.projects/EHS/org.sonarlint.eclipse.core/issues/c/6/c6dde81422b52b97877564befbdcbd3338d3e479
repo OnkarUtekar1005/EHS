@@ -1,19 +1,19 @@
 
-‚
-java:S1192|"SDefine a constant instead of duplicating this literal "/api/components/**" 3 times.(¹œò˜Hë$RCRITICALZ
-CODE_SMELL
-
-java:S1192d"PDefine a constant instead of duplicating this literal "/api/domains/**" 4 times.(Ã»ƒÿHï$RCRITICALZ
-CODE_SMELL
-
-java:S1192r"PDefine a constant instead of duplicating this literal "/api/modules/**" 3 times.(øïô‰Hô$RCRITICALZ
-CODE_SMELL
 {
-java:S1192e"LDefine a constant instead of duplicating this literal "ROLE_ADMIN" 17 times.(ü ÀàHø$RCRITICALZ
-CODE_SMELL
-†
-java:S3305&"RInject this field value directly into "filterChain", the only method that uses it.(ôÖÿÃùÿÿÿÿHŠ%RCRITICALZ
+java:S1192e"LDefine a constant instead of duplicating this literal "ROLE_ADMIN" 17 times.(ü ÀàH”%RCRITICALZ
 CODE_SMELL
 ‘
-java:S3305 "]Inject this field value directly into "authenticationProvider", the only method that uses it.(³ò×‡üÿÿÿÿH‹%RCRITICALZ
+java:S3305 "]Inject this field value directly into "authenticationProvider", the only method that uses it.(³ò×‡üÿÿÿÿH¦%RCRITICALZ
+CODE_SMELL
+†
+java:S3305&"RInject this field value directly into "filterChain", the only method that uses it.(ôÖÿÃùÿÿÿÿH§%RCRITICALZ
+CODE_SMELL
+
+java:S1192d"PDefine a constant instead of duplicating this literal "/api/domains/**" 4 times.(Ã»ƒÿH¨%RCRITICALZ
+CODE_SMELL
+
+java:S1192r"PDefine a constant instead of duplicating this literal "/api/modules/**" 3 times.(øïô‰H­%RCRITICALZ
+CODE_SMELL
+‚
+java:S1192|"SDefine a constant instead of duplicating this literal "/api/components/**" 3 times.(¹œò˜H±%RCRITICALZ
 CODE_SMELL

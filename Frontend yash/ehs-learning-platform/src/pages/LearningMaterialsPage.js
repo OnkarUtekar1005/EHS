@@ -74,7 +74,7 @@ const LearningMaterialsPage = () => {
           // Get all learning material components from this module
           const componentsResponse = await componentService.getByModule(moduleId);
           const learningComponents = componentsResponse.data.filter(
-            comp => comp.type === 'LEARNING_MATERIALS' || comp.type === 'LEARNING_MATERIAL'
+            comp => comp.type === 'LEARNING_MATERIAL' || comp.type === 'LEARNING_MATERIAL'
           );
           setComponents(learningComponents);
           

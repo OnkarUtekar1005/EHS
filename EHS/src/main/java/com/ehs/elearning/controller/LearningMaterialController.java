@@ -3,38 +3,39 @@ package com.ehs.elearning.controller;
 import com.ehs.elearning.model.LearningMaterial;
 import com.ehs.elearning.model.ModuleComponent;
 import com.ehs.elearning.model.ComponentType;
+import com.ehs.elearning.model.MaterialProgress;
+import com.ehs.elearning.model.Users;
 import com.ehs.elearning.payload.request.LearningMaterialRequest;
+import com.ehs.elearning.payload.request.MaterialProgressRequest;
 import com.ehs.elearning.payload.response.MessageResponse;
 import com.ehs.elearning.repository.LearningMaterialRepository;
 import com.ehs.elearning.repository.ModuleComponentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import com.ehs.elearning.model.MaterialProgress;
-import com.ehs.elearning.model.Users;
-import com.ehs.elearning.payload.request.MaterialProgressRequest;
 import com.ehs.elearning.repository.MaterialProgressRepository;
 import com.ehs.elearning.repository.UserRepository;
 import com.ehs.elearning.security.UserDetailsImpl;
 import com.ehs.elearning.service.FileStorageService;
+import com.ehs.elearning.service.LearningMaterialService;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import java.nio.file.Path;
-import java.net.MalformedURLException;
-import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.validation.Valid;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,9 @@ import java.util.stream.Collectors;
 @RequestMapping("/api")
 public class LearningMaterialController {
 
+    @Autowired
+    private LearningMaterialService learningMaterialService;
+    
     @Autowired
     private LearningMaterialRepository materialRepository;
     
@@ -58,7 +62,9 @@ public class LearningMaterialController {
     @Autowired
     private UserRepository userRepository;
     
-    
+    /**
+     * Get all materials for a component with user progress
+     */
     @GetMapping("/components/{componentId}/materials/progress")
     public ResponseEntity<?> getMaterialsWithProgress(@PathVariable UUID componentId) {
         try {
@@ -67,43 +73,8 @@ public class LearningMaterialController {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             UUID userId = userDetails.getId();
             
-            return componentRepository.findById(componentId)
-                    .map(component -> {
-                        // Verify this is a learning material component
-                        if (component.getType() != ComponentType.LEARNING_MATERIAL && 
-                            component.getType() != ComponentType.LEARNING_MATERIALS) {
-                            return ResponseEntity.badRequest()
-                                .body(new MessageResponse("Component is not a learning material type"));
-                        }
-                        
-                        List<LearningMaterial> materials = materialRepository.findByComponentOrderBySequenceOrderAsc(component);
-                        
-                        // Get user
-                        Optional<Users> userOpt = userRepository.findById(userId);
-                        if (!userOpt.isPresent()) {
-                            return ResponseEntity.ok(materials); // Return materials without progress info
-                        }
-                        
-                        Users user = userOpt.get();
-                        
-                        // Add progress information to each material
-                        for (LearningMaterial material : materials) {
-                            Optional<MaterialProgress> progressOpt = progressRepository.findByMaterialAndUser(material, user);
-                            if (progressOpt.isPresent()) {
-                                MaterialProgress progress = progressOpt.get();
-                                material.setProgress(progress.getProgress());
-                                material.setTimeSpent(progress.getTimeSpent());
-                                material.setCompleted(progress.getCompleted());
-                            } else {
-                                material.setProgress(0);
-                                material.setTimeSpent(0);
-                                material.setCompleted(false);
-                            }
-                        }
-                        
-                        return ResponseEntity.ok(materials);
-                    })
-                    .orElse(ResponseEntity.notFound().build());
+            List<LearningMaterial> materials = learningMaterialService.getMaterialsWithProgress(componentId, userId);
+            return ResponseEntity.ok(materials);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new MessageResponse("Error retrieving materials with progress: " + e.getMessage()));
@@ -121,32 +92,8 @@ public class LearningMaterialController {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             UUID userId = userDetails.getId();
             
-            return materialRepository.findById(id)
-                    .map(material -> {
-                        // Get user
-                        Optional<Users> userOpt = userRepository.findById(userId);
-                        if (!userOpt.isPresent()) {
-                            return ResponseEntity.ok(material); // Return material without progress info
-                        }
-                        
-                        Users user = userOpt.get();
-                        
-                        // Add progress information
-                        Optional<MaterialProgress> progressOpt = progressRepository.findByMaterialAndUser(material, user);
-                        if (progressOpt.isPresent()) {
-                            MaterialProgress progress = progressOpt.get();
-                            material.setProgress(progress.getProgress());
-                            material.setTimeSpent(progress.getTimeSpent());
-                            material.setCompleted(progress.getCompleted());
-                        } else {
-                            material.setProgress(0);
-                            material.setTimeSpent(0);
-                            material.setCompleted(false);
-                        }
-                        
-                        return ResponseEntity.ok(material);
-                    })
-                    .orElse(ResponseEntity.notFound().build());
+            LearningMaterial material = learningMaterialService.getMaterialForDisplay(id, userId);
+            return ResponseEntity.ok(material);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new MessageResponse("Error retrieving material with progress: " + e.getMessage()));
@@ -167,56 +114,13 @@ public class LearningMaterialController {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             UUID userId = userDetails.getId();
             
-            Optional<LearningMaterial> materialOpt = materialRepository.findById(id);
-            Optional<Users> userOpt = userRepository.findById(userId);
+            // Update progress using service
+            MaterialProgress progress = learningMaterialService.updateProgress(
+                id, userId, request.getProgress(), request.getTimeSpent()
+            );
             
-            if (!materialOpt.isPresent() || !userOpt.isPresent()) {
-                return ResponseEntity.badRequest()
-                    .body(new MessageResponse("Material or user not found"));
-            }
-            
-            LearningMaterial material = materialOpt.get();
-            Users user = userOpt.get();
-            
-            Optional<MaterialProgress> progressOpt = progressRepository.findByMaterialAndUser(material, user);
-            MaterialProgress materialProgress;
-            
-            if (progressOpt.isPresent()) {
-                materialProgress = progressOpt.get();
-                // Update existing progress
-                if (request.getProgress() != null) {
-                    materialProgress.setProgress(request.getProgress());
-                }
-                if (request.getTimeSpent() != null) {
-                    materialProgress.setTimeSpent(materialProgress.getTimeSpent() + request.getTimeSpent());
-                }
-                
-                // Auto-mark as completed if progress reaches 100%
-                if (materialProgress.getProgress() >= 100 && !materialProgress.getCompleted()) {
-                    materialProgress.setCompleted(true);
-                }
-            } else {
-                // Create new progress record
-                materialProgress = new MaterialProgress(material, user);
-                if (request.getProgress() != null) {
-                    materialProgress.setProgress(request.getProgress());
-                } else {
-                    materialProgress.setProgress(0);
-                }
-                if (request.getTimeSpent() != null) {
-                    materialProgress.setTimeSpent(request.getTimeSpent());
-                } else {
-                    materialProgress.setTimeSpent(0);
-                }
-            }
-            
-            progressRepository.save(materialProgress);
-            
-            // Return material with updated progress
-            material.setProgress(materialProgress.getProgress());
-            material.setTimeSpent(materialProgress.getTimeSpent());
-            material.setCompleted(materialProgress.getCompleted());
-            
+            // Get updated material to return
+            LearningMaterial material = learningMaterialService.getMaterialForDisplay(id, userId);
             return ResponseEntity.ok(material);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -264,59 +168,41 @@ public class LearningMaterialController {
                     .body(resource);
         } catch (MalformedURLException e) {
             return ResponseEntity.badRequest()
-                .body(new MessageResponse("Error: " + e.getMessage()));
+                .body(new MessageResponse("Error streaming file: " + e.getMessage()));
         }
     }
 
     /**
-     * Helper method to determine content type for HTTP response
+     * Get all learning materials for a component (without progress)
      */
-    private String determineContentType(String fileType) {
-        switch (fileType) {
-            case "PDF":
-                return "application/pdf";
-            case "PRESENTATION":
-                return "application/vnd.ms-powerpoint";
-            case "VIDEO":
-                return "video/mp4";
-            case "DOCUMENT":
-                return "application/msword";
-            case "HTML":
-                return "text/html";
-            case "IMAGE":
-                return "image/jpeg";
-            default:
-                return "application/octet-stream";
+    @GetMapping("/components/{componentId}/materials")
+    public ResponseEntity<?> getMaterialsByComponent(@PathVariable UUID componentId) {
+        try {
+            List<LearningMaterial> materials = learningMaterialService.getMaterialsWithProgress(componentId, null);
+            return ResponseEntity.ok(materials);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new MessageResponse("Error retrieving materials: " + e.getMessage()));
         }
     }
     
-    // Get all learning materials for a component
-    @GetMapping("/components/{componentId}/materials")
-    public ResponseEntity<?> getMaterialsByComponent(@PathVariable UUID componentId) {
-        return componentRepository.findById(componentId)
-                .map(component -> {
-                    // Verify this is a learning material component
-                    if (component.getType() != ComponentType.LEARNING_MATERIAL && 
-                        component.getType() != ComponentType.LEARNING_MATERIALS) {
-                        return ResponseEntity.badRequest()
-                            .body(new MessageResponse("Component is not a learning material type"));
-                    }
-                    
-                    List<LearningMaterial> materials = materialRepository.findByComponentOrderBySequenceOrderAsc(component);
-                    return ResponseEntity.ok(materials);
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-    
-    // Get learning material by ID
+    /**
+     * Get learning material by ID (without progress)
+     */
     @GetMapping("/materials/{id}")
     public ResponseEntity<?> getMaterialById(@PathVariable UUID id) {
-        return materialRepository.findById(id)
-                .map(material -> ResponseEntity.ok(material))
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            LearningMaterial material = learningMaterialService.getMaterialForDisplay(id, null);
+            return ResponseEntity.ok(material);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new MessageResponse("Error retrieving material: " + e.getMessage()));
+        }
     }
     
-    // Add file-based learning material
+    /**
+     * Add file-based learning material
+     */
     @PostMapping("/components/{componentId}/materials/file")
     public ResponseEntity<?> addFileMaterial(
             @PathVariable UUID componentId,
@@ -325,221 +211,166 @@ public class LearningMaterialController {
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "estimatedDuration", required = false) Integer estimatedDuration) {
         
-        return componentRepository.findById(componentId)
-                .map(component -> {
-                    // Verify this is a learning material component
-                    if (component.getType() != ComponentType.LEARNING_MATERIAL && 
-                        component.getType() != ComponentType.LEARNING_MATERIALS) {
-                        return ResponseEntity.badRequest()
-                            .body(new MessageResponse("Component is not a learning material type"));
-                    }
-                    
-                    try {
-                        // Store the file
-                        String fileName = fileStorageService.storeFile(file);
-                        String fileType = determineFileType(file.getOriginalFilename());
-                        
-                        // Create learning material
-                        LearningMaterial material = new LearningMaterial();
-                        material.setComponent(component);
-                        material.setTitle(title);
-                        material.setDescription(description);
-                        material.setFileType(fileType);
-                        material.setFilePath(fileName);
-                        material.setEstimatedDuration(estimatedDuration);
-                        
-                        // Set sequence order
-                        List<LearningMaterial> existingMaterials = 
-                            materialRepository.findByComponentOrderBySequenceOrderAsc(component);
-                        material.setSequenceOrder(existingMaterials.size() + 1);
-                        
-                        LearningMaterial savedMaterial = materialRepository.save(material);
-                        return ResponseEntity.ok(savedMaterial);
-                    } catch (IOException e) {
-                        return ResponseEntity.badRequest()
-                            .body(new MessageResponse("Failed to store file: " + e.getMessage()));
-                    }
-                })
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            // Determine file type based on filename
+            String fileType = determineFileType(file.getOriginalFilename());
+            
+            // Use service to create material
+            LearningMaterial material = learningMaterialService.createMaterial(
+                componentId, title, description, fileType, file, null, null, estimatedDuration
+            );
+            
+            return ResponseEntity.ok(material);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new MessageResponse("Failed to create file material: " + e.getMessage()));
+        }
     }
     
-    // Add content-based learning material (HTML, text, etc.)
+    /**
+     * Add content-based learning material (HTML, text, etc.)
+     */
     @PostMapping("/components/{componentId}/materials/content")
     public ResponseEntity<?> addContentMaterial(
             @PathVariable UUID componentId,
             @Valid @RequestBody LearningMaterialRequest materialRequest) {
         
-        return componentRepository.findById(componentId)
-                .map(component -> {
-                    // Verify this is a learning material component
-                    if (component.getType() != ComponentType.LEARNING_MATERIAL && 
-                        component.getType() != ComponentType.LEARNING_MATERIALS) {
-                        return ResponseEntity.badRequest()
-                            .body(new MessageResponse("Component is not a learning material type"));
-                    }
-                    
-                    // Create learning material
-                    LearningMaterial material = new LearningMaterial();
-                    material.setComponent(component);
-                    material.setTitle(materialRequest.getTitle());
-                    material.setDescription(materialRequest.getDescription());
-                    material.setFileType("HTML"); // Or TEXT, depending on content
-                    material.setContent(materialRequest.getContent());
-                    material.setEstimatedDuration(materialRequest.getEstimatedDuration());
-                    
-                    // Set sequence order
-                    List<LearningMaterial> existingMaterials = 
-                        materialRepository.findByComponentOrderBySequenceOrderAsc(component);
-                    material.setSequenceOrder(existingMaterials.size() + 1);
-                    
-                    LearningMaterial savedMaterial = materialRepository.save(material);
-                    return ResponseEntity.ok(savedMaterial);
-                })
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            LearningMaterial material = learningMaterialService.createMaterial(
+                componentId, 
+                materialRequest.getTitle(),
+                materialRequest.getDescription(),
+                "HTML", // Default for content-based materials
+                null,
+                materialRequest.getContent(),
+                null,
+                materialRequest.getEstimatedDuration()
+            );
+            
+            return ResponseEntity.ok(material);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new MessageResponse("Failed to create content material: " + e.getMessage()));
+        }
     }
     
-    // Add external URL learning material (videos, websites, etc.)
+    /**
+     * Add external URL learning material (videos, websites, etc.)
+     */
     @PostMapping("/components/{componentId}/materials/external")
     public ResponseEntity<?> addExternalMaterial(
             @PathVariable UUID componentId,
             @Valid @RequestBody LearningMaterialRequest materialRequest) {
         
-        return componentRepository.findById(componentId)
-                .map(component -> {
-                    // Verify this is a learning material component
-                    if (component.getType() != ComponentType.LEARNING_MATERIAL && 
-                        component.getType() != ComponentType.LEARNING_MATERIALS) {
-                        return ResponseEntity.badRequest()
-                            .body(new MessageResponse("Component is not a learning material type"));
-                    }
-                    
-                    // Create learning material
-                    LearningMaterial material = new LearningMaterial();
-                    material.setComponent(component);
-                    material.setTitle(materialRequest.getTitle());
-                    material.setDescription(materialRequest.getDescription());
-                    material.setFileType(materialRequest.getFileType()); // E.g., "VIDEO", "EXTERNAL"
-                    material.setExternalUrl(materialRequest.getExternalUrl());
-                    material.setEstimatedDuration(materialRequest.getEstimatedDuration());
-                    
-                    // Set sequence order
-                    List<LearningMaterial> existingMaterials = 
-                        materialRepository.findByComponentOrderBySequenceOrderAsc(component);
-                    material.setSequenceOrder(existingMaterials.size() + 1);
-                    
-                    LearningMaterial savedMaterial = materialRepository.save(material);
-                    return ResponseEntity.ok(savedMaterial);
-                })
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            LearningMaterial material = learningMaterialService.createMaterial(
+                componentId, 
+                materialRequest.getTitle(),
+                materialRequest.getDescription(),
+                materialRequest.getFileType(), 
+                null,
+                null,
+                materialRequest.getExternalUrl(),
+                materialRequest.getEstimatedDuration()
+            );
+            
+            return ResponseEntity.ok(material);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new MessageResponse("Failed to create external material: " + e.getMessage()));
+        }
     }
     
-    // Update learning material
-    @PutMapping("/materials/{id}")
-    public ResponseEntity<?> updateMaterial(
-            @PathVariable UUID id,
-            @Valid @RequestBody LearningMaterialRequest materialRequest) {
-        
-        return materialRepository.findById(id)
-                .map(material -> {
-                    // Update basic properties
-                    if (materialRequest.getTitle() != null) {
-                        material.setTitle(materialRequest.getTitle());
-                    }
-                    
-                    if (materialRequest.getDescription() != null) {
-                        material.setDescription(materialRequest.getDescription());
-                    }
-                    
-                    if (materialRequest.getContent() != null) {
-                        material.setContent(materialRequest.getContent());
-                    }
-                    
-                    if (materialRequest.getExternalUrl() != null) {
-                        material.setExternalUrl(materialRequest.getExternalUrl());
-                    }
-                    
-                    if (materialRequest.getEstimatedDuration() != null) {
-                        material.setEstimatedDuration(materialRequest.getEstimatedDuration());
-                    }
-                    
-                    // Update sequence order if needed
-                    if (materialRequest.getSequenceOrder() != null &&
-                            !materialRequest.getSequenceOrder().equals(material.getSequenceOrder())) {
-                        
-                        ModuleComponent component = material.getComponent();
-                        int oldOrder = material.getSequenceOrder();
-                        int newOrder = materialRequest.getSequenceOrder();
-                        
-                        List<LearningMaterial> materials = 
-                            materialRepository.findByComponentOrderBySequenceOrderAsc(component);
-                        
-                        // Reorder logic similar to components
-                        for (LearningMaterial m : materials) {
-                            if (m.getId().equals(material.getId())) {
-                                continue; // Skip the material being updated
-                            }
-                            
-                            if (oldOrder < newOrder) { // Moving down
-                                if (m.getSequenceOrder() > oldOrder && m.getSequenceOrder() <= newOrder) {
-                                    m.setSequenceOrder(m.getSequenceOrder() - 1);
-                                    materialRepository.save(m);
-                                }
-                            } else { // Moving up
-                                if (m.getSequenceOrder() >= newOrder && m.getSequenceOrder() < oldOrder) {
-                                    m.setSequenceOrder(m.getSequenceOrder() + 1);
-                                    materialRepository.save(m);
-                                }
-                            }
-                        }
-                        
-                        material.setSequenceOrder(newOrder);
-                    }
-                    
-                    LearningMaterial updatedMaterial = materialRepository.save(material);
-                    return ResponseEntity.ok(updatedMaterial);
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-    
-    // Delete learning material
+    /**
+     * Update learning material
+     */
+//    @PutMapping("/materials/{id}")
+//    @Transactional
+//    public ResponseEntity<?> updateMaterial(
+//            @PathVariable UUID id,
+//            @Valid @RequestBody LearningMaterialRequest materialRequest) {
+//        
+//        return materialRepository.findById(id)
+//                .map(material -> {
+//                    // Update basic properties
+//                    if (materialRequest.getTitle() != null) {
+//                        material.setTitle(materialRequest.getTitle());
+//                    }
+//                    
+//                    if (materialRequest.getDescription() != null) {
+//                        material.setDescription(materialRequest.getDescription());
+//                    }
+//                    
+//                    if (materialRequest.getContent() != null) {
+//                        material.setContent(materialRequest.getContent());
+//                    }
+//                    
+//                    if (materialRequest.getExternalUrl() != null) {
+//                        material.setExternalUrl(materialRequest.getExternalUrl());
+//                    }
+//                    
+//                    if (materialRequest.getEstimatedDuration() != null) {
+//                        material.setEstimatedDuration(materialRequest.getEstimatedDuration());
+//                    }
+//                    
+//                    // Update sequence order if needed
+//                    if (materialRequest.getSequenceOrder() != null &&
+//                            !materialRequest.getSequenceOrder().equals(material.getSequenceOrder())) {
+//                        
+//                        ModuleComponent component = material.getComponent();
+//                        int oldOrder = material.getSequenceOrder();
+//                        int newOrder = materialRequest.getSequenceOrder();
+//                        
+//                        List<LearningMaterial> materials = 
+//                            materialRepository.findByComponentOrderBySequenceOrderAsc(component);
+//                        
+//                        // Reorder logic similar to components
+//                        for (LearningMaterial m : materials) {
+//                            if (m.getId().equals(material.getId())) {
+//                                continue; // Skip the material being updated
+//                            }
+//                            
+//                            if (oldOrder < newOrder) { // Moving down
+//                                if (m.getSequenceOrder() > oldOrder && m.getSequenceOrder() <= newOrder) {
+//                                    m.setSequenceOrder(m.getSequenceOrder() - 1);
+//                                    materialRepository.save(m);
+//                                }
+//                            } else { // Moving up
+//                                if (m.getSequenceOrder() >= newOrder && m.getSequenceOrder() < oldOrder) {
+//                                    m.setSequenceOrder(m.getSequenceOrder() + 1);
+//                                    materialRepository.save(m);
+//                                }
+//                            }
+//                        }
+//                        
+//                        material.setSequenceOrder(newOrder);
+//                    }
+//                    
+//                    LearningMaterial updatedMaterial = materialRepository.save(material);
+//                    return ResponseEntity.ok(updatedMaterial);
+//                })
+//                .orElse(ResponseEntity.notFound().build());
+//    }
+//    
+    /**
+     * Delete learning material
+     */
     @DeleteMapping("/materials/{id}")
     public ResponseEntity<?> deleteMaterial(@PathVariable UUID id) {
-        return materialRepository.findById(id)
-                .map(material -> {
-                    // Get the component and sequence order before deletion
-                    ModuleComponent component = material.getComponent();
-                    int deletedOrder = material.getSequenceOrder();
-                    
-                    // If file-based, delete the file
-                    if (material.getFilePath() != null && !material.getFilePath().isEmpty()) {
-                        try {
-                            fileStorageService.deleteFile(material.getFilePath());
-                        } catch (IOException e) {
-                            // Log error but continue with deletion
-                            System.err.println("Error deleting file: " + e.getMessage());
-                        }
-                    }
-                    
-                    // Delete the material
-                    materialRepository.delete(material);
-                    
-                    // Reorder remaining materials
-                    List<LearningMaterial> remainingMaterials = 
-                        materialRepository.findByComponentOrderBySequenceOrderAsc(component);
-                    for (LearningMaterial m : remainingMaterials) {
-                        if (m.getSequenceOrder() > deletedOrder) {
-                            m.setSequenceOrder(m.getSequenceOrder() - 1);
-                            materialRepository.save(m);
-                        }
-                    }
-                    
-                    return ResponseEntity.ok(new MessageResponse("Learning material deleted successfully."));
-                })
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            learningMaterialService.deleteMaterial(id);
+            return ResponseEntity.ok(new MessageResponse("Learning material deleted successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new MessageResponse("Failed to delete material: " + e.getMessage()));
+        }
     }
     
-    // Reorder learning materials
+    /**
+     * Reorder learning materials
+     */
     @PutMapping("/components/{componentId}/materials/reorder")
+    @Transactional
     public ResponseEntity<?> reorderMaterials(
             @PathVariable UUID componentId,
             @RequestBody Map<String, List<UUID>> request) {
@@ -579,18 +410,33 @@ public class LearningMaterialController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    // Track user progress on materials
-    @PostMapping("/components/{componentId}/materials/track")
-    public ResponseEntity<?> trackMaterialProgress(
-            @PathVariable UUID componentId,
-            @RequestBody Map<String, Object> request) {
+    /**
+     * Helper method to determine content type for HTTP response
+     */
+    private String determineContentType(String fileType) {
+        if (fileType == null) return "application/octet-stream";
         
-        // This would integrate with a user progress tracking service
-        // For now, just return success
-        return ResponseEntity.ok(new MessageResponse("Progress tracked successfully."));
+        switch (fileType.toUpperCase()) {
+            case "PDF":
+                return "application/pdf";
+            case "PRESENTATION":
+                return "application/vnd.ms-powerpoint";
+            case "VIDEO":
+                return "video/mp4";
+            case "DOCUMENT":
+                return "application/msword";
+            case "HTML":
+                return "text/html";
+            case "IMAGE":
+                return "image/jpeg";
+            default:
+                return "application/octet-stream";
+        }
     }
     
-    // Helper method to determine file type from filename
+    /**
+     * Helper method to determine file type from filename
+     */
     private String determineFileType(String filename) {
         if (filename == null) return "UNKNOWN";
         
@@ -613,51 +459,5 @@ public class LearningMaterialController {
         } else {
             return "OTHER";
         }
-    }
- // Add this to LearningMaterialController.java
-    @PostMapping("/components/learning/materials/upload")
-    public ResponseEntity<?> uploadMaterial(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("componentId") UUID componentId,
-            @RequestParam("title") String title,
-            @RequestParam(value = "description", required = false) String description,
-            @RequestParam(value = "estimatedDuration", required = false) Integer estimatedDuration) {
-        
-        return componentRepository.findById(componentId)
-                .map(component -> {
-                    // Verify this is a learning material component
-                    if (component.getType() != ComponentType.LEARNING_MATERIAL && 
-                        component.getType() != ComponentType.LEARNING_MATERIALS) {
-                        return ResponseEntity.badRequest()
-                            .body(new MessageResponse("Component is not a learning material type"));
-                    }
-                    
-                    try {
-                        // Store the file
-                        String fileName = fileStorageService.storeFile(file);
-                        String fileType = determineFileType(file.getOriginalFilename());
-                        
-                        // Create learning material
-                        LearningMaterial material = new LearningMaterial();
-                        material.setComponent(component);
-                        material.setTitle(title);
-                        material.setDescription(description);
-                        material.setFileType(fileType);
-                        material.setFilePath(fileName);
-                        material.setEstimatedDuration(estimatedDuration);
-                        
-                        // Set sequence order
-                        List<LearningMaterial> existingMaterials = 
-                            materialRepository.findByComponentOrderBySequenceOrderAsc(component);
-                        material.setSequenceOrder(existingMaterials.size() + 1);
-                        
-                        LearningMaterial savedMaterial = materialRepository.save(material);
-                        return ResponseEntity.ok(savedMaterial);
-                    } catch (IOException e) {
-                        return ResponseEntity.badRequest()
-                            .body(new MessageResponse("Failed to store file: " + e.getMessage()));
-                    }
-                })
-                .orElse(ResponseEntity.notFound().build());
     }
 }

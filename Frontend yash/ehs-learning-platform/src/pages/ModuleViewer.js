@@ -148,7 +148,7 @@ const ModuleViewer = () => {
             console.error('Error loading assessment questions:', err);
             setComponentError('Failed to load assessment questions.');
           }
-        } else if (component.type === 'LEARNING_MATERIAL' || component.type === 'LEARNING_MATERIALS') {
+        } else if (component.type === 'LEARNING_MATERIAL' || component.type === 'LEARNING_MATERIAL') {
           // For learning material components, load materials with progress
           try {
             const materialsResponse = await learningMaterialService.getMaterialsWithProgress(component.id);
@@ -186,7 +186,7 @@ const ModuleViewer = () => {
         .every(c => isComponentCompleted(c.id));
         
       const isLearningMaterialCompleted = moduleData.components
-        .filter(c => c.type === 'LEARNING_MATERIAL' || c.type === 'LEARNING_MATERIALS')
+        .filter(c => c.type === 'LEARNING_MATERIAL' || c.type === 'LEARNING_MATERIAL')
         .every(c => isComponentCompleted(c.id));
         
       if (!isPreAssessmentCompleted || !isLearningMaterialCompleted) {
@@ -417,7 +417,7 @@ const ModuleViewer = () => {
                 StepIcon = AssignmentIcon;
                 break;
               case 'LEARNING_MATERIAL':
-              case 'LEARNING_MATERIALS':
+              case 'LEARNING_MATERIAL':
                 StepIcon = BookIcon;
                 break;
               case 'VIDEO':
@@ -610,7 +610,7 @@ const ModuleViewer = () => {
             )}
             
             {/* Learning material content */}
-            {(activeComponent.type === 'LEARNING_MATERIAL' || activeComponent.type === 'LEARNING_MATERIALS') && (
+            {(activeComponent.type === 'LEARNING_MATERIAL' || activeComponent.type === 'LEARNING_MATERIAL') && (
               <Box>
                 {activeComponent.materials && activeComponent.materials.length > 0 ? (
                   <Grid container spacing={3}>
@@ -790,7 +790,7 @@ const getComponentTypeLabel = (type) => {
     case 'POST_ASSESSMENT':
       return 'Post-Assessment';
     case 'LEARNING_MATERIAL':
-    case 'LEARNING_MATERIALS':
+    case 'LEARNING_MATERIAL':
       return 'Learning Materials';
     case 'VIDEO':
       return 'Video';

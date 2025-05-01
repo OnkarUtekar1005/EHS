@@ -1,3 +1,4 @@
+// src/pages/admin/ModuleCreator.js
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -39,9 +40,9 @@ import {
   Visibility as PreviewIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { moduleService, domainService, learningMaterialService } from '../../services/api';
+import { moduleService, domainService, materialLibraryService } from '../../services/api';
 import AssessmentCreator from './AssessmentCreator';
-import LearningMaterialCreator from './LearningMaterialCreator';
+import LearningMaterialBrowser from './LearningMaterialBrowser';
 
 const ModuleCreator = () => {
   const navigate = useNavigate();
@@ -61,7 +62,7 @@ const ModuleCreator = () => {
   // Components state
   const [components, setComponents] = useState([
     { id: 'pre-assess', type: 'PRE_ASSESSMENT', title: 'Pre-Assessment', configured: false, data: {} },
-    { id: 'learning', type: 'LEARNING_MATERIALS', title: 'Learning Materials', configured: false, data: {} },
+    { id: 'learning', type: 'LEARNING_MATERIAL', title: 'Learning Materials', configured: false, data: {} },
     { id: 'post-assess', type: 'POST_ASSESSMENT', title: 'Post-Assessment', configured: false, data: {} }
   ]);
   
@@ -84,15 +85,19 @@ const ModuleCreator = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        console.log("[ModuleCreator] Initializing with moduleId:", moduleId);
         
         // Fetch domains
         const domainsResponse = await domainService.getAll();
         setDomains(domainsResponse.data);
+        console.log("[ModuleCreator] Domains loaded:", domainsResponse.data);
         
         // If editing, fetch module data
         if (isEditing) {
+          console.log("[ModuleCreator] Loading existing module:", moduleId);
           const moduleResponse = await moduleService.getById(moduleId);
           const module = moduleResponse.data;
+          console.log("[ModuleCreator] Module data loaded:", module);
           
           // Set basic module data
           setModuleData({
@@ -106,6 +111,7 @@ const ModuleCreator = () => {
           
           // Set components if available
           if (module.components && module.components.length > 0) {
+            console.log("[ModuleCreator] Module has components:", module.components);
             setComponents(module.components.map(comp => ({
               id: comp.id,
               type: comp.type,
@@ -114,9 +120,11 @@ const ModuleCreator = () => {
               data: comp.data || {}
             })));
           }
+        } else {
+          console.log("[ModuleCreator] Creating new module");
         }
       } catch (err) {
-        console.error('Error loading data:', err);
+        console.error('[ModuleCreator] Error loading data:', err);
         setError(err.response?.data?.message || 'Failed to load data');
       } finally {
         setLoading(false);
@@ -133,7 +141,7 @@ const ModuleCreator = () => {
         return 'Pre-Assessment';
       case 'POST_ASSESSMENT':
         return 'Post-Assessment';
-      case 'LEARNING_MATERIALS':
+      case 'LEARNING_MATERIAL':
         return 'Learning Materials';
       case 'VIDEO':
         return 'Video Content';
@@ -159,6 +167,8 @@ const ModuleCreator = () => {
   const handleDragEnd = (result) => {
     if (!result.destination) return;
     
+    console.log("[ModuleCreator] Drag and drop reordering:", result);
+    
     const items = Array.from(components);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
@@ -168,19 +178,22 @@ const ModuleCreator = () => {
 
   // Open component configuration dialog
   const handleConfigureComponent = (component) => {
+    console.log("[ModuleCreator] Configuring component:", component);
     setSelectedComponent(component);
     setDialogType(component.type);
     setOpenDialog(true);
     
     // For learning materials, use the specific handler
-    if (component.type === 'LEARNING_MATERIALS' || component.type === 'LEARNING_MATERIAL') {
-      setDialogType('LEARNING_MATERIALS');
+    if (component.type === 'LEARNING_MATERIAL') {
+      setDialogType('LEARNING_MATERIAL');
     }
   };
 
   // Save learning material configuration
   const handleSaveLearningMaterial = (materials) => {
-    // Update the component with the new materials
+    console.log("[ModuleCreator] Received selected materials from browser:", materials);
+    
+    // Update the component with the selected materials
     const updatedComponents = components.map(comp => 
       comp.id === selectedComponent.id
         ? { 
@@ -195,6 +208,7 @@ const ModuleCreator = () => {
         : comp
     );
     
+    console.log("[ModuleCreator] Updated components with selected materials:", updatedComponents);
     setComponents(updatedComponents);
     setOpenDialog(false);
   };
@@ -225,6 +239,7 @@ const ModuleCreator = () => {
   
   // Delete component
   const handleDeleteComponent = (index) => {
+    console.log("[ModuleCreator] Deleting component at index:", index);
     const items = Array.from(components);
     items.splice(index, 1);
     setComponents(items);
@@ -245,6 +260,7 @@ const ModuleCreator = () => {
   const handleAddComponent = () => {
     if (!newComponentType) return;
     
+    console.log("[ModuleCreator] Adding new component of type:", newComponentType);
     const newComponent = {
       id: `comp-${Date.now()}`,
       type: newComponentType,
@@ -259,6 +275,8 @@ const ModuleCreator = () => {
   
   // Save assessment configuration
   const handleSaveAssessment = (assessmentData) => {
+    console.log("[ModuleCreator] Saving assessment data:", assessmentData);
+    
     // Update the component with the new configuration
     const updatedComponents = components.map(comp => 
       comp.id === selectedComponent.id
@@ -275,97 +293,11 @@ const ModuleCreator = () => {
     setOpenDialog(false);
   };
   
-  // Upload temporary learning materials after module is created
-  const uploadTemporaryMaterials = async (createdModule) => {
-    // Find all components with temporary materials
-    const componentsWithTempMaterials = components.filter(comp => 
-      comp.type === 'LEARNING_MATERIALS' && 
-      comp.data && 
-      comp.data.materials && 
-      comp.data.materials.some(m => m._isTemporary)
-    );
-
-    if (componentsWithTempMaterials.length === 0) {
-      return;
-    }
-
-    console.log("Found components with temporary materials:", componentsWithTempMaterials);
-
-    // Map temporary components to real ones
-    const componentIdMap = {};
-    createdModule.components.forEach(createdComp => {
-      // Find the corresponding temporary component
-      const tempComp = components.find(c => 
-        c.type === createdComp.type && 
-        (c.id === createdComp.id || (c.id.startsWith('comp-') && c.title === createdComp.title))
-      );
-      
-      if (tempComp && tempComp.id.startsWith('comp-')) {
-        componentIdMap[tempComp.id] = createdComp.id;
-      }
-    });
-
-    console.log("Component ID mapping:", componentIdMap);
-
-    // Process each component's materials
-    for (const comp of componentsWithTempMaterials) {
-      const realComponentId = componentIdMap[comp.id] || comp.id;
-      
-      if (!realComponentId) {
-        console.error("Could not find real component ID for:", comp.id);
-        continue;
-      }
-
-      console.log(`Processing materials for component ${comp.id} -> ${realComponentId}`);
-
-      // Process each material
-      for (const material of comp.data.materials.filter(m => m._isTemporary)) {
-        try {
-          console.log("Processing temporary material:", material);
-
-          if (material._file) {
-            // File material
-            const fileUploadData = {
-              title: material.title,
-              description: material.description,
-              estimatedDuration: material.estimatedDuration,
-              fileType: material.fileType
-            };
-            
-            await learningMaterialService.uploadMaterial(realComponentId, material._file, fileUploadData);
-          } else if (material.externalUrl) {
-            // External URL material
-            const externalData = {
-              title: material.title,
-              description: material.description,
-              fileType: material.fileType,
-              externalUrl: material.externalUrl,
-              estimatedDuration: material.estimatedDuration
-            };
-            
-            await learningMaterialService.addExternalMaterial(realComponentId, externalData);
-          } else if (material.content) {
-            // HTML content material
-            const contentData = {
-              title: material.title,
-              description: material.description,
-              content: material.content,
-              estimatedDuration: material.estimatedDuration
-            };
-            
-            await learningMaterialService.addContentMaterial(realComponentId, contentData);
-          }
-        } catch (materialErr) {
-          console.error(`Error uploading material "${material.title}":`, materialErr);
-          // Continue with other materials even if one fails
-        }
-      }
-    }
-  };
-  
   // Properly format the module data for submission
   const formatModuleDataForSubmission = () => {
-    return {
+    console.log("[ModuleCreator] Formatting module data for submission");
+    
+    const formattedData = {
       title: moduleData.title,
       description: moduleData.description,
       domainId: moduleData.domainId,
@@ -373,6 +305,8 @@ const ModuleCreator = () => {
       requiredCompletionScore: moduleData.requiredScore, // Match the server-side name
       status: moduleData.status,
       components: components.map((comp, index) => {
+        console.log(`[ModuleCreator] Formatting component ${index}:`, comp);
+        
         // Format data correctly for different component types
         let formattedData = { ...comp.data };
         
@@ -389,25 +323,19 @@ const ModuleCreator = () => {
           }
         }
         
-        // For learning materials, exclude temporary files
-        if (comp.type === 'LEARNING_MATERIALS' && formattedData.materials) {
-          // For initial creation, exclude temporary materials
-          formattedData = {
-            ...formattedData,
-            materials: formattedData.materials
-              .filter(m => !m._isTemporary)
-              .map(m => {
-                // Clean up any temporary properties
-                const cleanMaterial = { ...m };
-                delete cleanMaterial._isTemporary;
-                delete cleanMaterial._file;
-                delete cleanMaterial._filePath;
-                return cleanMaterial;
-              })
-          };
+        // For learning materials, include only material IDs
+        if (comp.type === 'LEARNING_MATERIAL' && formattedData.materials) {
+          // Extract just the material IDs and their sequence order for the backend
+          formattedData.materialAssociations = formattedData.materials.map((material, idx) => ({
+            materialId: material.id,
+            sequenceOrder: idx + 1
+          }));
+          
+          // Remove the full materials array as we'll use associations instead
+          delete formattedData.materials;
         }
         
-        return {
+        const formattedComponent = {
           id: comp.id && comp.id.startsWith('comp-') ? null : comp.id,
           title: comp.title,
           type: comp.type,
@@ -417,8 +345,14 @@ const ModuleCreator = () => {
           estimatedDuration: comp.estimatedDuration || 30,
           data: formattedData
         };
+        
+        console.log(`[ModuleCreator] Formatted component ${index}:`, formattedComponent);
+        return formattedComponent;
       })
     };
+    
+    console.log("[ModuleCreator] Final formatted module data:", formattedData);
+    return formattedData;
   };
   
   // Save module
@@ -440,30 +374,46 @@ const ModuleCreator = () => {
         return;
       }
       
-      // Flag to check if we have temporary materials
-      const hasTemporaryMaterials = components.some(comp => 
-        comp.type === 'LEARNING_MATERIALS' && 
-        comp.data && 
-        comp.data.materials && 
-        comp.data.materials.some(m => m._isTemporary)
-      );
-      
       // Prepare data for API with proper formatting
       const submitData = formatModuleDataForSubmission();
       
-      console.log('Submitting module data:', submitData);
+      console.log('[ModuleCreator] Submitting module data:', submitData);
       
       // Create/update module
+      console.log("[ModuleCreator] Sending module data to server");
       const response = await moduleService.create(submitData);
       const createdModule = response.data;
+      console.log('[ModuleCreator] Server response for module creation:', createdModule);
       
-      // If we have temporary materials, upload them now
-      if (hasTemporaryMaterials && createdModule) {
+      // Associate materials with components after module is created
+      if (createdModule && createdModule.components) {
         try {
-          await uploadTemporaryMaterials(createdModule);
+          // Process each component to associate materials
+          for (const component of components.filter(c => c.type === 'LEARNING_MATERIAL')) {
+            // Find the corresponding created component
+            const createdComponent = createdModule.components.find(cc => 
+              cc.title === component.title && cc.type === component.type
+            );
+            
+            if (createdComponent && component.data?.materials?.length > 0) {
+              console.log(`[ModuleCreator] Associating materials with component ${createdComponent.id}`);
+              
+              // Get array of material IDs
+              const materialIds = component.data.materials.map(m => m.id);
+              
+              // Associate materials with the component
+              if (materialIds.length > 0) {
+                await materialLibraryService.associateMaterialsWithComponent(
+                  createdComponent.id,
+                  materialIds
+                );
+                console.log(`[ModuleCreator] Associated ${materialIds.length} materials with component ${createdComponent.id}`);
+              }
+            }
+          }
         } catch (materialErr) {
-          console.error('Error uploading temporary materials:', materialErr);
-          setError('Module was saved, but some learning materials failed to upload');
+          console.error('[ModuleCreator] Error associating materials with components:', materialErr);
+          setError('Module was saved, but some learning materials could not be associated');
           setSaveLoading(false);
           return;
         }
@@ -477,7 +427,8 @@ const ModuleCreator = () => {
       }, 2000);
       
     } catch (err) {
-      console.error('Error saving module:', err);
+      console.error('[ModuleCreator] Error saving module:', err);
+      console.error('[ModuleCreator] Error details:', err.response?.data || err.message);
       setError(err.response?.data?.message || 'Failed to save module');
     } finally {
       setSaveLoading(false);
@@ -504,7 +455,7 @@ const ModuleCreator = () => {
   // Component type options
   const componentTypes = [
     { value: 'PRE_ASSESSMENT', label: 'Pre-Assessment' },
-    { value: 'LEARNING_MATERIALS', label: 'Learning Materials' },
+    { value: 'LEARNING_MATERIAL', label: 'Learning Materials' },
     { value: 'VIDEO', label: 'Video' },
     { value: 'PRESENTATION', label: 'Presentation' },
     { value: 'INTERACTIVE', label: 'Interactive Exercise' },
@@ -666,12 +617,10 @@ const ModuleCreator = () => {
                                   <Typography variant="body2" color="textSecondary">
                                     Status: {component.configured ? 'Configured' : 'Not configured'}
                                   </Typography>
-                                  {component.type === 'LEARNING_MATERIALS' && 
+                                  {component.type === 'LEARNING_MATERIAL' && 
                                    component.data?.materials?.length > 0 && (
                                     <Typography variant="body2" color="textSecondary">
                                       Materials: {component.data.materials.length}
-                                      {component.data.materials.some(m => m._isTemporary) && 
-                                       " (includes temporary files)"}
                                     </Typography>
                                   )}
                                   <Button
@@ -811,14 +760,14 @@ const ModuleCreator = () => {
       
       {/* Learning Materials Component Dialog */}
       <Dialog 
-        open={openDialog && (dialogType === 'LEARNING_MATERIALS' || dialogType === 'LEARNING_MATERIAL')} 
+        open={openDialog && dialogType === 'LEARNING_MATERIAL'} 
         onClose={handleCloseDialog}
         fullWidth
         maxWidth="lg"
       >
         <DialogContent sx={{ p: 0 }}>
           {selectedComponent && (
-            <LearningMaterialCreator
+            <LearningMaterialBrowser
               componentId={selectedComponent.id}
               initialMaterials={selectedComponent.data?.materials || []}
               onSave={handleSaveLearningMaterial}

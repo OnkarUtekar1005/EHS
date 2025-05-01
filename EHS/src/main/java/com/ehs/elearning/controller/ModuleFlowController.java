@@ -87,8 +87,7 @@ public class ModuleFlowController {
                 boolean isCompleted = false;
                 
                 // Check completion based on component type
-                if (component.getType() == ComponentType.LEARNING_MATERIAL || 
-                    component.getType() == ComponentType.LEARNING_MATERIALS) {
+                if (component.getType() == ComponentType.LEARNING_MATERIAL) {
                     
                     // For learning materials, check if all materials are completed
                     Long completedMaterials = materialProgressRepository.countCompletedMaterialsInComponent(component, user);
@@ -163,8 +162,8 @@ public class ModuleFlowController {
                 boolean isCompleted = false;
                 
                 // Check completion based on component type
-                if (component.getType() == ComponentType.LEARNING_MATERIAL || 
-                    component.getType() == ComponentType.LEARNING_MATERIALS) {
+                if (component.getType() == ComponentType.LEARNING_MATERIAL
+                    ) {
                     
                     // For learning materials, check if all materials are completed
                     Long completedMaterials = materialProgressRepository.countCompletedMaterialsInComponent(component, user);

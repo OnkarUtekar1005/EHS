@@ -102,27 +102,7 @@ public class ProgressTrackingService {
      * @param progress The progress percentage (0-100)
      * @return Map with status and component progress
      */
-    public Map<String, Object> trackMaterialProgress(UUID userId, UUID materialId, double progress) {
-        // Here you would update a UserMaterialProgress table
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("status", "tracked");
-        result.put("materialProgress", progress);
-        
-        // Calculate component progress based on material completion
-        LearningMaterial material = materialRepository.findById(materialId).orElse(null);
-        if (material != null) {
-            ModuleComponent component = material.getComponent();
-            List<LearningMaterial> allMaterials = 
-                materialRepository.findByComponentOrderBySequenceOrderAsc(component);
-            
-            // In a real implementation, you'd aggregate progress across all materials
-            // Here we're just returning a placeholder
-            result.put("componentProgress", 50.0); // Placeholder value
-        }
-        
-        return result;
-    }
+
     
     /**
      * Get a user's progress across all modules

@@ -400,6 +400,7 @@ public class TrainingModuleController {
     public ResponseEntity<?> createModule(@Valid @RequestBody ModuleRequest moduleRequest) {
         try {
             // Get current user as creator
+        	System.out.println("Received module request: " + moduleRequest);
             UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext()
                     .getAuthentication().getPrincipal();
             Optional<Users> user = userRepository.findById(userDetails.getId());

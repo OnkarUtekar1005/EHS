@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -53,10 +55,9 @@ public class LearningMaterial {
     @GeneratedValue
     private UUID id;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "component_id", nullable = false)
+    @OneToMany(mappedBy = "material", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
-    private ModuleComponent component;
+    private Set<ComponentMaterialAssociation> componentAssociations = new HashSet<>();
     
     @NotBlank
     @Size(max = 100)
@@ -99,13 +100,13 @@ public class LearningMaterial {
     public void setId(UUID id) {
         this.id = id;
     }
-
-    public ModuleComponent getComponent() {
-        return component;
+    
+    public Set<ComponentMaterialAssociation> getComponentAssociations() {
+        return componentAssociations;
     }
 
-    public void setComponent(ModuleComponent component) {
-        this.component = component;
+    public void setComponentAssociations(Set<ComponentMaterialAssociation> componentAssociations) {
+        this.componentAssociations = componentAssociations;
     }
 
     public String getTitle() {
@@ -174,5 +175,15 @@ public class LearningMaterial {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+    
+    public void addComponentAssociation(ComponentMaterialAssociation association) {
+        componentAssociations.add(association);
+        association.setMaterial(this);
+    }
+
+    public void removeComponentAssociation(ComponentMaterialAssociation association) {
+        componentAssociations.remove(association);
+        association.setMaterial(null);
     }
 }

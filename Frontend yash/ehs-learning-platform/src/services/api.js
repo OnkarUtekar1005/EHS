@@ -223,26 +223,40 @@ export const progressService = {
 };
 
 // Learning Material services
+// Updated learningMaterialService from src/services/api.js
+
 export const learningMaterialService = {
   // Get all learning materials for a component
-  getMaterialsByComponent: (componentId) => api.get(`/components/${componentId}/materials`),
+  getMaterialsByComponent: (componentId) => {
+    console.log("[API] Getting materials for component:", componentId);
+    return api.get(`/components/${componentId}/materials`);
+  },
   
   // Get materials with progress information
-  getMaterialsWithProgress: (componentId) => api.get(`/components/${componentId}/materials/progress`),
+  getMaterialsWithProgress: (componentId) => {
+    console.log("[API] Getting materials with progress for component:", componentId);
+    return api.get(`/components/${componentId}/materials/progress`);
+  },
   
   // Get a specific material by ID
-  getMaterialById: (materialId) => api.get(`/materials/${materialId}`),
+  getMaterialById: (materialId) => {
+    console.log("[API] Getting material by ID:", materialId);
+    return api.get(`/materials/${materialId}`);
+  },
   
   // Get material with user progress
-  getMaterialWithProgress: (materialId) => api.get(`/materials/${materialId}/progress`),
+  getMaterialWithProgress: (materialId) => {
+    console.log("[API] Getting material with progress by ID:", materialId);
+    return api.get(`/materials/${materialId}/progress`);
+  },
   
-  // Add file-based learning material
-  
-  // Use the specific material upload endpoint
+  // Add file-based learning material - UPDATED to match controller endpoint
   uploadMaterial: (componentId, file, data) => {
+    console.log("[API] Uploading material file for component:", componentId);
+    console.log("[API] File details:", file.name, file.type, file.size);
+    
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('componentId', componentId);
     formData.append('title', data.title);
     
     if (data.description) {
@@ -253,8 +267,8 @@ export const learningMaterialService = {
       formData.append('estimatedDuration', data.estimatedDuration);
     }
     
-    // Changed from "upload" to "uploads" to match the controller
-    return api.post(`/components/learning/materials/upload`, formData, {
+    // Use the endpoint that matches the controller
+    return api.post(`/components/${componentId}/materials/file`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -263,6 +277,7 @@ export const learningMaterialService = {
   
   // Add content-based learning material (HTML, rich text)
   addContentMaterial: (componentId, data) => {
+    console.log("[API] Adding content material for component:", componentId);
     return api.post(`/components/${componentId}/materials/content`, {
       title: data.title,
       description: data.description,
@@ -273,6 +288,7 @@ export const learningMaterialService = {
   
   // Add external URL learning material (videos, websites)
   addExternalMaterial: (componentId, data) => {
+    console.log("[API] Adding external material for component:", componentId);
     return api.post(`/components/${componentId}/materials/external`, {
       title: data.title,
       description: data.description,
@@ -284,6 +300,7 @@ export const learningMaterialService = {
   
   // Update learning material
   updateMaterial: (materialId, data) => {
+    console.log("[API] Updating material:", materialId);
     return api.put(`/materials/${materialId}`, {
       title: data.title,
       description: data.description,
@@ -296,11 +313,14 @@ export const learningMaterialService = {
   
   // Delete learning material
   deleteMaterial: (materialId) => {
+    console.log("[API] Deleting material:", materialId);
     return api.delete(`/materials/${materialId}`);
   },
   
   // Reorder learning materials
   reorderMaterials: (componentId, materialOrder) => {
+    console.log("[API] Reordering materials for component:", componentId);
+    console.log("[API] New order:", materialOrder);
     return api.put(`/components/${componentId}/materials/reorder`, {
       materialOrder
     });
@@ -308,6 +328,7 @@ export const learningMaterialService = {
   
   // Stream or download a learning material file
   streamFile: (materialId) => {
+    console.log("[API] Streaming file for material:", materialId);
     return api.get(`/materials/${materialId}/stream`, {
       responseType: 'blob'
     });
@@ -315,8 +336,121 @@ export const learningMaterialService = {
   
   // Update material progress
   updateProgress: (materialId, progressData) => {
+    console.log("[API] Updating progress for material:", materialId);
     return api.post(`/materials/${materialId}/update-progress`, progressData);
   }
 };
+
+// Material Library Service - Add to src/services/api.js
+
+export const materialLibraryService = {
+  // Get all materials from library with filtering/pagination
+  getAll: (params) => {
+    console.log("[API] Getting all materials from library with params:", params);
+    return api.get('/material-library', { params });
+  },
+  
+  // Get a specific material by ID
+  getById: (materialId) => {
+    console.log("[API] Getting material from library by ID:", materialId);
+    return api.get(`/material-library/${materialId}`);
+  },
+  
+  // Upload a file-based material to the library
+  uploadFile: (data) => {
+    console.log("[API] Uploading file to material library:", data.title);
+    
+    const formData = new FormData();
+    formData.append('file', data.file);
+    formData.append('title', data.title);
+    
+    if (data.description) {
+      formData.append('description', data.description);
+    }
+    
+    if (data.estimatedDuration) {
+      formData.append('estimatedDuration', data.estimatedDuration);
+    }
+    
+    return api.post('/material-library/file', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+  
+  // Create HTML content material
+  createContent: (data) => {
+    console.log("[API] Creating content material in library:", data.title);
+    return api.post('/material-library/content', {
+      title: data.title,
+      description: data.description,
+      content: data.content,
+      estimatedDuration: data.estimatedDuration
+    });
+  },
+  
+  // Create external URL material
+  createExternal: (data) => {
+    console.log("[API] Creating external URL material in library:", data.title);
+    return api.post('/material-library/external', {
+      title: data.title,
+      description: data.description,
+      fileType: data.fileType,
+      externalUrl: data.externalUrl,
+      estimatedDuration: data.estimatedDuration
+    });
+  },
+  
+  // Update existing material
+  update: (materialId, data) => {
+    console.log("[API] Updating material in library:", materialId);
+    return api.put(`/material-library/${materialId}`, {
+      title: data.title,
+      description: data.description,
+      content: data.content,
+      externalUrl: data.externalUrl,
+      estimatedDuration: data.estimatedDuration
+    });
+  },
+  
+  // Delete a material
+  delete: (materialId) => {
+    console.log("[API] Deleting material from library:", materialId);
+    return api.delete(`/material-library/${materialId}`);
+  },
+  
+  // Get where a material is used
+  getUsage: (materialId) => {
+    console.log("[API] Getting usage for material:", materialId);
+    return api.get(`/material-library/${materialId}/components`);
+  },
+  
+  // Associate a material with a component
+  associateMaterialWithComponent: (componentId, materialId, sequenceOrder = 0) => {
+    console.log(`[API] Associating material ${materialId} with component ${componentId}`);
+    return api.post(`/material-library/${materialId}/components/${componentId}`, { sequenceOrder });
+  },
+  
+  // Associate multiple materials with a component in bulk (custom endpoint - may need backend adjustment)
+  associateMaterialsWithComponent: (componentId, materialIds) => {
+    console.log(`[API] Associating ${materialIds.length} materials with component ${componentId}`);
+    
+    // Make multiple API calls - one for each association
+    // Here we create a sequence of promises and execute them one by one
+    return materialIds.reduce((promise, materialId, index) => {
+      return promise.then(() => {
+        return materialLibraryService.associateMaterialWithComponent(componentId, materialId, index + 1);
+      });
+    }, Promise.resolve());
+  },
+  
+  // Disassociate a material from a component
+  disassociateMaterialFromComponent: (componentId, materialId) => {
+    console.log(`[API] Disassociating material ${materialId} from component ${componentId}`);
+    return api.delete(`/material-library/${materialId}/components/${componentId}`);
+  }
+};
+
 
 export default api;

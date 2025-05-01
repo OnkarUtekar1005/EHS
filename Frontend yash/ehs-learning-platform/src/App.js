@@ -37,6 +37,8 @@ import AdminReports from './pages/admin/AdminReports';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminProfile from './pages/admin/AdminProfile';
 
+
+
 // Auth Pages
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
@@ -80,7 +82,7 @@ const theme = createTheme({
     },
     MuiDrawer: {
       styleOverrides: {
-        paper: {
+        paper: {    
           backgroundColor: '#ffffff',
         },
       },

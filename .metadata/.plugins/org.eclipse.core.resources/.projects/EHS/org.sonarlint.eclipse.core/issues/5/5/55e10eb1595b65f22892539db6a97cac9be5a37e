@@ -1,9 +1,9 @@
 
-q	java:S112"FDefine and throw a dedicated exception instead of using a generic one.(û¦÷§H‰RMAJORZ
+¼
+java:S4449("Annotate the parameter with @javax.annotation.Nullable in method 'cleanPath' declaration, or make sure that null can not be passed as argument.(ñHÇ%RMAJORZ
+CODE_SMELL
+q	java:S112"FDefine and throw a dedicated exception instead of using a generic one.(û¦÷§HÉ%RMAJORZ
 CODE_SMELL
 U
-java:S1128")Remove this unused import 'java.io.File'.(†Ğ¥ÅHŠRMINORZ
-CODE_SMELL
-¼
-java:S4449("Annotate the parameter with @javax.annotation.Nullable in method 'cleanPath' declaration, or make sure that null can not be passed as argument.(ñHŒRMAJORZ
+java:S1128")Remove this unused import 'java.io.File'.(†Ğ¥ÅHÊ%RMINORZ
 CODE_SMELL

@@ -1,5 +1,5 @@
 // src/components/layout/AdminLayout.js
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { 
   Box, 
@@ -19,7 +19,9 @@ import {
   Menu,
   MenuItem,
   Container,
-  Divider
+  Divider,
+  Badge,
+  Tooltip
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
@@ -39,161 +41,98 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
-const drawerWidth = 240;
+
+// Constants
+const DRAWER_WIDTH = 240;
 
 const AdminLayout = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { logout } = useAuth();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { logout, currentUser } = useAuth();
   
+  // Initialize drawer state based on screen size
   const [open, setOpen] = useState(!isMobile);
   const [anchorEl, setAnchorEl] = useState(null);
   const isMenuOpen = Boolean(anchorEl);
+  const [notificationCount, setNotificationCount] = useState(3); // Example notification count
 
-  // Handle drawer open/close
-  const handleDrawerToggle = () => {
-    setOpen(!open);
-  };
+  // Update drawer state when screen size changes
+  useEffect(() => {
+    setOpen(!isMobile);
+  }, [isMobile]);
+
+  // Memoize navigation items to prevent unnecessary re-renders
+  const navigationItems = useMemo(() => [
+    { path: '/admin', icon: <DashboardIcon />, label: 'Dashboard' },
+    { path: '/admin/modules', icon: <MenuBookIcon />, label: 'Modules' },
+    { path: '/admin/materials', icon: <LibraryBooksIcon />, label: 'Learning Materials' },
+    { path: '/admin/users', icon: <PeopleIcon />, label: 'Users' },
+    { path: '/admin/domains', icon: <CategoryIcon />, label: 'Domains' },
+    { path: '/admin/reports', icon: <AssessmentIcon />, label: 'Reports' },
+    { path: '/admin/settings', icon: <SettingsIcon />, label: 'Settings' }
+  ], []);
+
+  const quickActions = useMemo(() => [
+    { path: '/admin/modules/create', icon: <AddCircleOutlineIcon />, label: 'New Module' },
+    { path: '/admin/users/new', icon: <PersonAddIcon />, label: 'New User' },
+    { path: '/admin/reports/generate', icon: <BarChartIcon />, label: 'Run Reports' }
+  ], []);
+
+  // Use callbacks for event handlers to prevent unnecessary re-renders
+  const handleDrawerToggle = useCallback(() => {
+    setOpen(prevOpen => !prevOpen);
+  }, []);
   
-  // Handle profile menu
-  const handleProfileMenuOpen = (event) => {
+  const handleProfileMenuOpen = useCallback((event) => {
     setAnchorEl(event.currentTarget);
-  };
+  }, []);
 
-  const handleMenuClose = () => {
+  const handleMenuClose = useCallback(() => {
     setAnchorEl(null);
-  };
+  }, []);
 
-  // Handle logout - Updated to use AuthContext
-  const handleLogout = () => {
-    // Close the menu first
+  const handleLogout = useCallback(() => {
     handleMenuClose();
-    
-    // Use the AuthContext's logout function to clear state
     logout();
-    
-    // Then navigate to login
     navigate('/login', { replace: true });
-  };
+  }, [handleMenuClose, logout, navigate]);
 
-  // Handle profile navigation
-  const handleProfile = () => {
+  const handleProfile = useCallback(() => {
     handleMenuClose();
     navigate('/admin/profile');
-  };
+  }, [handleMenuClose, navigate]);
 
-  // Admin Sidebar content
-  const drawer = (
+  // Memoize drawer content to prevent unnecessary re-renders
+  const drawer = useMemo(() => (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {isMobile && (
         <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
-          <IconButton onClick={handleDrawerToggle}>
+          <IconButton onClick={handleDrawerToggle} aria-label="Close menu">
             <KeyboardArrowLeftIcon />
           </IconButton>
         </Box>
       )}
       
-      <List sx={{ mt: 2 }}>
-        {/* Main Navigation */}
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/admin"
-            selected={location.pathname === '/admin'}
-            className="sidebar-list-item"
-          >
-            <ListItemIcon>
-              <DashboardIcon />
-            </ListItemIcon>
-            <ListItemText primary="Dashboard" />
-          </ListItemButton>
-        </ListItem>
-        
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/admin/modules"
-            selected={location.pathname.startsWith('/admin/modules')}
-            className="sidebar-list-item"
-          >
-            <ListItemIcon>
-              <MenuBookIcon />
-            </ListItemIcon>
-            <ListItemText primary="Modules" />
-          </ListItemButton>
-        </ListItem>
-        
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/admin/materials"
-            selected={location.pathname.startsWith('/admin/materials')}
-            className="sidebar-list-item"
-          >
-            <ListItemIcon>
-              <span className="material-icons">library_books</span>
-            </ListItemIcon>
-            <ListItemText primary="Learning Materials" />
-          </ListItemButton>
-        </ListItem>
-        
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/admin/users"
-            selected={location.pathname.startsWith('/admin/users')}
-            className="sidebar-list-item"
-          >
-            <ListItemIcon>
-              <PeopleIcon />
-            </ListItemIcon>
-            <ListItemText primary="Users" />
-          </ListItemButton>
-        </ListItem>
-        
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/admin/domains"
-            selected={location.pathname.startsWith('/admin/domains')}
-            className="sidebar-list-item"
-          >
-            <ListItemIcon>
-              <CategoryIcon />
-            </ListItemIcon>
-            <ListItemText primary="Domains" />
-          </ListItemButton>
-        </ListItem>
-        
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/admin/reports"
-            selected={location.pathname.startsWith('/admin/reports')}
-            className="sidebar-list-item"
-          >
-            <ListItemIcon>
-              <AssessmentIcon />
-            </ListItemIcon>
-            <ListItemText primary="Reports" />
-          </ListItemButton>
-        </ListItem>
-        
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/admin/settings"
-            selected={location.pathname.startsWith('/admin/settings')}
-            className="sidebar-list-item"
-          >
-            <ListItemIcon>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Settings" />
-          </ListItemButton>
-        </ListItem>
+      <List component="nav" aria-label="Main navigation" sx={{ mt: 2 }}>
+        {navigationItems.map(item => (
+          <ListItem key={item.path} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={item.path}
+              selected={
+                item.path === '/admin' 
+                  ? location.pathname === '/admin'
+                  : location.pathname.startsWith(item.path)
+              }
+              className="sidebar-list-item"
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.label} />
+            </ListItemButton>
+          </ListItem>
+        ))}
       </List>
       
       <Divider sx={{ my: 2 }} />
@@ -208,48 +147,22 @@ const AdminLayout = () => {
         </Typography>
       </Box>
       
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/admin/modules/create"
-            className="sidebar-list-item"
-          >
-            <ListItemIcon>
-              <AddCircleOutlineIcon />
-            </ListItemIcon>
-            <ListItemText primary="New Module" />
-          </ListItemButton>
-        </ListItem>
-        
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/admin/users/new"
-            className="sidebar-list-item"
-          >
-            <ListItemIcon>
-              <PersonAddIcon />
-            </ListItemIcon>
-            <ListItemText primary="New User" />
-          </ListItemButton>
-        </ListItem>
-        
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/admin/reports/generate"
-            className="sidebar-list-item"
-          >
-            <ListItemIcon>
-              <BarChartIcon />
-            </ListItemIcon>
-            <ListItemText primary="Run Reports" />
-          </ListItemButton>
-        </ListItem>
+      <List component="nav" aria-label="Quick actions">
+        {quickActions.map(action => (
+          <ListItem key={action.path} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={action.path}
+              className="sidebar-list-item"
+            >
+              <ListItemIcon>{action.icon}</ListItemIcon>
+              <ListItemText primary={action.label} />
+            </ListItemButton>
+          </ListItem>
+        ))}
       </List>
     </Box>
-  );
+  ), [navigationItems, quickActions, isMobile, handleDrawerToggle, location.pathname]);
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
@@ -267,7 +180,7 @@ const AdminLayout = () => {
         <Toolbar>
           <IconButton
             color="inherit"
-            aria-label="open drawer"
+            aria-label={open ? "close drawer" : "open drawer"}
             edge="start"
             onClick={handleDrawerToggle}
             sx={{ mr: 2 }}
@@ -277,24 +190,38 @@ const AdminLayout = () => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             EHS E-Learning Platform - Admin Dashboard
           </Typography>
-          <IconButton
-            size="large"
-            aria-label="show notifications"
-            color="inherit"
-          >
-            <NotificationsIcon />
-          </IconButton>
-          <IconButton
-            size="large"
-            edge="end"
-            aria-label="account"
-            aria-controls="menu-appbar"
-            aria-haspopup="true"
-            onClick={handleProfileMenuOpen}
-            color="inherit"
-          >
-            <Avatar sx={{ width: 32, height: 32 }} />
-          </IconButton>
+          
+          <Tooltip title="Notifications">
+            <IconButton
+              size="large"
+              aria-label={`show ${notificationCount} notifications`}
+              color="inherit"
+            >
+              <Badge badgeContent={notificationCount} color="error">
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Account">
+            <IconButton
+              size="large"
+              edge="end"
+              aria-label="account"
+              aria-controls="menu-appbar"
+              aria-haspopup="true"
+              onClick={handleProfileMenuOpen}
+              color="inherit"
+            >
+              <Avatar 
+                sx={{ width: 32, height: 32 }} 
+                alt={currentUser?.name || 'User'}
+                src={currentUser?.profileImage}
+              >
+                {!currentUser?.profileImage && currentUser?.name?.charAt(0)}
+              </Avatar>
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
       
@@ -324,50 +251,53 @@ const AdminLayout = () => {
         open={open}
         onClose={isMobile ? handleDrawerToggle : undefined}
         sx={{
-          width: drawerWidth,
+          width: open ? DRAWER_WIDTH : 0,
           flexShrink: 0,
           [`& .MuiDrawer-paper`]: { 
-            width: drawerWidth, 
+            width: DRAWER_WIDTH, 
             boxSizing: 'border-box',
             top: '64px',
             height: 'calc(100% - 64px)',
             backgroundColor: '#FFFFFF',
             borderRight: '1px solid rgba(0, 0, 0, 0.12)'
           },
+          transition: theme.transitions.create(['width'], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
+        }}
+        ModalProps={{
+          keepMounted: true, // Better mobile performance
         }}
       >
         {drawer}
       </Drawer>
       
-      {/* Main content */}
+      {/* Main content - FIXED ALIGNMENT ISSUE */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           pt: 3,
-          px: { xs: 2, sm: 3 },
-          width: '100%',
+          width: { 
+            xs: '100%',
+            md: open ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%'
+          },
           mt: '64px',
-          transition: theme.transitions.create(['padding', 'margin'], {
+          transition: theme.transitions.create(['width', 'margin'], {
             easing: theme.transitions.easing.easeOut,
             duration: theme.transitions.duration.enteringScreen,
           }),
-          display: 'flex',
-          justifyContent: 'center',
         }}
       >
         <Container 
           sx={{ 
             maxWidth: {
               xs: '100%',
-              sm: open ? 'md' : 'lg',
-              md: open ? 'lg' : 'xl',
+              md: 'lg',
+              lg: 'xl'
             },
-            px: 0,
-            transition: theme.transitions.create('max-width', {
-              easing: theme.transitions.easing.easeOut,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
+            px: { xs: 2, sm: 3 },
           }}
         >
           <Outlet />
@@ -377,4 +307,4 @@ const AdminLayout = () => {
   );
 };
 
-export default AdminLayout;
+export default React.memo(AdminLayout);

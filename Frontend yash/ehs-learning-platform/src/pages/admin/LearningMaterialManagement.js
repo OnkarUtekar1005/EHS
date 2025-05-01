@@ -1,15 +1,12 @@
-
 // src/pages/admin/LearningMaterialManagement.js
 import React, { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Grid,
   Paper,
+  Button,
+  TextField,
+  Box,
   Table,
   TableBody,
   TableCell,
@@ -17,235 +14,288 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Chip,
-  Select,
-  MenuItem,
   FormControl,
   InputLabel,
-  TextField,
+  Select,
+  MenuItem,
+  Pagination,
   CircularProgress,
   Alert,
+  Chip,
+  Card,
+  CardContent,
+  CardActions,
+  Grid,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Tooltip
 } from '@mui/material';
 import {
-  Add as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
-  CloudUpload as UploadIcon,
-  FilterList as FilterIcon,
+  Add as AddIcon,
   Search as SearchIcon,
-  VideoLibrary as VideoIcon,
-  PictureAsPdf as PdfIcon,
-  Slideshow as PresentationIcon,
-  Description as DocumentIcon,
-  Code as HtmlIcon,
+  Delete as DeleteIcon,
+  Visibility as VisibilityIcon,
   Link as LinkIcon,
-  Image as ImageIcon
+  Upload as UploadIcon,
+  Code as CodeIcon,
+  PictureAsPdf as PdfIcon,
+  Image as ImageIcon,
+  VideoLibrary as VideoIcon,
+  MoreVert as MoreVertIcon,
+  Description as DocumentIcon
 } from '@mui/icons-material';
-import { learningMaterialService, componentService } from '../../services/api';
-import LearningMaterialCreator from './LearningMaterialCreator';
+import { useNavigate } from 'react-router-dom';
+import { materialLibraryService } from '../../services/api';
+import MaterialEditor from './MaterialEditor';
+
+// Material type constants
+const MATERIAL_TYPES = {
+  PDF: "PDF",
+  VIDEO: "VIDEO",
+  PRESENTATION: "PRESENTATION",
+  DOCUMENT: "DOCUMENT",
+  HTML: "HTML",
+  IMAGE: "IMAGE",
+  EXTERNAL: "EXTERNAL"
+};
 
 const LearningMaterialManagement = () => {
+  const navigate = useNavigate();
+  
   // State
-  const [loading, setLoading] = useState(false);
-  const [components, setComponents] = useState([]);
-  const [selectedComponent, setSelectedComponent] = useState(null);
-  const [materials, setMaterials] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [materials, setMaterials] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [totalPages, setTotalPages] = useState(1);
   
-  // Dialog state
-  const [openDialog, setOpenDialog] = useState(false);
-  const [dialogType, setDialogType] = useState('');
-  const [selectedMaterial, setSelectedMaterial] = useState(null);
+  // Material editor dialog state
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [currentMaterial, setCurrentMaterial] = useState(null);
+  const [editorMode, setEditorMode] = useState('create'); // 'create' or 'edit'
   
-  // Initial load of components with learning materials
+  // Preview dialog state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewMaterial, setPreviewMaterial] = useState(null);
+  
+  // Component usage dialog state
+  const [usageOpen, setUsageOpen] = useState(false);
+  const [usageMaterial, setUsageMaterial] = useState(null);
+  const [usageComponents, setUsageComponents] = useState([]);
+  
+  // Load materials on component mount and when filters change
   useEffect(() => {
-    fetchComponents();
-  }, []);
+    fetchMaterials();
+  }, [page, typeFilter]);
   
-  // Load materials when a component is selected
-  useEffect(() => {
-    if (selectedComponent) {
-      fetchMaterials(selectedComponent.id);
-    }
-  }, [selectedComponent]);
-  
-  // Fetch all module components that can have learning materials
-  const fetchComponents = async () => {
+  // Fetch materials from API
+  const fetchMaterials = async () => {
     try {
       setLoading(true);
-      // This would be a real API call in production
-      // Mock data for demonstration
-      setComponents([
-        { id: '1', title: 'Fire Safety Basics', moduleTitle: 'Fire Safety', type: 'LEARNING_MATERIALS' },
-        { id: '2', title: 'Chemical Safety Materials', moduleTitle: 'Chemical Handling', type: 'LEARNING_MATERIALS' },
-        { id: '3', title: 'First Aid Resources', moduleTitle: 'First Aid', type: 'LEARNING_MATERIALS' }
-      ]);
-    } catch (err) {
-      console.error('Error fetching components:', err);
-      setError('Failed to load components');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  // Fetch materials for a component
-  const fetchMaterials = async (componentId) => {
-    try {
-      setLoading(true);
-      // This would be a real API call in production
-      // const response = await learningMaterialService.getMaterialsByComponent(componentId);
-      // setMaterials(response.data);
       
-      // Mock data for demonstration
-      setMaterials([
-        { 
-          id: 'm1', 
-          title: 'Fire Safety PDF Guide', 
-          description: 'Comprehensive guide for fire safety procedures', 
-          fileType: 'PDF',
-          estimatedDuration: 15,
-          sequenceOrder: 1
-        },
-        { 
-          id: 'm2', 
-          title: 'Fire Extinguisher Usage Video', 
-          description: 'Video showing proper fire extinguisher usage', 
-          fileType: 'VIDEO',
-          estimatedDuration: 8,
-          sequenceOrder: 2
-        },
-        { 
-          id: 'm3', 
-          title: 'Emergency Exit Procedures', 
-          description: 'HTML content with emergency exit instructions', 
-          fileType: 'HTML',
-          estimatedDuration: 5,
-          sequenceOrder: 3
-        }
-      ]);
+      // Prepare query parameters
+      const params = {
+        page: page - 1,  // API uses 0-indexed pages
+        size: itemsPerPage
+      };
+      
+      if (searchTerm) params.title = searchTerm;
+      if (typeFilter) params.fileType = typeFilter;
+      
+      const response = await materialLibraryService.getAll(params);
+      
+      // Check if headers are available for pagination info
+      if (response.headers && response.headers['x-total-count']) {
+        setTotalItems(parseInt(response.headers['x-total-count'], 10));
+        setTotalPages(parseInt(response.headers['x-total-pages'], 10));
+      }
+      
+      setMaterials(response.data);
     } catch (err) {
       console.error('Error fetching materials:', err);
-      setError('Failed to load learning materials');
+      setError('Failed to load materials. ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
   };
   
-  // Handle component selection
-  const handleComponentChange = (event) => {
-    const componentId = event.target.value;
-    const component = components.find(comp => comp.id === componentId);
-    setSelectedComponent(component);
+  // Handle search
+  const handleSearch = () => {
+    setPage(1);
+    fetchMaterials();
   };
   
-  // Handle search input change
-  const handleSearchChange = (event) => {
-    setSearchTerm(event.target.value);
+  // Handle filter changes
+  const handleTypeChange = (e) => {
+    setTypeFilter(e.target.value);
+    setPage(1);
   };
   
-  // Handle filter change
-  const handleFilterChange = (event) => {
-    setTypeFilter(event.target.value);
+  // Handle pagination
+  const handlePageChange = (event, value) => {
+    setPage(value);
   };
   
-  // Open dialog to add new material
-  const handleAddMaterial = () => {
-    setDialogType('add');
-    setSelectedMaterial(null);
-    setOpenDialog(true);
+  // Open material editor for creation
+  const handleCreateMaterial = () => {
+    setCurrentMaterial(null);
+    setEditorMode('create');
+    setEditorOpen(true);
   };
   
-  // Open dialog to edit material
+  // Open material editor for editing
   const handleEditMaterial = (material) => {
-    setDialogType('edit');
-    setSelectedMaterial(material);
-    setOpenDialog(true);
+    setCurrentMaterial(material);
+    setEditorMode('edit');
+    setEditorOpen(true);
   };
   
-  // Delete material
-   // Delete material
-   const handleDeleteMaterial = async (materialId) => {
-    // Use Dialog instead of confirm
-    if (window.confirm('Are you sure you want to delete this material? This action cannot be undone.')) {
+  // Handle material preview - using direct file access with cache busting
+  const handlePreviewMaterial = (material) => {
+    console.log("Previewing material:", material); // Debug logging
+    
+    // Make a clean copy for preview, add timestamp for cache busting
+    const previewMaterialCopy = { 
+      ...material,
+      timestamp: new Date().getTime() // Add timestamp to prevent caching issues
+    };
+    
+    setPreviewMaterial(previewMaterialCopy);
+    setPreviewOpen(true);
+    
+    // If it's an external link, open in new tab
+    if (material.fileType === MATERIAL_TYPES.EXTERNAL && material.externalUrl) {
+      window.open(material.externalUrl, '_blank');
+    }
+  };
+  
+  // Close preview dialog
+  const handleClosePreview = () => {
+    setPreviewOpen(false);
+  };
+  
+  // Show where a material is used
+  const handleShowUsage = async (material) => {
+    try {
+      setLoading(true);
+      const response = await materialLibraryService.getUsage(material.id);
+      setUsageMaterial(material);
+      setUsageComponents(response.data);
+      setUsageOpen(true);
+    } catch (err) {
+      console.error('Error fetching material usage:', err);
+      setError('Failed to load material usage information');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Close usage dialog
+  const handleCloseUsage = () => {
+    setUsageOpen(false);
+  };
+  
+  // Handle material deletion
+  const handleDeleteMaterial = async (material) => {
+    if (window.confirm(`Are you sure you want to delete "${material.title}"? This action cannot be undone.`)) {
       try {
         setLoading(true);
-        // await learningMaterialService.deleteMaterial(materialId);
-        
-        // Update local state (mock implementation)
-        setMaterials(materials.filter(m => m.id !== materialId));
-        setSuccess('Learning material deleted successfully');
+        await materialLibraryService.delete(material.id);
+        setSuccess(`Material "${material.title}" deleted successfully`);
+        fetchMaterials(); // Refresh the list
       } catch (err) {
         console.error('Error deleting material:', err);
-        setError('Failed to delete learning material');
+        setError('Failed to delete material. ' + (err.response?.data?.message || err.message));
       } finally {
         setLoading(false);
       }
     }
   };
   
-  // Close dialog
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-  };
-  
-  // Save material from dialog
-  const handleSaveMaterial = (updatedMaterials) => {
-    setMaterials(updatedMaterials);
-    setOpenDialog(false);
-    setSuccess('Learning materials saved successfully');
-  };
-  
   // Get icon for material type
   const getMaterialIcon = (type) => {
     switch (type) {
-      case 'PDF':
+      case MATERIAL_TYPES.PDF:
         return <PdfIcon />;
-      case 'VIDEO':
+      case MATERIAL_TYPES.VIDEO:
         return <VideoIcon />;
-      case 'PRESENTATION':
-        return <PresentationIcon />;
-      case 'DOCUMENT':
+      case MATERIAL_TYPES.PRESENTATION:
         return <DocumentIcon />;
-      case 'HTML':
-        return <HtmlIcon />;
-      case 'IMAGE':
-        return <ImageIcon />;
-      case 'EXTERNAL':
+      case MATERIAL_TYPES.DOCUMENT:
+        return <DocumentIcon />;
+      case MATERIAL_TYPES.HTML:
+        return <CodeIcon />;
+      case MATERIAL_TYPES.EXTERNAL:
         return <LinkIcon />;
+      case MATERIAL_TYPES.IMAGE:
+        return <ImageIcon />;
       default:
         return <DocumentIcon />;
     }
   };
   
-  // Filter materials based on search and type filter
-  const filteredMaterials = materials.filter(material => {
-    const matchesSearch = !searchTerm || 
-      material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (material.description && material.description.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Handle save in material editor
+  const handleSaveMaterial = async (materialData) => {
+    try {
+      setLoading(true);
+      
+      if (editorMode === 'create') {
+        // Create new material
+        if (materialData.file) {
+          await materialLibraryService.uploadFile(materialData);
+        } else if (materialData.externalUrl) {
+          await materialLibraryService.createExternal(materialData);
+        } else if (materialData.content) {
+          await materialLibraryService.createContent(materialData);
+        }
+      } else {
+        // Update existing material
+        await materialLibraryService.update(currentMaterial.id, materialData);
+      }
+      
+      setSuccess(editorMode === 'create' 
+        ? 'Material created successfully' 
+        : 'Material updated successfully');
+        
+      setEditorOpen(false);
+      fetchMaterials(); // Refresh the list
+    } catch (err) {
+      console.error('Error saving material:', err);
+      setError('Failed to save material. ' + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Function to get file preview URL with cache busting
+  const getFileUrl = (filePath) => {
+    if (!filePath) return null;
     
-    const matchesType = !typeFilter || material.fileType === typeFilter;
+    // Extract just the filename from the path
+    const filename = filePath.split('/').pop();
     
-    return matchesSearch && matchesType;
-  });
+    // Add cache busting parameter
+    return `/api/files/${filename}?t=${new Date().getTime()}`;
+  };
   
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Learning Materials Management</Typography>
+        <Typography variant="h4">Learning Materials Library</Typography>
         <Button 
           variant="contained" 
           startIcon={<AddIcon />}
-          onClick={handleAddMaterial}
-          disabled={!selectedComponent}
+          onClick={handleCreateMaterial}
         >
-          Add Material
+          New Material
         </Button>
       </Box>
       
@@ -262,155 +312,337 @@ const LearningMaterialManagement = () => {
       )}
       
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Box mb={3}>
-          <Typography variant="h6" gutterBottom>
-            Select Component
-          </Typography>
+        <Box display="flex" flexWrap="wrap" gap={2} mb={2}>
+          <TextField
+            label="Search Materials"
+            variant="outlined"
+            size="small"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            InputProps={{
+              endAdornment: (
+                <IconButton size="small" onClick={handleSearch}>
+                  <SearchIcon />
+                </IconButton>
+              )
+            }}
+            sx={{ flexGrow: 1, minWidth: '200px' }}
+          />
           
-          <FormControl fullWidth>
-            <InputLabel id="component-select-label">Learning Materials Component</InputLabel>
+          <FormControl size="small" sx={{ minWidth: '150px' }}>
+            <InputLabel>Type</InputLabel>
             <Select
-              labelId="component-select-label"
-              value={selectedComponent ? selectedComponent.id : ''}
-              onChange={handleComponentChange}
-              label="Learning Materials Component"
+              value={typeFilter}
+              label="Type"
+              onChange={handleTypeChange}
             >
-              <MenuItem value="">
-                <em>Select a component</em>
-              </MenuItem>
-              {components.map((component) => (
-                <MenuItem key={component.id} value={component.id}>
-                  {component.moduleTitle} - {component.title}
-                </MenuItem>
-              ))}
+              <MenuItem value="">All Types</MenuItem>
+              <MenuItem value={MATERIAL_TYPES.PDF}>PDF</MenuItem>
+              <MenuItem value={MATERIAL_TYPES.VIDEO}>Video</MenuItem>
+              <MenuItem value={MATERIAL_TYPES.PRESENTATION}>Presentation</MenuItem>
+              <MenuItem value={MATERIAL_TYPES.DOCUMENT}>Document</MenuItem>
+              <MenuItem value={MATERIAL_TYPES.HTML}>HTML Content</MenuItem>
+              <MenuItem value={MATERIAL_TYPES.IMAGE}>Image</MenuItem>
+              <MenuItem value={MATERIAL_TYPES.EXTERNAL}>External Link</MenuItem>
             </Select>
           </FormControl>
         </Box>
         
-        {selectedComponent && (
+        {loading && !materials.length ? (
+          <Box display="flex" justifyContent="center" my={4}>
+            <CircularProgress />
+          </Box>
+        ) : (
           <>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6">
-                Materials for: {selectedComponent.title}
-              </Typography>
-              
-              <Box display="flex" gap={2}>
-                <TextField
-                  size="small"
-                  label="Search Materials"
-                  variant="outlined"
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  InputProps={{
-                    startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1 }} />
-                  }}
-                />
-                
-                <FormControl size="small" sx={{ minWidth: 150 }}>
-                  <InputLabel id="type-filter-label">Filter by Type</InputLabel>
-                  <Select
-                    labelId="type-filter-label"
-                    value={typeFilter}
-                    onChange={handleFilterChange}
-                    label="Filter by Type"
-                  >
-                    <MenuItem value="">All Types</MenuItem>
-                    <MenuItem value="PDF">PDF</MenuItem>
-                    <MenuItem value="VIDEO">Video</MenuItem>
-                    <MenuItem value="PRESENTATION">Presentation</MenuItem>
-                    <MenuItem value="DOCUMENT">Document</MenuItem>
-                    <MenuItem value="HTML">HTML Content</MenuItem>
-                    <MenuItem value="IMAGE">Image</MenuItem>
-                    <MenuItem value="EXTERNAL">External Link</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-            </Box>
-            
-            {loading ? (
-              <Box display="flex" justifyContent="center" my={4}>
-                <CircularProgress />
-              </Box>
-            ) : filteredMaterials.length === 0 ? (
-              <Box p={3} textAlign="center" border="1px dashed #ccc" borderRadius={1}>
-                <Typography color="textSecondary" paragraph>
-                  No learning materials found. Add your first material.
+            {materials.length === 0 ? (
+              <Box textAlign="center" py={4}>
+                <Typography variant="h6" color="textSecondary">
+                  No materials found
                 </Typography>
-                <Button
-                  variant="outlined"
-                  startIcon={<AddIcon />}
-                  onClick={handleAddMaterial}
+                <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                  Try adjusting your search or create a new material
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  startIcon={<AddIcon />} 
+                  sx={{ mt: 2 }}
+                  onClick={handleCreateMaterial}
                 >
-                  Add Learning Material
+                  Create Material
                 </Button>
               </Box>
             ) : (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Seq</TableCell>
-                      <TableCell>Type</TableCell>
-                      <TableCell>Title</TableCell>
-                      <TableCell>Description</TableCell>
-                      <TableCell>Duration</TableCell>
-                      <TableCell align="right">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredMaterials.map((material) => (
-                      <TableRow key={material.id}>
-                        <TableCell>{material.sequenceOrder}</TableCell>
-                        <TableCell>
-                          <Box display="flex" alignItems="center">
-                            {getMaterialIcon(material.fileType)}
-                            <Typography variant="body2" sx={{ ml: 1 }}>
-                              {material.fileType}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>{material.title}</TableCell>
-                        <TableCell>{material.description}</TableCell>
-                        <TableCell>{material.estimatedDuration} min</TableCell>
-                        <TableCell align="right">
-                          <IconButton 
-                            size="small" 
-                            onClick={() => handleEditMaterial(material)}
+              <Grid container spacing={3}>
+                {materials.map((material) => (
+                  <Grid item xs={12} sm={6} md={4} key={material.id}>
+                    <Card>
+                      <CardContent>
+                        <Box display="flex" alignItems="center" mb={1}>
+                          {getMaterialIcon(material.fileType)}
+                          <Typography variant="h6" sx={{ ml: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {material.title}
+                          </Typography>
+                        </Box>
+                        <Chip 
+                          label={material.fileType} 
+                          size="small" 
+                          sx={{ mb: 1 }}
+                        />
+                        {material.description && (
+                          <Typography 
+                            variant="body2" 
+                            color="textSecondary" 
+                            sx={{ 
+                              mb: 1, 
+                              height: '40px', 
+                              overflow: 'hidden', 
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical'
+                            }}
                           >
+                            {material.description}
+                          </Typography>
+                        )}
+                        <Typography variant="body2">
+                          Duration: {material.estimatedDuration || 0} min
+                        </Typography>
+                      </CardContent>
+                      <CardActions>
+                        <Tooltip title="Preview">
+                          <IconButton onClick={() => handlePreviewMaterial(material)}>
+                            <VisibilityIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Edit">
+                          <IconButton onClick={() => handleEditMaterial(material)}>
                             <EditIcon />
                           </IconButton>
-                          <IconButton 
-                            size="small" 
-                            onClick={() => handleDeleteMaterial(material.id)}
-                          >
+                        </Tooltip>
+                        <Tooltip title="Where Used">
+                          <IconButton onClick={() => handleShowUsage(material)}>
+                            <MoreVertIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton onClick={() => handleDeleteMaterial(material)}>
                             <DeleteIcon />
                           </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                        </Tooltip>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
             )}
+            
+            <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
+              <Typography variant="body2">
+                Showing {materials.length} of {totalItems} materials
+              </Typography>
+              <Pagination 
+                count={totalPages} 
+                page={page} 
+                onChange={handlePageChange} 
+                color="primary"
+              />
+            </Box>
           </>
         )}
       </Paper>
       
-      {/* Material Dialog */}
-      <Dialog
-        open={openDialog}
-        onClose={handleCloseDialog}
+      {/* Material Editor Dialog */}
+      <Dialog 
+        open={editorOpen} 
+        onClose={() => setEditorOpen(false)}
         fullWidth
-        maxWidth="lg"
+        maxWidth="md"
       >
         <DialogContent sx={{ p: 0 }}>
-          <LearningMaterialCreator
-            componentId={selectedComponent ? selectedComponent.id : null}
-            initialMaterials={materials}
+          <MaterialEditor
+            material={currentMaterial}
+            mode={editorMode}
             onSave={handleSaveMaterial}
-            onCancel={handleCloseDialog}
+            onCancel={() => setEditorOpen(false)}
           />
         </DialogContent>
+      </Dialog>
+      
+      {/* Material Preview Dialog - FIXED TO USE EXISTING FILE CONTROLLER */}
+      <Dialog
+        open={previewOpen}
+        onClose={handleClosePreview}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>
+          {previewMaterial?.title}
+        </DialogTitle>
+        <DialogContent>
+          {previewMaterial && (
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                {previewMaterial.fileType} • {previewMaterial.estimatedDuration || 0} min
+              </Typography>
+              
+              {previewMaterial.description && (
+                <Typography variant="body1" paragraph>
+                  {previewMaterial.description}
+                </Typography>
+              )}
+              
+              {/* Image Preview - USING FILE CONTROLLER */}
+              {previewMaterial.fileType === MATERIAL_TYPES.IMAGE && previewMaterial.filePath && (
+                <Box sx={{ textAlign: 'center', mt: 2 }}>
+                  <img 
+                    src={getFileUrl(previewMaterial.filePath)}
+                    alt={previewMaterial.title}
+                    style={{ maxWidth: '100%', maxHeight: '400px' }}
+                    onError={(e) => {
+                      console.error('Image failed to load:', e);
+                      e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
+                    }}
+                  />
+                </Box>
+              )}
+              
+              {/* PDF Preview - USING FILE CONTROLLER */}
+              {previewMaterial.fileType === MATERIAL_TYPES.PDF && previewMaterial.filePath && (
+                <Box sx={{ textAlign: 'center', mt: 2 }}>
+                  <iframe
+                    src={getFileUrl(previewMaterial.filePath)}
+                    width="100%"
+                    height="500px"
+                    title={previewMaterial.title}
+                    onError={(e) => {
+                      console.error("Failed to load PDF:", e);
+                    }}
+                  />
+                </Box>
+              )}
+              
+              {/* Video Preview - USING FILE CONTROLLER */}
+              {previewMaterial.fileType === MATERIAL_TYPES.VIDEO && (
+                <Box sx={{ textAlign: 'center', mt: 2 }}>
+                  {previewMaterial.externalUrl ? (
+                    <iframe
+                      src={previewMaterial.externalUrl}
+                      width="100%"
+                      height="400px"
+                      frameBorder="0"
+                      allowFullScreen
+                      title={previewMaterial.title}
+                    />
+                  ) : previewMaterial.filePath ? (
+                    <video 
+                      src={getFileUrl(previewMaterial.filePath)}
+                      controls
+                      width="100%"
+                      height="400px"
+                      title={previewMaterial.title}
+                      onError={(e) => {
+                        console.error("Failed to load video:", e);
+                      }}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <Typography>Video source not available</Typography>
+                  )}
+                </Box>
+              )}
+              
+              {/* HTML Content Preview */}
+              {previewMaterial.fileType === MATERIAL_TYPES.HTML && previewMaterial.content && (
+                <Box sx={{ mt: 2, border: '1px solid #eee', p: 2, borderRadius: 1 }}>
+                  <div dangerouslySetInnerHTML={{ __html: previewMaterial.content }} />
+                </Box>
+              )}
+              
+              {/* External Link Preview */}
+              {previewMaterial.fileType === MATERIAL_TYPES.EXTERNAL && previewMaterial.externalUrl && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body1">
+                    External Link: <a href={previewMaterial.externalUrl} target="_blank" rel="noopener noreferrer">
+                      {previewMaterial.externalUrl}
+                    </a>
+                  </Typography>
+                </Box>
+              )}
+              
+              {/* Document Preview - USING FILE CONTROLLER */}
+              {(previewMaterial.fileType === MATERIAL_TYPES.DOCUMENT || 
+                previewMaterial.fileType === MATERIAL_TYPES.PRESENTATION) && 
+                previewMaterial.filePath && (
+                <Box sx={{ textAlign: 'center', mt: 2 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Document preview not available in browser. Click the button below to open the document.
+                  </Typography>
+                  <Button 
+                    variant="contained" 
+                    onClick={() => window.open(getFileUrl(previewMaterial.filePath), '_blank')}
+                  >
+                    Open Document
+                  </Button>
+                </Box>
+              )}
+              
+              {/* Fallback if no content is available to preview */}
+              {!previewMaterial.filePath && !previewMaterial.externalUrl && !previewMaterial.content && 
+                previewMaterial.fileType !== MATERIAL_TYPES.EXTERNAL && previewMaterial.fileType !== MATERIAL_TYPES.HTML && (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  No preview content available for this material.
+                </Alert>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePreview}>Close</Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Material Usage Dialog */}
+      <Dialog
+        open={usageOpen}
+        onClose={handleCloseUsage}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>
+          Where "{usageMaterial?.title}" is Used
+        </DialogTitle>
+        <DialogContent>
+          {usageComponents.length === 0 ? (
+            <Typography variant="body1">
+              This material is not currently used in any modules.
+            </Typography>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Module</TableCell>
+                    <TableCell>Component</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {usageComponents.map((component, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{component.moduleName}</TableCell>
+                      <TableCell>{component.componentName}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseUsage}>Close</Button>
+        </DialogActions>
       </Dialog>
     </Container>
   );

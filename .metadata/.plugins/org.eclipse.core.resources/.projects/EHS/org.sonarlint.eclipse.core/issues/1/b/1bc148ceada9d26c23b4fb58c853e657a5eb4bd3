@@ -1,23 +1,15 @@
 
-r	java:S112¨"FDefine and throw a dedicated exception instead of using a generic one.(¡ÀëHÍRMAJORZ
-CODE_SMELL
-v	java:S112/"FDefine and throw a dedicated exception instead of using a generic one.(úöÊ«üÿÿÿÿHÉRMAJORZ
-CODE_SMELL
-v	java:S112y"FDefine and throw a dedicated exception instead of using a generic one.(¿•‹µıÿÿÿÿHÌRMAJORZ
-CODE_SMELL
-q	java:S112S"FDefine and throw a dedicated exception instead of using a generic one.(‡ëªÌHËRMAJORZ
-CODE_SMELL
-l	java:S107#"<Method has 8 parameters, which is greater than 7 authorized.(şğµáûÿÿÿÿHÒRMAJORZ
-CODE_SMELL
-p	java:S112G"FDefine and throw a dedicated exception instead of using a generic one.(®¬ğ(HÊRMAJORZ
-CODE_SMELL
-q	java:S112)"FDefine and throw a dedicated exception instead of using a generic one.(‡ëªÌHÈRMAJORZ
+m	java:S107õ"<Method has 8 parameters, which is greater than 7 authorized.(şğµáûÿÿÿÿH„,RMAJORZ
 CODE_SMELL
 †
-java:S3776t"RRefactor this method to reduce its Cognitive Complexity from 17 to the 15 allowed.(ñ¢ˆéÿÿÿÿÿHÓRCRITICALZ
+java:S6204À"RReplace this usage of 'Stream.collect(Collectors.toList())' with 'Stream.toList()'(ª™¨¹8ºá¿è2H‘,RMAJORZ
 CODE_SMELL
-U
-java:S5411"(Use a primitive boolean expression here.(§ÿ­ÇHÏRMINORZ
+†
+java:S3776P"RRefactor this method to reduce its Cognitive Complexity from 17 to the 15 allowed.(ñ¢ˆéÿÿÿÿÿH¨'RCRITICALZ
 CODE_SMELL
-r	java:S112É"FDefine and throw a dedicated exception instead of using a generic one.(¡ÀëHÎRMAJORZ
+T
+java:S5411k"(Use a primitive boolean expression here.(§ÿ­ÇH¥'RMINORZ
+CODE_SMELL
+o
+java:S1128"7Remove this unused import 'java.util.stream.Collector'.(ß‹ÎÓøÿÿÿÿ8§şá¿è2H¡,RMINORZ
 CODE_SMELL

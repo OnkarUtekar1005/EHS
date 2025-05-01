@@ -1,61 +1,57 @@
 
-Z
-java:S1452u"&Remove usage of generic wildcard type.(åÛ£³þÿÿÿÿHÎRCRITICALZ
+b
+java:S1452³"&Remove usage of generic wildcard type.(Î õ´ûÿÿÿÿ8¶÷Ûçç2Hä&RCRITICALZ
 CODE_SMELL
-‡
-java:S3776 "RRefactor this method to reduce its Cognitive Complexity from 18 to the 15 allowed.(ÑÚ‘ÆÿÿÿÿÿHÏRCRITICALZ
+o
+java:S1854v"<Remove this useless assignment to local variable "progress".(·Õˆë8¶÷Ûçç2Hç&RMAJORZ
 CODE_SMELL
-[
-java:S1452ç"&Remove usage of generic wildcard type.(õË­þÿÿÿÿHÝRCRITICALZ
+a
+java:S1452X"&Remove usage of generic wildcard type.(åÛ£³þÿÿÿÿ8¶÷Ûçç2Hâ&RCRITICALZ
 CODE_SMELL
-[
-java:S1452¹"&Remove usage of generic wildcard type.(õÅŒ–þÿÿÿÿHÞRCRITICALZ
+a
+java:S1452k"&Remove usage of generic wildcard type.(ÑÚ‘Æÿÿÿÿÿ8¶÷Ûçç2Hý&RCRITICALZ
 CODE_SMELL
-[
-java:S1452§"&Remove usage of generic wildcard type.(Î õ´ûÿÿÿÿHßRCRITICALZ
+b
+java:S1452ê"&Remove usage of generic wildcard type.(„šªÂþÿÿÿÿ8¶÷Ûçç2Há&RCRITICALZ
 CODE_SMELL
-[
-java:S1452Á"&Remove usage of generic wildcard type.(ïÏÅÿÿÿÿÿHàRCRITICALZ
+b
+java:S1452Ï"&Remove usage of generic wildcard type.(ïÏÅÿÿÿÿÿ8¶÷Ûçç2Hê&RCRITICALZ
 CODE_SMELL
-V
-java:S1452ú"&Remove usage of generic wildcard type.(³÷­ŠHáRCRITICALZ
+]
+java:S1452ç"&Remove usage of generic wildcard type.(³÷­Š8¶÷Ûçç2Hå&RCRITICALZ
 CODE_SMELL
-V
-java:S1452È"&Remove usage of generic wildcard type.(¸ÅÏ÷HâRCRITICALZ
+t
+java:S1128"BRemove this unused import 'com.ehs.elearning.model.ComponentType'.(•„½[8¶÷Ûçç2H'RMINORZ
 CODE_SMELL
-l
-java:S1612»"?Replace this lambda with method reference 'ResponseEntity::ok'.(¹«øÚHãRMINORZ
+r
+java:S1128":Remove this unused import 'com.ehs.elearning.model.Users'.(Ò¿ˆÿÿÿÿÿ8¶÷Ûçç2Hß&RMINORZ
 CODE_SMELL
-™
-java:S1192L"jDefine a constant instead of duplicating this literal "Component is not a learning material type" 6 times.(ÓøýHåRCRITICALZ
+b
+java:S1452Á"&Remove usage of generic wildcard type.(õÅŒ–þÿÿÿÿ8¶÷Ûçç2Hÿ&RCRITICALZ
 CODE_SMELL
-[
-java:S1452ð"&Remove usage of generic wildcard type.(„šªÂþÿÿÿÿHìRCRITICALZ
+]
+java:S1452…"&Remove usage of generic wildcard type.(ºÆñæ8¶÷Ûçç2Hþ&RCRITICALZ
 CODE_SMELL
-U
-java:S5411Ã"(Use a primitive boolean expression here.(§ÿ­ÇHíRMINORZ
+†
+java:S6204†"RReplace this usage of 'Stream.collect(Collectors.toList())' with 'Stream.toList()'(ª™¨¹8¶÷Ûçç2Hü&RMAJORZ
 CODE_SMELL
-V
-java:S1452Ÿ"&Remove usage of generic wildcard type.(±¾àHðRCRITICALZ
+`
+java:S1481v"-Remove this unused "progress" local variable.(·Õˆë8¶÷Ûçç2Hè&RMINORZ
 CODE_SMELL
-
-java:S6204¯"RReplace this usage of 'Stream.collect(Collectors.toList())' with 'Stream.toList()'(ª™¨¹HñRMAJORZ
+h
+java:S1128!"0Remove this unused import 'java.io.IOException'.(ªº»Úýÿÿÿÿ8¶÷Ûçç2HÝ&RMINORZ
 CODE_SMELL
-V
-java:S1452“"&Remove usage of generic wildcard type.(ºÆñæHòRCRITICALZ
+b
+java:S1452‡"&Remove usage of generic wildcard type.(õË­þÿÿÿÿ8¶÷Ûçç2Hã&RCRITICALZ
 CODE_SMELL
-[
-java:S1452 "&Remove usage of generic wildcard type.(ÑÚ‘ÆÿÿÿÿÿHóRCRITICALZ
+a
+java:S1452E"&Remove usage of generic wildcard type.(‚†»ùÿÿÿÿ8¶÷Ûçç2Hæ&RCRITICALZ
 CODE_SMELL
-V
-java:S1452¶"&Remove usage of generic wildcard type.(ƒ¬ªHôRCRITICALZ
+]
+java:S1452ö"&Remove usage of generic wildcard type.(±¾à8¶÷Ûçç2H€'RCRITICALZ
 CODE_SMELL
-‚
-java:S3776¶"RRefactor this method to reduce its Cognitive Complexity from 37 to the 15 allowed.(ƒ¬ªHõRCRITICALZ
+t	java:S125£"<This block of commented-out lines of code should be removed.(ù¹Á©ùÿÿÿÿ8‘œè¿è2HÅ,RMAJORZ
 CODE_SMELL
-[
-java:S1452ë"&Remove usage of generic wildcard type.(°ÊÒûÿÿÿÿH…RCRITICALZ
-CODE_SMELL
-Z
-java:S1452?"&Remove usage of generic wildcard type.(‚†»ùÿÿÿÿH†RCRITICALZ
+|
+java:S1128"DRemove this unused import 'com.ehs.elearning.model.ModuleComponent'.(¥Á®Îýÿÿÿÿ8‘œè¿è2Hñ,RMINORZ
 CODE_SMELL

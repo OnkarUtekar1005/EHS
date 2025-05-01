@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -39,6 +42,10 @@ public class ModuleComponent {
     private Boolean requiredToAdvance = true;
     
     private Integer estimatedDuration; // in minutes
+    
+    @OneToMany(mappedBy = "component", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private Set<ComponentMaterialAssociation> materialAssociations = new HashSet<>();
     
     // Constructors
     public ModuleComponent() {
@@ -115,5 +122,24 @@ public class ModuleComponent {
 
     public void setEstimatedDuration(Integer estimatedDuration) {
         this.estimatedDuration = estimatedDuration;
+    }
+    
+    public Set<ComponentMaterialAssociation> getMaterialAssociations() {
+        return materialAssociations;
+    }
+
+    public void setMaterialAssociations(Set<ComponentMaterialAssociation> materialAssociations) {
+        this.materialAssociations = materialAssociations;
+    }
+
+    // Helper methods
+    public void addMaterialAssociation(ComponentMaterialAssociation association) {
+        materialAssociations.add(association);
+        association.setComponent(this);
+    }
+
+    public void removeMaterialAssociation(ComponentMaterialAssociation association) {
+        materialAssociations.remove(association);
+        association.setComponent(null);
     }
 }
