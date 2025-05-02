@@ -1,15 +1,15 @@
 
-m	java:S107õ"<Method has 8 parameters, which is greater than 7 authorized.(şğµáûÿÿÿÿH„,RMAJORZ
+[
+java:S5411k"(Use a primitive boolean expression here.(§ÿ­Ç8·é2H€4RMINORZ
+CODE_SMELL
+t	java:S107õ"<Method has 8 parameters, which is greater than 7 authorized.(şğµáûÿÿÿÿ8·é2Hƒ4RMAJORZ
+CODE_SMELL
+
+java:S3776P"RRefactor this method to reduce its Cognitive Complexity from 17 to the 15 allowed.(ñ¢ˆéÿÿÿÿÿ8·é2H„4RCRITICALZ
 CODE_SMELL
 †
-java:S6204À"RReplace this usage of 'Stream.collect(Collectors.toList())' with 'Stream.toList()'(ª™¨¹8ºá¿è2H‘,RMAJORZ
-CODE_SMELL
-†
-java:S3776P"RRefactor this method to reduce its Cognitive Complexity from 17 to the 15 allowed.(ñ¢ˆéÿÿÿÿÿH¨'RCRITICALZ
-CODE_SMELL
-T
-java:S5411k"(Use a primitive boolean expression here.(§ÿ­ÇH¥'RMINORZ
+java:S6204À"RReplace this usage of 'Stream.collect(Collectors.toList())' with 'Stream.toList()'(ª™¨¹8·é2H‘4RMAJORZ
 CODE_SMELL
 o
-java:S1128"7Remove this unused import 'java.util.stream.Collector'.(ß‹ÎÓøÿÿÿÿ8§şá¿è2H¡,RMINORZ
+java:S1128"7Remove this unused import 'java.util.stream.Collector'.(ß‹ÎÓøÿÿÿÿ8·é2H’4RMINORZ
 CODE_SMELL

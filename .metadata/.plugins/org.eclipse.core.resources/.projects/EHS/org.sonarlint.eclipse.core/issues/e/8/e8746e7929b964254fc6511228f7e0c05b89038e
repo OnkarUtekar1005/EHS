@@ -1,10 +1,25 @@
 
-t
-java:S6208–"CMerge the previous cases into this one using comma-separated label.(ˆ¢ÔşÿÿÿÿH±RINFOZ
-CODE_SMELL
 o
-java:S6208"CMerge the previous cases into this one using comma-separated label.(ãËûìH³RINFOZ
+java:S6208"CMerge the previous cases into this one using comma-separated label.(ãËûìHş-RINFOZ
 CODE_SMELL
 “
-java:S11927"dDefine a constant instead of duplicating this literal "Component is not an assessment type" 3 times.(†…ÌîHµRCRITICALZ
+java:S11927"dDefine a constant instead of duplicating this literal "Component is not an assessment type" 3 times.(†…ÌîH€.RCRITICALZ
+CODE_SMELL
+t
+java:S6208–"CMerge the previous cases into this one using comma-separated label.(ˆ¢ÔşÿÿÿÿH„.RINFOZ
+CODE_SMELL
+a
+java:S1452-"&Remove usage of generic wildcard type.(ŞÚÄøÿÿÿÿ8îêÑé2H†.RCRITICALZ
+CODE_SMELL
+\
+java:S1452@"&Remove usage of generic wildcard type.(­¤ëÈ8îêÑé2H‡.RCRITICALZ
+CODE_SMELL
+\
+java:S1452m"&Remove usage of generic wildcard type.(¯‡›ä8îêÑé2Hˆ.RCRITICALZ
+CODE_SMELL
+]
+java:S1452"&Remove usage of generic wildcard type.(™ªŞ½8îêÑé2H‰.RCRITICALZ
+CODE_SMELL
+b
+java:S1452¨"&Remove usage of generic wildcard type.(ŞŠóøÿÿÿÿ8îêÑé2HŠ.RCRITICALZ
 CODE_SMELL

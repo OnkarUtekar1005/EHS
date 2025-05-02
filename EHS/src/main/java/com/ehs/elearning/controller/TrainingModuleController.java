@@ -31,6 +31,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 
 import java.util.*;
@@ -619,7 +620,9 @@ public class TrainingModuleController {
     }
     
     // Delete module
+ // Delete module
     @DeleteMapping("/modules/{id}")
+    @Transactional
     public ResponseEntity<MessageResponse> deleteModule(@PathVariable UUID id) {
         try {
             // Check if current user is authorized to delete this module
@@ -633,11 +636,36 @@ public class TrainingModuleController {
             }
             
             // Check if module exists
-            if (!moduleRepository.existsById(id)) {
+            Optional<TrainingModule> moduleOpt = moduleRepository.findById(id);
+            if (!moduleOpt.isPresent()) {
                 return ResponseEntity.notFound().build();
             }
             
-            moduleRepository.deleteById(id);
+            TrainingModule module = moduleOpt.get();
+            
+            // Get all components
+            List<ModuleComponent> components = componentRepository.findByTrainingModuleOrderBySequenceOrderAsc(module);
+            
+            // For each component, clean up related entities first
+            for (ModuleComponent component : components) {
+                // Delete questions for this component
+                List<Question> questions = questionRepository.findByComponentOrderBySequenceOrderAsc(component);
+                if (!questions.isEmpty()) {
+                    // Delete each question explicitly
+                    questionRepository.deleteAll(questions);
+                }
+                
+                // If there are material associations, handle them too
+                // You may need to inject the appropriate repository if not already present
+                // materialAssociationRepository.deleteByComponent(component);
+            }
+            
+            // Now delete components 
+            componentRepository.deleteAll(components);
+            
+            // Finally delete the module itself
+            moduleRepository.delete(module);
+            
             return ResponseEntity.ok(new MessageResponse("Module deleted successfully."));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
