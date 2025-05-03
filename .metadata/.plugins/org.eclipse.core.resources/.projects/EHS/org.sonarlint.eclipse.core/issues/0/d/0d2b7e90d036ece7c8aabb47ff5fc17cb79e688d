@@ -1,6 +1,57 @@
 
-M
-java:S1220""Move this file to a named package.8ş¢é2H¼0RMINORZ
+b
+java:S1452³"&Remove usage of generic wildcard type.(Î õ´ûÿÿÿÿ8¶÷Ûçç2Hä&RCRITICALZ
 CODE_SMELL
-m	java:S125"<This block of commented-out lines of code should be removed.(¢ÒŸ8ş¢é2H½0RMAJORZ
+o
+java:S1854v"<Remove this useless assignment to local variable "progress".(·Õˆë8¶÷Ûçç2Hç&RMAJORZ
+CODE_SMELL
+a
+java:S1452X"&Remove usage of generic wildcard type.(åÛ£³şÿÿÿÿ8¶÷Ûçç2Hâ&RCRITICALZ
+CODE_SMELL
+a
+java:S1452k"&Remove usage of generic wildcard type.(ÑÚ‘Æÿÿÿÿÿ8¶÷Ûçç2Hı&RCRITICALZ
+CODE_SMELL
+b
+java:S1452ê"&Remove usage of generic wildcard type.(„šªÂşÿÿÿÿ8¶÷Ûçç2Há&RCRITICALZ
+CODE_SMELL
+b
+java:S1452Ï"&Remove usage of generic wildcard type.(ïÏÅÿÿÿÿÿ8¶÷Ûçç2Hê&RCRITICALZ
+CODE_SMELL
+]
+java:S1452ç"&Remove usage of generic wildcard type.(³÷­Š8¶÷Ûçç2Hå&RCRITICALZ
+CODE_SMELL
+t
+java:S1128"BRemove this unused import 'com.ehs.elearning.model.ComponentType'.(•„½[8¶÷Ûçç2H'RMINORZ
+CODE_SMELL
+r
+java:S1128":Remove this unused import 'com.ehs.elearning.model.Users'.(Ò¿ˆÿÿÿÿÿ8¶÷Ûçç2Hß&RMINORZ
+CODE_SMELL
+b
+java:S1452Á"&Remove usage of generic wildcard type.(õÅŒ–şÿÿÿÿ8¶÷Ûçç2Hÿ&RCRITICALZ
+CODE_SMELL
+]
+java:S1452…"&Remove usage of generic wildcard type.(ºÆñæ8¶÷Ûçç2Hş&RCRITICALZ
+CODE_SMELL
+†
+java:S6204†"RReplace this usage of 'Stream.collect(Collectors.toList())' with 'Stream.toList()'(ª™¨¹8¶÷Ûçç2Hü&RMAJORZ
+CODE_SMELL
+`
+java:S1481v"-Remove this unused "progress" local variable.(·Õˆë8¶÷Ûçç2Hè&RMINORZ
+CODE_SMELL
+h
+java:S1128!"0Remove this unused import 'java.io.IOException'.(ªº»Úıÿÿÿÿ8¶÷Ûçç2Hİ&RMINORZ
+CODE_SMELL
+b
+java:S1452‡"&Remove usage of generic wildcard type.(õË­şÿÿÿÿ8¶÷Ûçç2Hã&RCRITICALZ
+CODE_SMELL
+a
+java:S1452E"&Remove usage of generic wildcard type.(‚†»ùÿÿÿÿ8¶÷Ûçç2Hæ&RCRITICALZ
+CODE_SMELL
+]
+java:S1452ö"&Remove usage of generic wildcard type.(±¾à8¶÷Ûçç2H€'RCRITICALZ
+CODE_SMELL
+t	java:S125£"<This block of commented-out lines of code should be removed.(ù¹Á©ùÿÿÿÿ8‘œè¿è2HÅ,RMAJORZ
+CODE_SMELL
+|
+java:S1128"DRemove this unused import 'com.ehs.elearning.model.ModuleComponent'.(¥Á®Îıÿÿÿÿ8‘œè¿è2Hñ,RMINORZ
 CODE_SMELL
