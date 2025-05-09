@@ -21,23 +21,24 @@ import MyCourses from './pages/MyCourses';
 import Reports from './pages/Reports';
 import DomainView from './pages/DomainView';
 import ModuleView from './pages/ModuleView';
-import ModuleViewer from './pages/ModuleViewer'; // Added the new component
+import ModuleViewer from './pages/ModuleViewer'; 
 import LearningMaterialsPage from './pages/LearningMaterialsPage';
 import Profile from './pages/Profile';
 
-// Admin Pages
+// Admin Pages - Updated imports using the new structure
 import AdminDashboard from './pages/admin/AdminDashboard';
-import ModuleManagement from './pages/admin/ModuleManagement';
-import ModuleCreator from './pages/admin/ModuleCreator';
-import AssessmentCreator from './pages/admin/AssessmentCreator';
-import LearningMaterialManagement from './pages/admin/LearningMaterialManagement';
-import UserManagement from './pages/admin/UserManagement/UserManagement'
+import ModuleManagement from './pages/admin/ModuleManagement/ModuleManagement';
+import ModuleCreator from './pages/admin/ModuleManagement/ModuleCreator';
+import AssessmentCreator from './pages/admin/ModuleManagement/AssessmentCreator';
+import LearningMaterialManagement from './pages/admin/LearningMaterialManagment/LearningMaterialManagement';
+import LearningMaterialBrowser from './pages/admin/LearningMaterialManagment/LearningMaterialBrowser';
+import LearningMaterialCreator from './pages/admin/LearningMaterialManagment/LearningMaterialCreator';
+import MaterialEditor from './pages/admin/LearningMaterialManagment/MaterialEditor';
+import UserManagement from './pages/admin/UserManagement/UserManagement';
 import DomainManagement from './pages/admin/DomainManagement';
 import AdminReports from './pages/admin/AdminReports';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminProfile from './pages/admin/AdminProfile';
-
-
 
 // Auth Pages
 import Login from './pages/Login';
@@ -150,7 +151,7 @@ function AppContent() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/domains/:domainId" element={<DomainView />} />
           <Route path="/modules/:moduleId" element={<ModuleView />} />
-          <Route path="/modules/:moduleId/viewer" element={<ModuleViewer />} /> {/* Added new ModuleViewer route */}
+          <Route path="/modules/:moduleId/viewer" element={<ModuleViewer />} />
           <Route path="/learning-materials" element={<LearningMaterialsPage />} />
           <Route path="/modules/:moduleId/materials" element={<LearningMaterialsPage />} />
           <Route path="/modules/:moduleId/components/:componentId/materials" element={<LearningMaterialsPage />} />

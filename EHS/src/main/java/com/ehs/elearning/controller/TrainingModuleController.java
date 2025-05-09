@@ -633,18 +633,36 @@ public class TrainingModuleController {
             }
             
             // Check if module exists
-            if (!moduleRepository.existsById(id)) {
+            Optional<TrainingModule> moduleOpt = moduleRepository.findById(id);
+            if (!moduleOpt.isPresent()) {
                 return ResponseEntity.notFound().build();
             }
             
+            TrainingModule module = moduleOpt.get();
+            
+            // Find all components for this module
+            List<ModuleComponent> components = componentRepository.findByTrainingModuleOrderBySequenceOrderAsc(module);
+            
+            // For each component, manually delete all related questions first
+            for (ModuleComponent component : components) {
+                List<Question> questions = questionRepository.findByComponentOrderBySequenceOrderAsc(component);
+                if (!questions.isEmpty()) {
+                    questionRepository.deleteAll(questions);
+                }
+            }
+            
+            // Now safely delete all components
+            componentRepository.deleteAll(components);
+            
+            // Finally delete the module
             moduleRepository.deleteById(id);
             return ResponseEntity.ok(new MessageResponse("Module deleted successfully."));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new MessageResponse("Error deleting module: " + e.getMessage()));
         }
     }
-    
     // Publish module (change status to PUBLISHED)
     @PostMapping("/modules/{id}/publish")
     public ResponseEntity<?> publishModule(@PathVariable UUID id) {

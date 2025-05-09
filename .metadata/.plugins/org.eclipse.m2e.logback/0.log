@@ -1132,3 +1132,27 @@
 2025-05-01 23:07:04,918 [Worker-151: Building] INFO  o.a.m.s.f.DefaultMavenResourcesFiltering - Copying 0 resource from src\main\resources to target\classes
 2025-05-01 23:07:04,933 [Worker-151: Building] INFO  o.a.m.s.f.DefaultMavenResourcesFiltering - skip non existing resourceDirectory D:\YASH\Projects GGC\stanley attempt 2\EHS\EHS\src\test\resources
 2025-05-01 23:07:39,497 [ForkJoinPool.commonPool-worker-110] INFO  j.exodus.util.CompressBackupUtil - Backup file "local_only_issue_backup2025-05-01-23-07-39.tar.gz" created.
+2025-05-03 14:18:04,208 [Worker-7: Loading available Gradle versions] INFO  o.e.b.c.i.u.g.PublishedGradleVersions - Gradle version information cache is up-to-date. Trying to read.
+2025-05-03 14:33:54,260 [Worker-5: Loading available Gradle versions] INFO  o.e.b.c.i.u.g.PublishedGradleVersions - Gradle version information cache is up-to-date. Trying to read.
+2025-05-03 14:36:20,719 [Worker-5: Importing Maven projects] INFO  o.e.m.c.i.l.LifecycleMappingFactory - Using org.eclipse.m2e.jdt.JarLifecycleMapping lifecycle mapping for MavenProject: com.ehs.elearning:EHS:0.0.1-SNAPSHOT @ D:\YASH\Projects GGC\stanley attempt 2\EHS\EHS\pom.xml.
+2025-05-03 14:36:22,681 [Worker-5: Importing Maven projects] INFO  o.e.m.j.i.AbstractJavaProjectConfigurator - Adding source folder /EHS/src/main/java
+2025-05-03 14:36:22,682 [Worker-5: Importing Maven projects] INFO  o.e.m.j.i.AbstractJavaProjectConfigurator - Adding resource folder /EHS/src/main/resources
+2025-05-03 14:36:22,682 [Worker-5: Importing Maven projects] INFO  o.e.m.j.i.AbstractJavaProjectConfigurator - Adding resource folder /EHS/src/main/resources
+2025-05-03 14:36:22,684 [Worker-5: Importing Maven projects] INFO  o.e.m.j.i.AbstractJavaProjectConfigurator - Adding source folder /EHS/src/test/java
+2025-05-03 14:36:23,370 [Worker-5: Importing Maven projects] INFO  o.e.m.c.i.p.ProjectConfigurationManager - Imported and configured 1 project(s) in 7 sec
+2025-05-03 14:36:24,417 [Worker-13: Updating Maven Project] INFO  o.e.m.c.i.p.ProjectConfigurationManager - Update started
+2025-05-03 14:36:25,055 [Worker-13: Updating Maven Project] INFO  o.e.m.c.i.l.LifecycleMappingFactory - Using org.eclipse.m2e.jdt.JarLifecycleMapping lifecycle mapping for MavenProject: com.ehs.elearning:EHS:0.0.1-SNAPSHOT @ D:\YASH\Projects GGC\stanley attempt 2\EHS\EHS\pom.xml.
+2025-05-03 14:36:26,638 [Worker-13: Updating Maven Project] INFO  o.e.m.j.i.AbstractJavaProjectConfigurator - Adding source folder /EHS/src/main/java
+2025-05-03 14:36:26,639 [Worker-13: Updating Maven Project] INFO  o.e.m.j.i.AbstractJavaProjectConfigurator - Adding resource folder /EHS/src/main/resources
+2025-05-03 14:36:26,640 [Worker-13: Updating Maven Project] INFO  o.e.m.j.i.AbstractJavaProjectConfigurator - Adding resource folder /EHS/src/main/resources
+2025-05-03 14:36:26,641 [Worker-13: Updating Maven Project] INFO  o.e.m.j.i.AbstractJavaProjectConfigurator - Adding source folder /EHS/src/test/java
+2025-05-03 14:36:49,066 [Worker-13: Updating Maven Project] INFO  o.e.m.c.i.p.ProjectConfigurationManager - Update completed for 1 poms: local refresh takes 0.00 sec, refresh facades takes 2.00 sec, update config takes 0.00 sec 
+2025-05-03 14:37:19,579 [ForkJoinPool.commonPool-worker-2] INFO  o.s.s.s.o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'sonarLintSpringAppConfig' of type [org.sonarsource.sonarlint.core.spring.SonarLintSpringAppConfig$$EnhancerBySpringCGLIB$$f1f1cc84] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2025-05-03 14:37:19,627 [ForkJoinPool.commonPool-worker-2] INFO  o.s.s.s.o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'provideClientEventBus' of type [com.google.common.eventbus.AsyncEventBus] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2025-05-03 14:37:51,108 [ForkJoinPool.commonPool-worker-2] INFO  jetbrains.exodus.io.FileDataWriter - Uninterruptible file channel will be used
+2025-05-03 14:37:51,108 [ForkJoinPool.commonPool-worker-2] WARN  jetbrains.exodus.io.FileDataWriter - Can't open directory channel. Log directory fsync won't be performed.
+2025-05-03 14:37:51,436 [ForkJoinPool.commonPool-worker-2] INFO  j.exodus.env.EnvironmentImpl - Exodus environment created: D:\YASH\Projects GGC\stanley attempt 2\EHS\.sonarlint\default\xodus-local-only-issue-store6681025018663935368
+2025-05-03 14:37:51,452 [ForkJoinPool.commonPool-worker-2] INFO  j.exodus.gc.GarbageCollector - Queueing ComputeUtilizationFromScratchJob
+2025-05-03 14:38:01,108 [Exodus shared background cleaner] INFO  j.exodus.gc.GarbageCollector - Started calculation of log utilization from scratch at D:\YASH\Projects GGC\stanley attempt 2\EHS\.sonarlint\default\xodus-local-only-issue-store6681025018663935368
+2025-05-03 14:38:01,124 [Exodus shared background cleaner] INFO  j.exodus.gc.GarbageCollector - Finished calculation of log utilization from scratch at D:\YASH\Projects GGC\stanley attempt 2\EHS\.sonarlint\default\xodus-local-only-issue-store6681025018663935368
+2025-05-03 14:40:20,173 [ForkJoinPool.commonPool-worker-2] INFO  j.exodus.util.CompressBackupUtil - Backup file "local_only_issue_backup2025-05-03-14-40-20.tar.gz" created.

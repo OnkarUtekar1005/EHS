@@ -4,6 +4,19 @@ import axios from 'axios';
 // Set this to false in production
 const DEBUG_MODE = true;
 
+// Helper function to handle API errors
+const handleApiError = (error) => {
+  console.error('API Error:', error);
+  if (error.response) {
+    console.error('Response error details:', {
+      status: error.response.status,
+      headers: error.response.headers,
+      data: error.response.data
+    });
+  }
+  return error;
+};
+
 // Debug function to get token details
 const debugToken = () => {
     const token = localStorage.getItem('token');
@@ -30,7 +43,6 @@ const api = axios.create({
 });
 
 // Request interceptor for adding auth token
-// In src/services/api.js - Update the request interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -105,7 +117,7 @@ api.interceptors.response.use(
   }
 );
 
-// Auth services - UPDATED VERSION
+// Auth services
 export const authService = {
     login: async (credentials) => {
       try {
@@ -161,9 +173,7 @@ export const userService = {
   assignBulkDomains: (data) => api.put('/users/domains/assign', data),
 };
 
-
-// Update to src/services/api.js - Add search method to domainService
-
+// Domain services
 export const domainService = {
   getAll: () => api.get('/domains'),
   getById: (id) => api.get(`/domains/${id}`),
@@ -186,11 +196,20 @@ export const moduleService = {
   archive: (id) => api.post(`/modules/${id}/archive`),
   clone: (id) => api.post(`/modules/${id}/clone`),
   getStats: (id) => api.get(`/modules/${id}/stats`),
-  
-  // Add the missing methods here
   getAvailableModules: () => api.get('/modules/available'),
   getRecommendedModules: () => api.get('/modules/recommended'),
   getUserProfile: () => api.get('/auth/user'),
+  getComponentQuestions: async (componentId) => {
+    try {
+      console.log(`[API] Getting questions for component: ${componentId}`);
+      const response = await api.get(`/components/${componentId}/questions`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching component questions:', error);
+      // Return empty data array to prevent mapping errors
+      return { data: [] };
+    }
+  }
 };
 
 // Component services
@@ -205,14 +224,24 @@ export const componentService = {
 
 // Assessment services
 export const assessmentService = {
-  getQuestions: (componentId) => api.get(`/components/${componentId}/questions`),
+  getQuestions: async (componentId) => {
+    try {
+      console.log(`[API] Getting assessment questions for component: ${componentId}`);
+      const response = await api.get(`/components/${componentId}/questions`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching assessment questions:', error);
+      // Return empty data array to prevent mapping errors
+      return { data: [] };
+    }
+  },
   addQuestion: (componentId, questionData) => api.post(`/components/${componentId}/questions`, questionData),
   updateQuestion: (id, questionData) => api.put(`/questions/${id}`, questionData),
   deleteQuestion: (id) => api.delete(`/questions/${id}`),
   submitAnswers: (componentId, answers) => api.post(`/components/${componentId}/submit`, { answers }),
 };
 
-
+// Progress tracking services
 export const progressService = {
   getUserProgress: (userId) => api.get(`/progress/user/${userId}`),
   getModuleProgress: (moduleId) => api.get(`/progress/module/${moduleId}`),
@@ -223,13 +252,18 @@ export const progressService = {
 };
 
 // Learning Material services
-// Updated learningMaterialService from src/services/api.js
-
 export const learningMaterialService = {
   // Get all learning materials for a component
-  getMaterialsByComponent: (componentId) => {
-    console.log("[API] Getting materials for component:", componentId);
-    return api.get(`/components/${componentId}/materials`);
+  getMaterialsByComponent: async (componentId) => {
+    try {
+      console.log("[API] Getting materials for component:", componentId);
+      const response = await api.get(`/components/${componentId}/materials`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching materials for component:', error);
+      // Return empty data array to prevent mapping errors
+      return { data: [] };
+    }
   },
   
   // Get materials with progress information
@@ -250,7 +284,7 @@ export const learningMaterialService = {
     return api.get(`/materials/${materialId}/progress`);
   },
   
-  // Add file-based learning material - UPDATED to match controller endpoint
+  // Add file-based learning material
   uploadMaterial: (componentId, file, data) => {
     console.log("[API] Uploading material file for component:", componentId);
     console.log("[API] File details:", file.name, file.type, file.size);
@@ -267,7 +301,6 @@ export const learningMaterialService = {
       formData.append('estimatedDuration', data.estimatedDuration);
     }
     
-    // Use the endpoint that matches the controller
     return api.post(`/components/${componentId}/materials/file`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
@@ -341,8 +374,7 @@ export const learningMaterialService = {
   }
 };
 
-// Material Library Service - Add to src/services/api.js
-
+// Material Library Service
 export const materialLibraryService = {
   // Get all materials from library with filtering/pagination
   getAll: (params) => {
@@ -432,17 +464,29 @@ export const materialLibraryService = {
     return api.post(`/material-library/${materialId}/components/${componentId}`, { sequenceOrder });
   },
   
-  // Associate multiple materials with a component in bulk (custom endpoint - may need backend adjustment)
+  // Associate multiple materials with a component in bulk
   associateMaterialsWithComponent: (componentId, materialIds) => {
     console.log(`[API] Associating ${materialIds.length} materials with component ${componentId}`);
     
     // Make multiple API calls - one for each association
-    // Here we create a sequence of promises and execute them one by one
     return materialIds.reduce((promise, materialId, index) => {
       return promise.then(() => {
         return materialLibraryService.associateMaterialWithComponent(componentId, materialId, index + 1);
       });
     }, Promise.resolve());
+  },
+
+  // Get materials for a component
+  getMaterialsByComponent: async (componentId) => {
+    try {
+      console.log(`[API] Getting materials for component: ${componentId}`);
+      const response = await api.get(`/components/${componentId}/materials`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching materials for component:', error);
+      // Return empty data array to prevent mapping errors
+      return { data: [] };
+    }
   },
   
   // Disassociate a material from a component
@@ -451,6 +495,5 @@ export const materialLibraryService = {
     return api.delete(`/material-library/${materialId}/components/${componentId}`);
   }
 };
-
 
 export default api;
