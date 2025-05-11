@@ -50,6 +50,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { materialLibraryService } from '../../../services/api';
 import MaterialEditor from './MaterialEditor';
+//import MaterialPreviewDialog from '../../../components/admin/MaterialPreviewDialog';
 
 // Material type constants
 const MATERIAL_TYPES = {
@@ -81,10 +82,8 @@ const LearningMaterialManagement = () => {
   const [editorOpen, setEditorOpen] = useState(false);
   const [currentMaterial, setCurrentMaterial] = useState(null);
   const [editorMode, setEditorMode] = useState('create'); // 'create' or 'edit'
-  
-  // Preview dialog state
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewMaterial, setPreviewMaterial] = useState(null);
+
+  // Preview state removed
   
   // Component usage dialog state
   const [usageOpen, setUsageOpen] = useState(false);
@@ -158,30 +157,8 @@ const LearningMaterialManagement = () => {
     setEditorOpen(true);
   };
   
-  // Handle material preview - using direct file access with cache busting
-  const handlePreviewMaterial = (material) => {
-    console.log("Previewing material:", material); // Debug logging
-    
-    // Make a clean copy for preview, add timestamp for cache busting
-    const previewMaterialCopy = { 
-      ...material,
-      timestamp: new Date().getTime() // Add timestamp to prevent caching issues
-    };
-    
-    setPreviewMaterial(previewMaterialCopy);
-    setPreviewOpen(true);
-    
-    // If it's an external link, open in new tab
-    if (material.fileType === MATERIAL_TYPES.EXTERNAL && material.externalUrl) {
-      window.open(material.externalUrl, '_blank');
-    }
-  };
-  
-  // Close preview dialog
-  const handleClosePreview = () => {
-    setPreviewOpen(false);
-  };
-  
+  // Preview handlers removed
+
   // Show where a material is used
   const handleShowUsage = async (material) => {
     try {
@@ -275,16 +252,7 @@ const LearningMaterialManagement = () => {
     }
   };
   
-  // Function to get file preview URL with cache busting
-  const getFileUrl = (filePath) => {
-    if (!filePath) return null;
-    
-    // Extract just the filename from the path
-    const filename = filePath.split('/').pop();
-    
-    // Add cache busting parameter
-    return `/api/files/${filename}?t=${new Date().getTime()}`;
-  };
+  // File URL function removed
   
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -411,11 +379,7 @@ const LearningMaterialManagement = () => {
                         </Typography>
                       </CardContent>
                       <CardActions>
-                        <Tooltip title="Preview">
-                          <IconButton onClick={() => handlePreviewMaterial(material)}>
-                            <VisibilityIcon />
-                          </IconButton>
-                        </Tooltip>
+                        {/* Preview button removed */}
                         <Tooltip title="Edit">
                           <IconButton onClick={() => handleEditMaterial(material)}>
                             <EditIcon />
@@ -470,139 +434,7 @@ const LearningMaterialManagement = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Material Preview Dialog - FIXED TO USE EXISTING FILE CONTROLLER */}
-      <Dialog
-        open={previewOpen}
-        onClose={handleClosePreview}
-        fullWidth
-        maxWidth="md"
-      >
-        <DialogTitle>
-          {previewMaterial?.title}
-        </DialogTitle>
-        <DialogContent>
-          {previewMaterial && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>
-                {previewMaterial.fileType} • {previewMaterial.estimatedDuration || 0} min
-              </Typography>
-              
-              {previewMaterial.description && (
-                <Typography variant="body1" paragraph>
-                  {previewMaterial.description}
-                </Typography>
-              )}
-              
-              {/* Image Preview - USING FILE CONTROLLER */}
-              {previewMaterial.fileType === MATERIAL_TYPES.IMAGE && previewMaterial.filePath && (
-                <Box sx={{ textAlign: 'center', mt: 2 }}>
-                  <img 
-                    src={getFileUrl(previewMaterial.filePath)}
-                    alt={previewMaterial.title}
-                    style={{ maxWidth: '100%', maxHeight: '400px' }}
-                    onError={(e) => {
-                      console.error('Image failed to load:', e);
-                      e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
-                    }}
-                  />
-                </Box>
-              )}
-              
-              {/* PDF Preview - USING FILE CONTROLLER */}
-              {previewMaterial.fileType === MATERIAL_TYPES.PDF && previewMaterial.filePath && (
-                <Box sx={{ textAlign: 'center', mt: 2 }}>
-                  <iframe
-                    src={getFileUrl(previewMaterial.filePath)}
-                    width="100%"
-                    height="500px"
-                    title={previewMaterial.title}
-                    onError={(e) => {
-                      console.error("Failed to load PDF:", e);
-                    }}
-                  />
-                </Box>
-              )}
-              
-              {/* Video Preview - USING FILE CONTROLLER */}
-              {previewMaterial.fileType === MATERIAL_TYPES.VIDEO && (
-                <Box sx={{ textAlign: 'center', mt: 2 }}>
-                  {previewMaterial.externalUrl ? (
-                    <iframe
-                      src={previewMaterial.externalUrl}
-                      width="100%"
-                      height="400px"
-                      frameBorder="0"
-                      allowFullScreen
-                      title={previewMaterial.title}
-                    />
-                  ) : previewMaterial.filePath ? (
-                    <video 
-                      src={getFileUrl(previewMaterial.filePath)}
-                      controls
-                      width="100%"
-                      height="400px"
-                      title={previewMaterial.title}
-                      onError={(e) => {
-                        console.error("Failed to load video:", e);
-                      }}
-                    >
-                      Your browser does not support the video tag.
-                    </video>
-                  ) : (
-                    <Typography>Video source not available</Typography>
-                  )}
-                </Box>
-              )}
-              
-              {/* HTML Content Preview */}
-              {previewMaterial.fileType === MATERIAL_TYPES.HTML && previewMaterial.content && (
-                <Box sx={{ mt: 2, border: '1px solid #eee', p: 2, borderRadius: 1 }}>
-                  <div dangerouslySetInnerHTML={{ __html: previewMaterial.content }} />
-                </Box>
-              )}
-              
-              {/* External Link Preview */}
-              {previewMaterial.fileType === MATERIAL_TYPES.EXTERNAL && previewMaterial.externalUrl && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="body1">
-                    External Link: <a href={previewMaterial.externalUrl} target="_blank" rel="noopener noreferrer">
-                      {previewMaterial.externalUrl}
-                    </a>
-                  </Typography>
-                </Box>
-              )}
-              
-              {/* Document Preview - USING FILE CONTROLLER */}
-              {(previewMaterial.fileType === MATERIAL_TYPES.DOCUMENT || 
-                previewMaterial.fileType === MATERIAL_TYPES.PRESENTATION) && 
-                previewMaterial.filePath && (
-                <Box sx={{ textAlign: 'center', mt: 2 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Document preview not available in browser. Click the button below to open the document.
-                  </Typography>
-                  <Button 
-                    variant="contained" 
-                    onClick={() => window.open(getFileUrl(previewMaterial.filePath), '_blank')}
-                  >
-                    Open Document
-                  </Button>
-                </Box>
-              )}
-              
-              {/* Fallback if no content is available to preview */}
-              {!previewMaterial.filePath && !previewMaterial.externalUrl && !previewMaterial.content && 
-                previewMaterial.fileType !== MATERIAL_TYPES.EXTERNAL && previewMaterial.fileType !== MATERIAL_TYPES.HTML && (
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  No preview content available for this material.
-                </Alert>
-              )}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClosePreview}>Close</Button>
-        </DialogActions>
-      </Dialog>
+      {/* Material Preview Dialog removed */}
       
       {/* Material Usage Dialog */}
       <Dialog

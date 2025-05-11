@@ -36,8 +36,7 @@
 //   Delete as DeleteIcon,
 //   Save as SaveIcon,
 //   Cancel as CancelIcon,
-//   SmartToy as AIIcon,
-//   Visibility as PreviewIcon
+//   SmartToy as AIIcon
 // } from '@mui/icons-material';
 // import { useNavigate, useParams } from 'react-router-dom';
 // import { moduleService, domainService, materialLibraryService } from '../../services/api';
@@ -446,11 +445,7 @@
 //     alert('This feature is not implemented yet');
 //   };
   
-//   // Preview module
-//   const handlePreviewModule = () => {
-//     // Open preview in new tab or modal
-//     alert('Preview functionality not implemented yet');
-//   };
+// 
   
 //   // Component type options
 //   const componentTypes = [
@@ -693,13 +688,6 @@
 //                 onClick={handleAIGenerate}
 //               >
 //                 AI Generate Complete Module
-//               </Button>
-//               <Button
-//                 variant="outlined"
-//                 startIcon={<PreviewIcon />}
-//                 onClick={handlePreviewModule}
-//               >
-//                 Preview Module
 //               </Button>
 //             </Box>
 //           </Box>

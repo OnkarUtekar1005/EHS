@@ -253,7 +253,7 @@ const UserLearningContentViewer = ({ componentId, onComplete }) => {
         <DialogContent dividers>
           {materialInDialog?.content ? (
             <Paper elevation={0} sx={{ p: 2 }}><div dangerouslySetInnerHTML={{ __html: materialInDialog.content }} /></Paper>
-          ) : ( <Typography>No preview content available.</Typography> )}
+          ) : ( <Typography>No content available.</Typography> )}
         </DialogContent>
       </Dialog>
     </Box>

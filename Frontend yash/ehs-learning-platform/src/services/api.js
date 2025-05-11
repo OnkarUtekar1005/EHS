@@ -360,11 +360,42 @@ export const learningMaterialService = {
   },
   
   // Stream or download a learning material file
-  streamFile: (materialId) => {
-    console.log("[API] Streaming file for material:", materialId);
-    return api.get(`/materials/${materialId}/stream`, {
+  streamFile: (materialId, preview = false) => {
+    console.log("[API] Streaming file for material:", materialId, preview ? "(preview mode)" : "");
+
+    // Create a special axios instance that doesn't add auth headers for preview requests
+    const requestConfig = {
       responseType: 'blob'
+    };
+
+    // For preview requests, create a direct request without auth headers
+    if (preview) {
+      // Create a new axios instance without the interceptors
+      const directAxios = axios.create({
+        baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080/api'
+      });
+
+      // Add cache-busting parameter
+      const cacheBuster = new Date().getTime();
+      return directAxios.get(`/materials/${materialId}/stream?preview=true&cacheBuster=${cacheBuster}`, requestConfig);
+    }
+
+    // Regular request with auth
+    return api.get(`/materials/${materialId}/stream`, requestConfig);
+  },
+
+  // Get preview info for a material
+  getPreviewInfo: (materialId) => {
+    console.log("[API] Getting preview info for material:", materialId);
+
+    // Create a special axios instance that doesn't add auth headers for preview requests
+    const directAxios = axios.create({
+      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080/api'
     });
+
+    // Add cache-busting parameter
+    const cacheBuster = new Date().getTime();
+    return directAxios.get(`/materials/${materialId}/preview-info?preview=true&cacheBuster=${cacheBuster}`);
   },
   
   // Update material progress

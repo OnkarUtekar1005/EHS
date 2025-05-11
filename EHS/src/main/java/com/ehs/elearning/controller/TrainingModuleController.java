@@ -1,5 +1,6 @@
 package com.ehs.elearning.controller;
 
+import com.ehs.elearning.model.ComponentMaterialAssociation;
 import com.ehs.elearning.model.ComponentType;
 import com.ehs.elearning.model.Domain;
 import com.ehs.elearning.model.ModuleComponent;
@@ -12,6 +13,7 @@ import com.ehs.elearning.model.Users;
 import com.ehs.elearning.payload.request.ComponentRequest;
 import com.ehs.elearning.payload.request.ModuleRequest;
 import com.ehs.elearning.payload.response.MessageResponse;
+import com.ehs.elearning.repository.ComponentMaterialAssociationRepository;
 import com.ehs.elearning.repository.DomainRepository;
 import com.ehs.elearning.repository.ModuleComponentRepository;
 import com.ehs.elearning.repository.QuestionRepository;
@@ -56,6 +58,9 @@ public class TrainingModuleController {
     // Add this helper method to handle saving assessment questions
     @Autowired
     private QuestionRepository questionRepository;
+
+    @Autowired
+    private ComponentMaterialAssociationRepository associationRepository;
     
     
     // Get all published modules (for all users)
@@ -625,35 +630,51 @@ public class TrainingModuleController {
             // Check if current user is authorized to delete this module
             UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext()
                     .getAuthentication().getPrincipal();
-            
+
             // Only admins can delete modules
             if (!userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(new MessageResponse("Error: You are not authorized to delete modules."));
             }
-            
+
             // Check if module exists
             Optional<TrainingModule> moduleOpt = moduleRepository.findById(id);
             if (!moduleOpt.isPresent()) {
                 return ResponseEntity.notFound().build();
             }
-            
+
             TrainingModule module = moduleOpt.get();
-            
+
             // Find all components for this module
             List<ModuleComponent> components = componentRepository.findByTrainingModuleOrderBySequenceOrderAsc(module);
-            
-            // For each component, manually delete all related questions first
+
+            // For each component, handle dependencies
             for (ModuleComponent component : components) {
+                // 1. Delete related questions
                 List<Question> questions = questionRepository.findByComponentOrderBySequenceOrderAsc(component);
                 if (!questions.isEmpty()) {
                     questionRepository.deleteAll(questions);
                 }
+
+                // 2. Delete component material associations (not automatically handled by cascade)
+                try {
+                    // Find all associations for this component
+                    List<ComponentMaterialAssociation> associations =
+                        associationRepository.findByComponent(component);
+
+                    // Delete all found associations
+                    if (!associations.isEmpty()) {
+                        associationRepository.deleteAll(associations);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error deleting component material associations: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
-            
+
             // Now safely delete all components
             componentRepository.deleteAll(components);
-            
+
             // Finally delete the module
             moduleRepository.deleteById(id);
             return ResponseEntity.ok(new MessageResponse("Module deleted successfully."));

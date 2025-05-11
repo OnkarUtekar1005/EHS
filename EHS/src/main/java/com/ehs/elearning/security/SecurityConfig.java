@@ -17,6 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -30,16 +31,21 @@ import java.util.Arrays;
 public class SecurityConfig {
     @Autowired
     private UserDetailsServiceImpl userDetailsService;
-    
+
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
-    
+
     @Autowired
     private JwtAuthenticationEntryPoint unauthorizedHandler;
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter();
+    }
+
+    @Bean
+    public PreviewRequestFilter previewRequestFilter() {
+        return new PreviewRequestFilter();
     }
 
     @Bean
@@ -142,7 +148,10 @@ public class SecurityConfig {
                     .requestMatchers("/api/materials/reorder").authenticated()  // Reorder materials
                     .requestMatchers("/api/components/{id}/materials/track").authenticated()  // Track material progress
                     .requestMatchers("/api/components/{id}/progress").authenticated()  // Get user progress
-                 // Add this to your security configuration
+                    // Preview endpoints - allow anonymous access with simpler configuration
+                    .requestMatchers("/api/materials/*/stream").permitAll()
+                    .requestMatchers("/api/materials/*/preview-info").permitAll()
+                    // Add this to your security configuration
                     .requestMatchers(HttpMethod.POST,"/api/components/learning/materials/upload").permitAll()
                     
                     // Progress tracking endpoints
@@ -168,6 +177,11 @@ public class SecurityConfig {
             );
 
         http.authenticationProvider(authenticationProvider());
+
+        // Add the PreviewRequestFilter before the JWT filter to ensure it's applied early in the chain
+        http.addFilterBefore(previewRequestFilter(), UsernamePasswordAuthenticationFilter.class);
+
+        // Add the JWT authentication filter
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

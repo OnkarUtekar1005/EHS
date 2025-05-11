@@ -33,6 +33,7 @@ import jakarta.validation.Valid;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -130,9 +131,13 @@ public class LearningMaterialController {
 
     /**
      * Stream or download a learning material file
+     * @param id The ID of the learning material
+     * @param preview If true, don't track progress for this view
      */
     @GetMapping("/materials/{id}/stream")
-    public ResponseEntity<?> streamFile(@PathVariable UUID id) {
+    public ResponseEntity<?> streamFile(
+            @PathVariable UUID id,
+            @RequestParam(required = false, defaultValue = "false") boolean preview) {
         try {
             Optional<LearningMaterial> materialOpt = materialRepository.findById(id);
             if (!materialOpt.isPresent()) {
@@ -151,6 +156,30 @@ public class LearningMaterialController {
                 return ResponseEntity.notFound().build();
             }
             
+            // Track progress if not in preview mode and user is authenticated
+            if (!preview) {
+                try {
+                    // Get authentication
+                    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                    if (authentication != null && authentication.isAuthenticated() && 
+                        !authentication.getPrincipal().equals("anonymousUser")) {
+                        
+                        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                        
+                        // Track material progress (only if not in preview mode)
+                        learningMaterialService.updateProgress(
+                            material.getId(), 
+                            userDetails.getId(), 
+                            100, // Mark as completed
+                            0    // No time spent tracking for auto-completion
+                        );
+                    }
+                } catch (Exception e) {
+                    // Log error but continue serving the file
+                    System.err.println("Error tracking progress: " + e.getMessage());
+                }
+            }
+            
             // Get file resource
             Path filePath = fileStorageService.getFilePath(material.getFilePath());
             Resource resource = new UrlResource(filePath.toUri());
@@ -161,6 +190,20 @@ public class LearningMaterialController {
             // Build response headers
             HttpHeaders headers = new HttpHeaders();
             headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + material.getTitle() + "\"");
+
+            // Always add CORS headers for consistent behavior
+            headers.add("Access-Control-Allow-Origin", "*");
+            headers.add("Access-Control-Allow-Methods", "GET, OPTIONS");
+            headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+            // Add headers for iframe embedding
+            headers.add("X-Frame-Options", "ALLOWALL");
+            headers.add("Content-Security-Policy", "frame-ancestors *");
+
+            // Add caching headers for preview requests to improve performance
+            if (preview) {
+                headers.setCacheControl("max-age=3600"); // Cache for 1 hour
+            }
             
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
@@ -197,6 +240,46 @@ public class LearningMaterialController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new MessageResponse("Error retrieving material: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Get preview info for a learning material
+     * Returns lightweight metadata for preview purposes without tracking progress
+     */
+    @GetMapping("/materials/{id}/preview-info")
+    public ResponseEntity<?> getPreviewInfo(@PathVariable UUID id) {
+        try {
+            Optional<LearningMaterial> materialOpt = materialRepository.findById(id);
+            if (!materialOpt.isPresent()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            LearningMaterial material = materialOpt.get();
+            
+            // Create a lightweight response with only needed info for preview
+            Map<String, Object> previewInfo = new HashMap<>();
+            previewInfo.put("id", material.getId());
+            previewInfo.put("title", material.getTitle());
+            previewInfo.put("description", material.getDescription());
+            previewInfo.put("fileType", material.getFileType());
+            previewInfo.put("hasFile", material.getFilePath() != null && !material.getFilePath().isEmpty());
+            previewInfo.put("hasContent", material.getContent() != null && !material.getContent().isEmpty());
+            previewInfo.put("hasExternalUrl", material.getExternalUrl() != null && !material.getExternalUrl().isEmpty());
+            
+            // Include content/externalUrl only if they exist
+            if (material.getContent() != null && !material.getContent().isEmpty()) {
+                previewInfo.put("content", material.getContent());
+            }
+            
+            if (material.getExternalUrl() != null && !material.getExternalUrl().isEmpty()) {
+                previewInfo.put("externalUrl", material.getExternalUrl());
+            }
+            
+            return ResponseEntity.ok(previewInfo);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new MessageResponse("Error retrieving preview info: " + e.getMessage()));
         }
     }
     
@@ -282,77 +365,6 @@ public class LearningMaterialController {
     }
     
     /**
-     * Update learning material
-     */
-//    @PutMapping("/materials/{id}")
-//    @Transactional
-//    public ResponseEntity<?> updateMaterial(
-//            @PathVariable UUID id,
-//            @Valid @RequestBody LearningMaterialRequest materialRequest) {
-//        
-//        return materialRepository.findById(id)
-//                .map(material -> {
-//                    // Update basic properties
-//                    if (materialRequest.getTitle() != null) {
-//                        material.setTitle(materialRequest.getTitle());
-//                    }
-//                    
-//                    if (materialRequest.getDescription() != null) {
-//                        material.setDescription(materialRequest.getDescription());
-//                    }
-//                    
-//                    if (materialRequest.getContent() != null) {
-//                        material.setContent(materialRequest.getContent());
-//                    }
-//                    
-//                    if (materialRequest.getExternalUrl() != null) {
-//                        material.setExternalUrl(materialRequest.getExternalUrl());
-//                    }
-//                    
-//                    if (materialRequest.getEstimatedDuration() != null) {
-//                        material.setEstimatedDuration(materialRequest.getEstimatedDuration());
-//                    }
-//                    
-//                    // Update sequence order if needed
-//                    if (materialRequest.getSequenceOrder() != null &&
-//                            !materialRequest.getSequenceOrder().equals(material.getSequenceOrder())) {
-//                        
-//                        ModuleComponent component = material.getComponent();
-//                        int oldOrder = material.getSequenceOrder();
-//                        int newOrder = materialRequest.getSequenceOrder();
-//                        
-//                        List<LearningMaterial> materials = 
-//                            materialRepository.findByComponentOrderBySequenceOrderAsc(component);
-//                        
-//                        // Reorder logic similar to components
-//                        for (LearningMaterial m : materials) {
-//                            if (m.getId().equals(material.getId())) {
-//                                continue; // Skip the material being updated
-//                            }
-//                            
-//                            if (oldOrder < newOrder) { // Moving down
-//                                if (m.getSequenceOrder() > oldOrder && m.getSequenceOrder() <= newOrder) {
-//                                    m.setSequenceOrder(m.getSequenceOrder() - 1);
-//                                    materialRepository.save(m);
-//                                }
-//                            } else { // Moving up
-//                                if (m.getSequenceOrder() >= newOrder && m.getSequenceOrder() < oldOrder) {
-//                                    m.setSequenceOrder(m.getSequenceOrder() + 1);
-//                                    materialRepository.save(m);
-//                                }
-//                            }
-//                        }
-//                        
-//                        material.setSequenceOrder(newOrder);
-//                    }
-//                    
-//                    LearningMaterial updatedMaterial = materialRepository.save(material);
-//                    return ResponseEntity.ok(updatedMaterial);
-//                })
-//                .orElse(ResponseEntity.notFound().build());
-//    }
-//    
-    /**
      * Delete learning material
      */
     @DeleteMapping("/materials/{id}")
@@ -415,20 +427,39 @@ public class LearningMaterialController {
      */
     private String determineContentType(String fileType) {
         if (fileType == null) return "application/octet-stream";
-        
+
         switch (fileType.toUpperCase()) {
             case "PDF":
                 return "application/pdf";
             case "PRESENTATION":
+                return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+            case "PPT":
                 return "application/vnd.ms-powerpoint";
+            case "PPTX":
+                return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
             case "VIDEO":
+                return "video/mp4";
+            case "MP4":
                 return "video/mp4";
             case "DOCUMENT":
                 return "application/msword";
+            case "DOC":
+                return "application/msword";
+            case "DOCX":
+                return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
             case "HTML":
                 return "text/html";
             case "IMAGE":
                 return "image/jpeg";
+            case "JPG":
+            case "JPEG":
+                return "image/jpeg";
+            case "PNG":
+                return "image/png";
+            case "GIF":
+                return "image/gif";
+            case "SVG":
+                return "image/svg+xml";
             default:
                 return "application/octet-stream";
         }

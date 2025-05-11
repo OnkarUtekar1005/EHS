@@ -1,0 +1,9 @@
+Context of the project : an enviornment health safety elearning application with 2 roles 
+admin : which has to make training modules, publish them for users, edit them on the go, and manage users while being able to get all the access of most of the application
+user : which has to be able to view and complete training modules and see their progress and report
+the basic overview of the project is in project overview.md understand that first 
+here lies the currently changes that i need for the project
+The admin is now able to create the training module from the frontend and backend the whole of it, admin creates modules adds questions and add learning material to the triaing modules with its descriptions
+now the user part wheere the user which share the same domain as the training module should have a flow to access the whole training module like he should be able to get the give the post assessment should be able to view the learing material and also give the post assessments 
+he should also get a report out of it  
+now it is a big task first task you yours is to create comprehenvide plan and create a userflow plan in a md file

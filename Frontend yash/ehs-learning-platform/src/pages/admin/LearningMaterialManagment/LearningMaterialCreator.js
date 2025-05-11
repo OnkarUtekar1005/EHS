@@ -1,5 +1,5 @@
 // src/pages/admin/LearningMaterialCreator.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Paper,
@@ -41,9 +41,9 @@ import {
   Description as DocumentIcon,
   Image as ImageIcon,
   PictureAsPdf as PdfIcon,
-  Upload as UploadIcon
+  Upload as UploadIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
-import { useParams, useNavigate } from 'react-router-dom';
 import { learningMaterialService } from '../../../services/api';
 
 // Material type constants - should match backend enum
@@ -74,6 +74,8 @@ const LearningMaterialCreator = ({
   const [dialogType, setDialogType] = useState('');
   const [currentMaterial, setCurrentMaterial] = useState(null);
   const [editingIndex, setEditingIndex] = useState(-1);
+
+  // Preview functionality removed
   
   // Material content state
   const [materialData, setMaterialData] = useState({
@@ -85,35 +87,33 @@ const LearningMaterialCreator = ({
     estimatedDuration: 5,
     file: null
   });
-  
+
   // Tab state for different material types
   const [tabValue, setTabValue] = useState(0);
-  
+
   // File upload state
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   
-  const navigate = useNavigate();
-  
   // Check if component is temporary
-  const isTemporaryComponent = () => {
+  const isTemporaryComponent = useCallback(() => {
     return componentId && String(componentId).startsWith('comp-');
-  };
+  }, [componentId]);
   
   // Load existing materials if component ID is provided and no initial materials
   useEffect(() => {
     console.log("ComponentId:", componentId);
     console.log("InitialMaterials:", initialMaterials);
-    
+
     if (componentId && (!initialMaterials || initialMaterials.length === 0) && !isTemporaryComponent()) {
       fetchMaterials();
     } else if (initialMaterials && initialMaterials.length > 0) {
       setMaterials(initialMaterials);
     }
-  }, [componentId, initialMaterials]);
+  }, [componentId, initialMaterials, fetchMaterials, isTemporaryComponent]);
   
   // Fetch materials
-  const fetchMaterials = async () => {
+  const fetchMaterials = useCallback(async () => {
     try {
       setLoading(true);
       console.log("Fetching materials for component:", componentId);
@@ -132,7 +132,7 @@ const LearningMaterialCreator = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [componentId, setLoading, setError, setMaterials]);
   
   // Handle tab change
   const handleTabChange = (event, newValue) => {
@@ -161,13 +161,6 @@ const LearningMaterialCreator = ({
     });
   };
   
-  // Handle rich text editor change
-  const handleContentChange = (content) => {
-    setMaterialData({
-      ...materialData,
-      content
-    });
-  };
   
   // Handle file selection
   const handleFileSelect = (e) => {
@@ -519,7 +512,7 @@ const LearningMaterialCreator = ({
   // Get icon for material type
   const getMaterialIcon = (type) => {
     if (!type) return <DocumentIcon />; // Default icon for undefined type
-    
+
     switch (type) {
       case MATERIAL_TYPES.PDF:
         return <PdfIcon />;
@@ -539,6 +532,8 @@ const LearningMaterialCreator = ({
         return <DocumentIcon />;
     }
   };
+
+  // Preview functionality removed
   
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -673,6 +668,7 @@ const LearningMaterialCreator = ({
                                     <span className="material-icons">edit</span>
                                   </IconButton>
                                 </Tooltip>
+                                {/* Preview button removed */}
                                 <Tooltip title="Delete">
                                   <IconButton onClick={() => handleDeleteMaterial(material, index)}>
                                     <DeleteIcon />
@@ -703,8 +699,8 @@ const LearningMaterialCreator = ({
       </Paper>
       
       {/* Add/Edit Material Dialog */}
-      <Dialog 
-        open={openDialog} 
+      <Dialog
+        open={openDialog}
         onClose={handleCloseDialog}
         fullWidth
         maxWidth="md"
@@ -722,7 +718,7 @@ const LearningMaterialCreator = ({
                 <Tab icon={<CodeIcon />} label="HTML Content" />
               </Tabs>
             </Box>
-            
+
             <Box mt={3}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
@@ -757,11 +753,11 @@ const LearningMaterialCreator = ({
                     inputProps={{ min: 1 }}
                   />
                 </Grid>
-                
+
                 {/* File Upload Tab */}
                 {tabValue === 0 && (
                   <Grid item xs={12}>
-                    <Box 
+                    <Box
                       border="2px dashed #ccc"
                       borderRadius={1}
                       p={3}
@@ -787,7 +783,7 @@ const LearningMaterialCreator = ({
                       <Typography variant="body2" color="textSecondary">
                         Supports PDF, PPT, DOC, and images
                       </Typography>
-                      
+
                       {selectedFile && (
                         <Box mt={2} p={2} bgcolor="#f5f5f5" borderRadius={1}>
                           <Typography variant="body2">
@@ -795,15 +791,15 @@ const LearningMaterialCreator = ({
                           </Typography>
                           {previewUrl && (
                             <Box mt={2} display="flex" justifyContent="center">
-                              <img 
-                                src={previewUrl} 
-                                alt="Preview" 
-                                style={{ maxWidth: '100%', maxHeight: '200px' }} 
+                              <img
+                                src={previewUrl}
+                                alt="Preview"
+                                style={{ maxWidth: '100%', maxHeight: '200px' }}
                               />
                             </Box>
                           )}
-                          <Button 
-                            size="small" 
+                          <Button
+                            size="small"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleClearFile();
@@ -817,7 +813,7 @@ const LearningMaterialCreator = ({
                     </Box>
                   </Grid>
                 )}
-                
+
                 {/* Video Tab */}
                 {tabValue === 1 && (
                   <Grid item xs={12}>
@@ -833,7 +829,7 @@ const LearningMaterialCreator = ({
                     />
                   </Grid>
                 )}
-                
+
                 {/* External Link Tab */}
                 {tabValue === 2 && (
                   <Grid item xs={12}>
@@ -849,7 +845,7 @@ const LearningMaterialCreator = ({
                     />
                   </Grid>
                 )}
-                
+
                 {/* HTML Content Tab */}
                 {tabValue === 3 && (
                   <Grid item xs={12}>
@@ -873,15 +869,15 @@ const LearningMaterialCreator = ({
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button 
+          <Button
             onClick={handleCloseDialog}
             startIcon={<CancelIcon />}
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleSaveMaterial} 
-            variant="contained" 
+          <Button
+            onClick={handleSaveMaterial}
+            variant="contained"
             color="primary"
             startIcon={loading ? <CircularProgress size={16} /> : <SaveIcon />}
             disabled={loading}
@@ -890,6 +886,8 @@ const LearningMaterialCreator = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Preview Dialog removed */}
     </Container>
   );
 };

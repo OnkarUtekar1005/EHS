@@ -35,8 +35,7 @@ import {
   Delete as DeleteIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  SmartToy as AIIcon,
-  Visibility as PreviewIcon
+  SmartToy as AIIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
@@ -495,9 +494,8 @@ const ModuleCreator = () => {
   // Cancel and go back
   const handleCancel = () => navigate('/admin/modules');
   
-  // Placeholder functions
+  // Placeholder function
   const handleAIGenerate = () => alert('This feature is not implemented yet');
-  const handlePreviewModule = () => alert('Preview functionality not implemented yet');
   
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -731,14 +729,6 @@ const ModuleCreator = () => {
                 disabled={loading}
               >
                 AI Generate
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<PreviewIcon />}
-                onClick={handlePreviewModule}
-                disabled={loading}
-              >
-                Preview
               </Button>
             </Box>
           </Box>

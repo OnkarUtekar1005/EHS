@@ -21,10 +21,6 @@ import {
   CircularProgress,
   Alert,
   Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Chip,
   Pagination
 } from '@mui/material';
@@ -44,6 +40,7 @@ import {
   Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { materialLibraryService } from '../../../services/api';
+//import MaterialPreviewDialog from '../../../components/admin/MaterialPreviewDialog';
 
 // Material type constants
 const MATERIAL_TYPES = {
@@ -63,16 +60,14 @@ const LearningMaterialBrowser = ({ componentId, initialMaterials = [], onSave, o
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  
-  // Preview dialog state
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewMaterial, setPreviewMaterial] = useState(null);
+
+  // Preview state removed
   
   // Check if componentId is temporary
   const isTemporaryComponent = () => {
@@ -181,16 +176,7 @@ const LearningMaterialBrowser = ({ componentId, initialMaterials = [], onSave, o
     setSelectedMaterials(newMaterials);
   };
   
-  // Preview material
-  const handlePreviewMaterial = (material) => {
-    setPreviewMaterial(material);
-    setPreviewOpen(true);
-  };
-  
-  // Close preview dialog
-  const handleClosePreview = () => {
-    setPreviewOpen(false);
-  };
+  // Preview handlers removed
   
   // Save selected materials
   const handleSaveSelection = async () => {
@@ -367,11 +353,7 @@ const LearningMaterialBrowser = ({ componentId, initialMaterials = [], onSave, o
                                   </IconButton>
                                 </span>
                               </Tooltip>
-                              <Tooltip title="Preview">
-                                <IconButton onClick={() => handlePreviewMaterial(material)}>
-                                  <VisibilityIcon />
-                                </IconButton>
-                              </Tooltip>
+                              {/* Preview button removed */}
                               <Tooltip title="Remove">
                                 <IconButton onClick={() => handleRemoveMaterial(material)}>
                                   <DeleteIcon />
@@ -483,13 +465,7 @@ const LearningMaterialBrowser = ({ componentId, initialMaterials = [], onSave, o
                             >
                               Select
                             </Button>
-                            <Button 
-                              size="small" 
-                              onClick={() => handlePreviewMaterial(material)}
-                              startIcon={<VisibilityIcon />}
-                            >
-                              Preview
-                            </Button>
+                            {/* Preview button removed */}
                           </CardActions>
                         </Card>
                       </Grid>
@@ -511,97 +487,7 @@ const LearningMaterialBrowser = ({ componentId, initialMaterials = [], onSave, o
         </Grid>
       </Grid>
       
-      {/* Material Preview Dialog */}
-      <Dialog
-        open={previewOpen}
-        onClose={handleClosePreview}
-        fullWidth
-        maxWidth="md"
-      >
-        <DialogTitle>
-          {previewMaterial?.title}
-        </DialogTitle>
-        <DialogContent>
-          {previewMaterial && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>
-                {previewMaterial.fileType} • {previewMaterial.estimatedDuration || 0} min
-              </Typography>
-              
-              {previewMaterial.description && (
-                <Typography variant="body1" paragraph>
-                  {previewMaterial.description}
-                </Typography>
-              )}
-              
-              {previewMaterial.fileType === MATERIAL_TYPES.IMAGE && previewMaterial.filePath && (
-                <Box sx={{ textAlign: 'center', mt: 2 }}>
-                  <img 
-                    src={`/api/files/${previewMaterial.filePath}`}
-                    alt={previewMaterial.title}
-                    style={{ maxWidth: '100%', maxHeight: '400px' }}
-                  />
-                </Box>
-              )}
-              
-              {previewMaterial.fileType === MATERIAL_TYPES.PDF && previewMaterial.filePath && (
-                <Box sx={{ textAlign: 'center', mt: 2 }}>
-                  <iframe
-                    src={`/api/files/${previewMaterial.filePath}`}
-                    width="100%"
-                    height="500px"
-                    title={previewMaterial.title}
-                  />
-                </Box>
-              )}
-              
-              {previewMaterial.fileType === MATERIAL_TYPES.VIDEO && previewMaterial.externalUrl && (
-                <Box sx={{ textAlign: 'center', mt: 2 }}>
-                  <iframe
-                    src={previewMaterial.externalUrl}
-                    width="100%"
-                    height="400px"
-                    frameBorder="0"
-                    allowFullScreen
-                    title={previewMaterial.title}
-                  />
-                </Box>
-              )}
-              
-              {previewMaterial.fileType === MATERIAL_TYPES.HTML && previewMaterial.content && (
-                <Box sx={{ mt: 2, border: '1px solid #eee', p: 2, borderRadius: 1 }}>
-                  <div dangerouslySetInnerHTML={{ __html: previewMaterial.content }} />
-                </Box>
-              )}
-              
-              {previewMaterial.fileType === MATERIAL_TYPES.EXTERNAL && previewMaterial.externalUrl && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="body1">
-                    External Link: <a href={previewMaterial.externalUrl} target="_blank" rel="noopener noreferrer">
-                      {previewMaterial.externalUrl}
-                    </a>
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClosePreview}>Close</Button>
-          {!selectedMaterials.some(m => m.id === previewMaterial?.id) && (
-            <Button 
-              onClick={() => {
-                handleSelectMaterial(previewMaterial);
-                handleClosePreview();
-              }}
-              variant="contained"
-              color="primary"
-            >
-              Select Material
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+      {/* Material Preview Dialog removed */}
     </Box>
   );
 };
