@@ -1,11 +1,48 @@
 Context of the project : an enviornment health safety elearning application with 2 roles 
 admin : which has to make training modules, publish them for users, edit them on the go, and manage users while being able to get all the access of most of the application
 user : which has to be able to view and complete training modules and see their progress and report
-the basic overview of the project is in project overview.md understand that first 
+the basic overview of the project is in flow documentation project overview.md understand that first 
 here lies the currently changes that i need for the project
-The user when on the login page there is a hyperlink of forgotpassword  now this functionality is not working .U have given me the approach using email to reset password but when user click on the receved email like it direct it to the reset page but when i add the new password it gives mee error-'Error: Password is required' and 400 in the api
-Now i want you to analyze the code understand the issue and make a plan to soleve and then make changes
-also Note we just need to make chnages where forgotpassword is used we dont need to do chnages in the other parts
-now if it is a big task first task you yours is to create comprehenvide plan and create a userforgotpassword plan in a md file
-
- 
+currently i am working on the user module my courses section where the user should be able to start the course created by the admin 
+i have 3 test modules with me now first is with only pre assessment so we will only focus on that lets make a complete part where a 
+user can start the module and will be able to give the pre assessment and thats it later we can add the functionality later first only 
+current assessment view is giving issues
+ "ERROR
+_q$options.map is not a function
+TypeError: _q$options.map is not a function
+    at http://localhost:3000/static/js/bundle.js:186646:107
+    at Array.map (<anonymous>)
+    at renderAssessmentComponent (http://localhost:3000/static/js/bundle.js:186627:30)
+    at renderActiveComponent (http://localhost:3000/static/js/bundle.js:186457:14)
+    at ModuleView (http://localhost:3000/static/js/bundle.js:186346:44)
+    at renderWithHooks (http://localhost:3000/static/js/bundle.js:118909:22)
+    at updateFunctionComponent (http://localhost:3000/static/js/bundle.js:122476:24)
+    at beginWork (http://localhost:3000/static/js/bundle.js:124195:20)
+    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:109165:18)
+    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:109209:20)
+ERROR
+_q$options.map is not a function
+TypeError: _q$options.map is not a function
+    at http://localhost:3000/static/js/bundle.js:186646:107
+    at Array.map (<anonymous>)
+    at renderAssessmentComponent (http://localhost:3000/static/js/bundle.js:186627:30)
+    at renderActiveComponent (http://localhost:3000/static/js/bundle.js:186457:14)
+    at ModuleView (http://localhost:3000/static/js/bundle.js:186346:44)
+    at renderWithHooks (http://localhost:3000/static/js/bundle.js:118909:22)
+    at updateFunctionComponent (http://localhost:3000/static/js/bundle.js:122476:24)
+    at beginWork (http://localhost:3000/static/js/bundle.js:124195:20)
+    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:109165:18)
+    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:109209:20)
+ERROR
+_q$options.map is not a function
+TypeError: _q$options.map is not a function
+    at http://localhost:3000/static/js/bundle.js:186646:107
+    at Array.map (<anonymous>)
+    at renderAssessmentComponent (http://localhost:3000/static/js/bundle.js:186627:30)
+    at renderActiveComponent (http://localhost:3000/static/js/bundle.js:186457:14)
+    at ModuleView (http://localhost:3000/static/js/bundle.js:186346:44)
+    at renderWithHooks (http://localhost:3000/static/js/bundle.js:118909:22)
+    at updateFunctionComponent (http://localhost:3000/static/js/bundle.js:122476:24)
+    at beginWork (http://localhost:3000/static/js/bundle.js:124195:20)
+    at beginWork$1 (http://localhost:3000/static/js/bundle.js:129142:18)
+    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:128412:16)"

@@ -25,11 +25,28 @@ const AssessmentViewer = ({ componentId, isCompleted, onComplete }) => {
         // Get assessment questions
         const response = await assessmentService.getQuestions(componentId);
         
-        // Format questions if needed
-        const formattedQuestions = response.data.map(q => ({
-          ...q,
-          options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options
-        }));
+        // Format questions with proper error handling for options
+        const formattedQuestions = response.data.map(q => {
+          let parsedOptions = [];
+          
+          try {
+            // If options is a string, try to parse it as JSON
+            if (typeof q.options === 'string') {
+              parsedOptions = JSON.parse(q.options);
+            } else if (Array.isArray(q.options)) {
+              // If already an array, use it directly
+              parsedOptions = q.options;
+            }
+          } catch (err) {
+            console.error('Error parsing options for question:', q.id, err);
+            // Fall back to empty array on parsing error (already initialized)
+          }
+          
+          return {
+            ...q,
+            options: parsedOptions
+          };
+        });
         
         setQuestions(formattedQuestions);
         
@@ -202,7 +219,7 @@ const AssessmentViewer = ({ componentId, isCompleted, onComplete }) => {
                     value={answers[question.id] || ''}
                     onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                   >
-                    {Array.isArray(question.options) ? (
+                    {Array.isArray(question.options) && question.options.length > 0 ? (
                       question.options.map(option => (
                         <FormControlLabel
                           key={option.id || option.value || option}

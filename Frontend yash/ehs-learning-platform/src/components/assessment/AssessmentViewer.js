@@ -225,10 +225,19 @@ const AssessmentViewer = ({
     let options = [];
     try {
       if (question.options) {
-        options = JSON.parse(question.options);
+        if (typeof question.options === 'string') {
+          options = JSON.parse(question.options);
+        } else if (Array.isArray(question.options)) {
+          options = question.options;
+        }
       }
     } catch (err) {
       console.error('Error parsing options:', err);
+    }
+    
+    // Ensure options is an array
+    if (!Array.isArray(options)) {
+      options = [];
     }
     
     return (

@@ -213,7 +213,45 @@ const ModuleView = () => {
                         const assessmentResponse = await assessmentService.getQuestions(component.id);
                         if (!isEffectMounted) return; // Check mount after await
                         console.log(`${LOG_PREFIX} loadComponent: Fetched questions for ${component.id}.`);
-                        loadedComponentData = { ...component, questions: assessmentResponse.data || [] };
+                        
+                        // Parse options from JSON string to array for each question
+                        const processedQuestions = (assessmentResponse.data || []).map(question => {
+                            // Handle options: convert from JSON string to array if needed
+                            let parsedOptions = [];
+                            
+                            if (question.options) {
+                                try {
+                                    // Check if options is already an array or needs parsing
+                                    if (typeof question.options === 'string') {
+                                        parsedOptions = JSON.parse(question.options);
+                                        
+                                        // Additional validation for parsed options
+                                        if (!Array.isArray(parsedOptions)) {
+                                            console.warn(`${LOG_PREFIX} Parsed options is not an array for question ${question.id}:`, parsedOptions);
+                                            parsedOptions = [];
+                                        }
+                                    } else if (Array.isArray(question.options)) {
+                                        parsedOptions = question.options;
+                                    } else {
+                                        console.warn(`${LOG_PREFIX} Options is not a string or array:`, typeof question.options);
+                                    }
+                                } catch (err) {
+                                    console.error(`${LOG_PREFIX} Error parsing options for question ${question.id}:`, err);
+                                }
+                            } else {
+                                console.warn(`${LOG_PREFIX} No options found for question ${question.id}`);
+                            }
+                            
+                            // Log what we're returning for debugging
+                            console.log(`${LOG_PREFIX} Question ${question.id} options:`, parsedOptions);
+                            
+                            return {
+                                ...question,
+                                options: parsedOptions
+                            };
+                        });
+                        
+                        loadedComponentData = { ...component, questions: processedQuestions };
                     }
                 } else {
                     console.log(`${LOG_PREFIX} loadComponent: Is Learning type (${component.type}).`);
@@ -532,7 +570,14 @@ const ModuleView = () => {
                          <FormControl component="fieldset" key={q.id} sx={{ mb: 3, width: '100%' }}>
                              <FormLabel component="legend">{index + 1}. {q.text}</FormLabel>
                              <RadioGroup name={`question_${q.id}`} value={assessmentAnswers[q.id] || ''} onChange={(e) => handleAnswerChange(q.id, e.target.value)} >
-                                 {q.options?.map((opt) => ( <FormControlLabel key={opt.id} value={opt.id} control={<Radio />} label={opt.text} /> )) || <Typography variant="caption">No options.</Typography>}
+                                 {Array.isArray(q.options) && q.options.length > 0 
+                                  ? q.options.map((opt) => ( <FormControlLabel 
+                                      key={opt.id || `option-${Math.random()}`} 
+                                      value={opt.id || opt.value || String(opt)} 
+                                      control={<Radio />} 
+                                      label={opt.text || opt.label || String(opt)} 
+                                    /> )) 
+                                  : <Typography variant="caption">No options.</Typography>}
                              </RadioGroup>
                          </FormControl>
                      ))}
