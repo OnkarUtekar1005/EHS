@@ -5,9 +5,11 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.sql.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+
 
 @Entity
 @Table(name = "users", 
@@ -41,6 +43,8 @@ public class Users {
     private String lastName;
     private String jobTitle;
     private String department;
+    private String lastGeneratedPassword; // Store the last generated password for admin export
+    private Date lastPasswordReset; ;
     
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -155,4 +159,21 @@ public class Users {
     public void setDomains(Set<Domain> domains) {
         this.domains = domains;
     }
+
+    public String getLastGeneratedPassword() {
+        return lastGeneratedPassword;
+    }
+
+    public void setLastGeneratedPassword(String lastGeneratedPassword) {
+        this.lastGeneratedPassword = lastGeneratedPassword;
+    }
+
+    public Date getLastPasswordReset() {
+        return lastPasswordReset;
+    }
+
+    public void setLastPasswordReset(Date lastPasswordReset) {
+        this.lastPasswordReset = lastPasswordReset;
+    }
+
 }

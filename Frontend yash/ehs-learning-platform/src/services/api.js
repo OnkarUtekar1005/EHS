@@ -122,18 +122,18 @@ export const authService = {
     login: async (credentials) => {
       try {
         const response = await api.post('/auth/login', credentials);
-        
+
         // Store token in localStorage when login is successful
         if (response.data && response.data.token) {
           // IMPORTANT: Store the token WITHOUT 'Bearer ' prefix
           // The interceptor will add it when making requests
           localStorage.setItem('token', response.data.token);
           console.log('Token stored in localStorage after login', response.data.token.substring(0, 10) + '...');
-          
+
           // Store user info
           localStorage.setItem('user', JSON.stringify(response.data));
         }
-        
+
         return response;
       } catch (error) {
         console.error('Login error:', error);
@@ -154,9 +154,24 @@ export const authService = {
     },
     getCurrentUser: () => api.get('/auth/user'),
     changePassword: (passwordData) => api.put('/auth/password', passwordData),
-    requestPasswordReset: (email) => api.post('/auth/password/reset-request', email),
-    validateResetToken: (token) => api.get(`/auth/password/validate-token/${token}`),
-    resetPassword: (resetData) => api.post('/auth/password/reset', resetData),
+
+    // New password reset flow endpoints
+    requestPasswordReset: (emailData) => {
+      console.log('Requesting password reset for:', emailData);
+      return api.post('/auth/forgot-password', emailData);
+    },
+    validateResetToken: (token) => {
+      console.log('Validating reset token:', token);
+      const endpoint = `/auth/reset-password/validate?token=${token}`;
+      console.log('Validation endpoint:', endpoint);
+      console.log('Full URL:', api.defaults.baseURL + endpoint);
+      return api.get(endpoint);
+    },
+    resetPassword: (resetData) => {
+      console.log('Resetting password with token');
+      console.log('Reset password payload:', JSON.stringify(resetData, null, 2));
+      return api.post('/auth/reset-password', resetData);
+    },
 };
 
 // User services
@@ -171,6 +186,9 @@ export const userService = {
   search: (criteria) => api.get('/users/search', { params: criteria }),
   assignDomains: (userId, domains) => api.put(`/users/${userId}/domains`, domains),
   assignBulkDomains: (data) => api.put('/users/domains/assign', data),
+   exportUsers: () => {
+    return api.get('/users/export');
+   }
 };
 
 // Domain services

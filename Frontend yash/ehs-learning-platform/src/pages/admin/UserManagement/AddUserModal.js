@@ -3,7 +3,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, Button, Select, MenuItem, FormControl,
   InputLabel, Grid, Typography, List, ListItem,
-  ListItemText, Checkbox, Box
+  ListItemText, Checkbox, Box, IconButton
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import api from '../../../services/api';
@@ -11,13 +11,12 @@ import api from '../../../services/api';
 function AddUserModal({ open, onClose, onUserAdded }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [role, setRole] = useState('EMPLOYEE');
   const [domains, setDomains] = useState([]);
   const [availableDomains, setAvailableDomains] = useState([]);
   const [selectedDomains, setSelectedDomains] = useState([]);
   const [errors, setErrors] = useState({});
-  
+
   // Fetch available domains
   useEffect(() => {
     if (open) {
@@ -29,33 +28,10 @@ function AddUserModal({ open, onClose, onUserAdded }) {
           console.error('Error fetching domains:', error);
         }
       };
-      
+
       fetchDomains();
-      generatePassword();
     }
   }, [open]);
-  
-  // Generate random password
-  const generatePassword = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
-    let newPassword = '';
-    
-    // Ensure password has at least one of each required character type
-    newPassword += chars.substring(0, 26).charAt(Math.floor(Math.random() * 26)); // Uppercase
-    newPassword += chars.substring(26, 52).charAt(Math.floor(Math.random() * 26)); // Lowercase
-    newPassword += chars.substring(52, 62).charAt(Math.floor(Math.random() * 10)); // Number
-    newPassword += chars.substring(62).charAt(Math.floor(Math.random() * (chars.length - 62))); // Special char
-    
-    // Add remaining characters
-    for (let i = 4; i < 10; i++) {
-      newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    
-    // Shuffle the password
-    newPassword = newPassword.split('').sort(() => 0.5 - Math.random()).join('');
-    
-    setPassword(newPassword);
-  };
   
   // Handle domain selection
   const handleDomainToggle = (domainId) => {
@@ -74,31 +50,34 @@ function AddUserModal({ open, onClose, onUserAdded }) {
   // Validate form
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!username) newErrors.username = 'Username is required';
     if (!email) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Email is invalid';
-    if (!password) newErrors.password = 'Password is required';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   // Handle form submit
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    
+
     try {
       const userData = {
         username,
         email,
-        password,
         role,
         domainIds: selectedDomains
       };
-      
-      await api.post('/api/users', userData);
-      onUserAdded();
+
+      const response = await api.post('/api/users', userData);
+      // Pass the backend-generated password to the parent component
+      if (response.data && response.data.password) {
+        onUserAdded(response.data.password);
+      } else {
+        onUserAdded();
+      }
       handleClose();
       // Show success notification
     } catch (error) {
@@ -122,7 +101,6 @@ function AddUserModal({ open, onClose, onUserAdded }) {
   const handleClose = () => {
     setUsername('');
     setEmail('');
-    setPassword('');
     setRole('EMPLOYEE');
     setSelectedDomains([]);
     setErrors({});
@@ -176,24 +154,11 @@ function AddUserModal({ open, onClose, onUserAdded }) {
           </Grid>
           
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label="Password"
-              type="text"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              InputProps={{
-                endAdornment: (
-                  <Button onClick={generatePassword} size="small">
-                    Generate
-                  </Button>
-                )
-              }}
-              error={!!errors.password}
-              helperText={errors.password}
-              required
-              margin="normal"
-            />
+            <div style={{ padding: '16px 0', marginTop: '16px' }}>
+              <Typography variant="body2" color="textSecondary">
+                A secure password will be generated automatically when the user is created.
+              </Typography>
+            </div>
           </Grid>
           
           <Grid item xs={12} md={6}>
