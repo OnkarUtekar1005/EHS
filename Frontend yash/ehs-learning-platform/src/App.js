@@ -135,7 +135,7 @@ function AppContent() {
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         
         {/* User routes */}
         <Route 

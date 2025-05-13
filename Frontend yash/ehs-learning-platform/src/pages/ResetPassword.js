@@ -1,6 +1,6 @@
 // src/pages/ResetPassword.js
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Container,
   Box,
   Typography,
@@ -12,12 +12,12 @@ import {
   IconButton,
   CircularProgress
 } from '@mui/material';
-import { 
+import {
   Visibility,
   VisibilityOff,
   ArrowBack
 } from '@mui/icons-material';
-import { useNavigate, useParams, Link as RouterLink } from 'react-router-dom';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { authService } from '../services/api';
 
 const ResetPassword = () => {
@@ -35,18 +35,36 @@ const ResetPassword = () => {
   const [success, setSuccess] = useState(false);
   const [isValidatingToken, setIsValidatingToken] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
-  
-  const { token } = useParams();
+
   const navigate = useNavigate();
+  const location = useLocation();
+  const token = new URLSearchParams(location.search).get('token');
 
   useEffect(() => {
     const validateToken = async () => {
+      if (!token) {
+        console.error("No token found in URL");
+        setTokenValid(false);
+        setIsValidatingToken(false);
+        return;
+      }
+
       try {
+        console.log(`Validating token: ${token}`);
         // Connect to the real API endpoint to validate token
         await authService.validateResetToken(token);
         setTokenValid(true);
+        console.log("Token validation successful");
       } catch (error) {
         console.error('Token validation error:', error);
+        if (error.response) {
+          console.error('Token validation response:', error.response.data);
+          console.error('Status code:', error.response.status);
+        } else if (error.request) {
+          console.error('No response received:', error.request);
+        } else {
+          console.error('Error message:', error.message);
+        }
         setTokenValid(false);
       } finally {
         setIsValidatingToken(false);
@@ -129,9 +147,9 @@ const ResetPassword = () => {
     
     try {
       // Connect to the real API endpoint
-      await authService.resetPassword({ 
-        token, 
-        newPassword: passwords.password 
+      await authService.resetPassword({
+        token,
+        password: passwords.password  // Changed from 'newPassword' to 'password' to match backend expectation
       });
       
       setSuccess(true);
@@ -141,14 +159,17 @@ const ResetPassword = () => {
         navigate('/login');
       }, 3000);
     } catch (error) {
+      console.error('Password reset error:', error);
+
       if (error.response) {
         const { status, data } = error.response;
-        
+        console.error('Error response:', { status, data });
+
         if (status === 400) {
           setSubmitError(data?.message || 'Invalid request. Please check your password and try again.');
         } else if (status === 401 || status === 403) {
           setSubmitError('Your password reset link has expired. Please request a new one.');
-          
+
           // Redirect to forgot password page after 2 seconds
           setTimeout(() => {
             navigate('/forgot-password');
@@ -159,8 +180,10 @@ const ResetPassword = () => {
           setSubmitError('Failed to reset password. Please try again.');
         }
       } else if (error.request) {
+        console.error('No response received:', error.request);
         setSubmitError('Cannot connect to the server. Please check your internet connection and try again.');
       } else {
+        console.error('Error message:', error.message);
         setSubmitError('An unexpected error occurred. Please try again.');
       }
     } finally {

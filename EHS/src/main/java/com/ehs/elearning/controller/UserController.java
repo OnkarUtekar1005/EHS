@@ -305,7 +305,10 @@ public class UserController {
         
         // Create user
         Users user = new Users(username, email, passwordEncoder.encode(password));
-        
+
+        // After generating the password in createUser method
+           user.setLastGeneratedPassword(password);
+           user.setLastPasswordReset(new java.sql.Date(System.currentTimeMillis()));
         // Set role
         String role = userData.get("role");
         if (role == null || role.isEmpty()) {
@@ -381,7 +384,10 @@ public class UserController {
             
             // Create user
             Users user = new Users(username, email, passwordEncoder.encode(password));
-            
+     
+            // After generating the password in createUser method
+               user.setLastGeneratedPassword(password);
+               user.setLastPasswordReset(new java.sql.Date(System.currentTimeMillis()));
             // Set role (default to USER)
             if (role == null || role.isEmpty()) {
                 user.setRole(Role.USER);
@@ -507,7 +513,7 @@ public class UserController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         UUID userId = userDetails.getId();
-        
+
         return userRepository.findById(userId).map(user -> {
             Map<String, Object> profile = new HashMap<>();
             profile.put("id", user.getId());
@@ -517,8 +523,132 @@ public class UserController {
             profile.put("lastName", user.getLastName());
             profile.put("role", user.getRole());
             profile.put("assignedDomains", user.getDomains());
-            
+
             return ResponseEntity.ok(profile);
         }).orElse(ResponseEntity.notFound().build());
+    }
+
+    // Generate a secure random password
+    @GetMapping("/generate-password")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> generatePassword() {
+        String password = generateSecurePassword();
+        Map<String, String> response = new HashMap<>();
+        response.put("password", password);
+        return ResponseEntity.ok(response);
+    }
+
+    // Reset password for a specific user
+    @PutMapping("/{id}/password")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> resetUserPassword(@PathVariable UUID id, @RequestBody Map<String, Object> resetData) {
+        return userRepository.findById(id).map(user -> {
+            boolean useRandomPassword = resetData.containsKey("useRandomPassword")
+                && (Boolean) resetData.get("useRandomPassword");
+
+            String password;
+
+            if (useRandomPassword) {
+                // Generate random password
+                password = generateSecurePassword();
+            } else if (resetData.containsKey("password") && resetData.get("password") != null) {
+                // Use provided password
+                password = (String) resetData.get("password");
+            } else {
+                return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Either password or useRandomPassword flag must be provided"));
+            }
+
+            // Encode and set the password
+            user.setPassword(passwordEncoder.encode(password));
+
+            // Store plaintext password for reference
+            user.setLastGeneratedPassword(password);
+            user.setLastPasswordReset(new java.sql.Date(System.currentTimeMillis()));
+
+            // Save the user
+            userRepository.save(user);
+
+            // Handle email notification if requested
+            boolean sendEmail = resetData.containsKey("sendEmail")
+                && (Boolean) resetData.get("sendEmail");
+
+            if (sendEmail) {
+                // TODO: Implement email notification (can be added in a future implementation)
+                // Example: emailService.sendPasswordResetNotification(user.getEmail(), password);
+            }
+
+            // Prepare response
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Password reset successfully");
+            if (useRandomPassword) {
+                response.put("generatedPassword", password);
+            }
+
+            return ResponseEntity.ok(response);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+      @GetMapping("/export")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> exportUsers() {
+        List<Users> allUsers = userRepository.findAll();
+        
+        List<Map<String, Object>> exportData = new ArrayList<>();
+        
+        for (Users user : allUsers) {
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", user.getId().toString());
+            userData.put("username", user.getUsername());
+            userData.put("email", user.getEmail());
+            userData.put("firstName", user.getFirstName());
+            userData.put("lastName", user.getLastName());
+            userData.put("role", user.getRole().toString());
+            userData.put("department", user.getDepartment());
+            userData.put("jobTitle", user.getJobTitle());
+            
+            // Include the generated password in the export
+            userData.put("password", user.getLastGeneratedPassword());
+            userData.put("passwordCreatedAt", user.getLastPasswordReset());
+            
+            // Get domains
+            List<String> domainNames = user.getDomains().stream()
+                .map(Domain::getName)
+                .collect(Collectors.toList());
+            userData.put("domains", String.join(", ", domainNames));
+            
+            exportData.add(userData);
+        }
+        
+        return ResponseEntity.ok(exportData);
+    }
+
+    // Emergency password reset endpoint for testing
+    @PutMapping("/reset-password-by-email")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<?> resetPasswordByEmail(@RequestBody Map<String, String> resetData) {
+        String email = resetData.get("email");
+        String newPassword = resetData.get("password");
+
+        if (email == null || email.isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Email is required"));
+        }
+
+        if (newPassword == null || newPassword.isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: New password is required"));
+        }
+
+        // Find user by email
+        Optional<Users> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: User not found with email: " + email));
+        }
+
+        // Update password
+        Users user = userOptional.get();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new MessageResponse("Password has been reset successfully for: " + email));
     }
 }

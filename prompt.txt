@@ -3,7 +3,9 @@ admin : which has to make training modules, publish them for users, edit them on
 user : which has to be able to view and complete training modules and see their progress and report
 the basic overview of the project is in project overview.md understand that first 
 here lies the currently changes that i need for the project
-The admin is now able to create the training module from the frontend and backend the whole of it, admin creates modules adds questions and add learning material to the triaing modules with its descriptions
-now the user part wheere the user which share the same domain as the training module should have a flow to access the whole training module like he should be able to get the give the post assessment should be able to view the learing material and also give the post assessments 
-he should also get a report out of it  
-now it is a big task first task you yours is to create comprehenvide plan and create a userflow plan in a md file
+The user when on the login page there is a hyperlink of forgotpassword  now this functionality is not working .U have given me the approach using email to reset password but when user click on the receved email like it direct it to the reset page but when i add the new password it gives mee error-'Error: Password is required' and 400 in the api
+Now i want you to analyze the code understand the issue and make a plan to soleve and then make changes
+also Note we just need to make chnages where forgotpassword is used we dont need to do chnages in the other parts
+now if it is a big task first task you yours is to create comprehenvide plan and create a userforgotpassword plan in a md file
+
+ 
