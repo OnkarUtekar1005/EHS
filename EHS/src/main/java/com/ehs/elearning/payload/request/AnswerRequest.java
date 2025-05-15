@@ -1,30 +1,29 @@
 package com.ehs.elearning.payload.request;
 
-import jakarta.validation.constraints.NotNull;
-
-import java.util.UUID;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public class AnswerRequest {
     
-    @NotNull
-    private UUID questionId;
+    @NotBlank
+    @Size(max = 500)
+    private String text;
     
-    private String userAnswer; // JSON string of user's answer
-    
-    // Getters and Setters
-    public UUID getQuestionId() {
-        return questionId;
+    private Boolean isCorrect = false;
+
+    public String getText() {
+        return text;
     }
 
-    public void setQuestionId(UUID questionId) {
-        this.questionId = questionId;
+    public void setText(String text) {
+        this.text = text;
     }
 
-    public String getUserAnswer() {
-        return userAnswer;
+    public Boolean getIsCorrect() {
+        return isCorrect;
     }
 
-    public void setUserAnswer(String userAnswer) {
-        this.userAnswer = userAnswer;
+    public void setIsCorrect(Boolean isCorrect) {
+        this.isCorrect = isCorrect;
     }
 }

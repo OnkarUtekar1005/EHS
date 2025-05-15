@@ -1,6 +1,33 @@
 Context of the project : an enviornment health safety elearning application with 2 roles 
 admin : which has to make training modules, publish them for users, edit them on the go, and manage users while being able to get all the access of most of the application
 user : which has to be able to view and complete training modules and see their progress and report
-the basic overview of the project is in flow documentation project overview.md understand that first 
+dont use flow documentation for the project it has the wrong context of the project instead go through the entire project once and understand it and create a own flow documentation v2 and create a project overview in it
 here lies the currently changes that i need for the project 
-understand the project and give me an create a to do list within your to check all the modules and backend and frontend go through it one by one optimizing the code and cleaning bugs and other things
+Currently we are developing the project and have done a some amount of progress towards the final goals
+today task is to create the module creation functionality for the admin role, which will allow them to create new training modules, edit existing ones,
+and publish them for users to view and complete.
+The admin role should be able to create new training modules with the following features:
+Admin when first lands on the dashboard should see a sidebar buttons like existing one like user. the side bar buttons should be called as course management
+when click on course management it should then land on a page where he will see all the already existing courses with buttons on next to them 
+the buttons should be edit publish delete takedown and clone
+on the top there should be search bar to search a particular course with filter option of domain filter.
+the pagination should be of 5 items per page 
+at the bottom and on the right side of the search there should be button for course creation
+when click on course creation it should be able to create a new course 
+for the new course it should ask for details
+the details should be title of the course , domain that course belongs to, description of the course, icon for the course if not selected any icon it should be a default icon, time limit for the course, passing score for the course
+then they should be able to add component to the course
+there will only be 3 types of component 
+pre assessment 
+materials 
+post assessment
+
+the pre assessment will be either mcq or true or false 
+the post assessment will be the same 
+and material is basically a learning material sort of thing where there will be either pdf , video , ppt
+
+the admin should have the flexibility to add any of this component in any order and they could also add some a required functionality that the previous component should be require to progress to next one 
+the course will always follow the order on the component arranges by admin 
+the admin should be able to edit the course details and components at any time and also be able to but not when published and it should only update it not create a new one when we try to edit it 
+to do this create a to do list and divide it to a subpart so that this can be continued to multiple claude code chats
+

@@ -30,17 +30,14 @@ import { useAuth } from '../../contexts/AuthContext';
 // Icons
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
 import PeopleIcon from '@mui/icons-material/People';
 import CategoryIcon from '@mui/icons-material/Category';
-import AssessmentIcon from '@mui/icons-material/Assessment';
 import SettingsIcon from '@mui/icons-material/Settings';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import BarChartIcon from '@mui/icons-material/BarChart';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
-import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import AddBoxIcon from '@mui/icons-material/AddBox';
 
 // Constants
 const DRAWER_WIDTH = 240;
@@ -66,18 +63,15 @@ const AdminLayout = () => {
   // Memoize navigation items to prevent unnecessary re-renders
   const navigationItems = useMemo(() => [
     { path: '/admin', icon: <DashboardIcon />, label: 'Dashboard' },
-    { path: '/admin/modules', icon: <MenuBookIcon />, label: 'Modules' },
-    { path: '/admin/materials', icon: <LibraryBooksIcon />, label: 'Learning Materials' },
+    { path: '/admin/courses', icon: <MenuBookIcon />, label: 'Courses' },
     { path: '/admin/users', icon: <PeopleIcon />, label: 'Users' },
     { path: '/admin/domains', icon: <CategoryIcon />, label: 'Domains' },
-    { path: '/admin/reports', icon: <AssessmentIcon />, label: 'Reports' },
     { path: '/admin/settings', icon: <SettingsIcon />, label: 'Settings' }
   ], []);
 
   const quickActions = useMemo(() => [
-    { path: '/admin/modules/create', icon: <AddCircleOutlineIcon />, label: 'New Module' },
-    { path: '/admin/users/new', icon: <PersonAddIcon />, label: 'New User' },
-    { path: '/admin/reports/generate', icon: <BarChartIcon />, label: 'Run Reports' }
+    { path: '/admin/courses/create', icon: <AddBoxIcon />, label: 'New Course' },
+    { path: '/admin/users/new', icon: <PersonAddIcon />, label: 'New User' }
   ], []);
 
   // Use callbacks for event handlers to prevent unnecessary re-renders

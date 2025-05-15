@@ -1,54 +1,50 @@
 package com.ehs.elearning.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Entity
 @Table(name = "answers")
 public class Answer {
-    
+
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @NotBlank
+    @Size(max = 500)
+    private String text;
+
+    private Boolean isCorrect = false;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "question_id", nullable = false)
+    @JoinColumn(name = "question_id")
+    @JsonIgnoreProperties({"answers", "moduleComponent"})
     private Question question;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private Users user;
-    
-    @Column(columnDefinition = "text")
-    private String userAnswer; // JSON string of user's answer
-    
-    private Boolean isCorrect;
-    
-    private Integer score;
-    
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime submittedAt;
-    
-    private Integer attemptNumber = 1;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
     
     @PrePersist
     protected void onCreate() {
-        submittedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
     
-    // Constructors
-    public Answer() {
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
-    
-    public Answer(Question question, Users user, String userAnswer) {
-        this.question = question;
-        this.user = user;
-        this.userAnswer = userAnswer;
-    }
-    
+
     // Getters and Setters
     public UUID getId() {
         return id;
@@ -58,28 +54,12 @@ public class Answer {
         this.id = id;
     }
 
-    public Question getQuestion() {
-        return question;
+    public String getText() {
+        return text;
     }
 
-    public void setQuestion(Question question) {
-        this.question = question;
-    }
-
-    public Users getUser() {
-        return user;
-    }
-
-    public void setUser(Users user) {
-        this.user = user;
-    }
-
-    public String getUserAnswer() {
-        return userAnswer;
-    }
-
-    public void setUserAnswer(String userAnswer) {
-        this.userAnswer = userAnswer;
+    public void setText(String text) {
+        this.text = text;
     }
 
     public Boolean getIsCorrect() {
@@ -90,23 +70,27 @@ public class Answer {
         this.isCorrect = isCorrect;
     }
 
-    public Integer getScore() {
-        return score;
+    public Question getQuestion() {
+        return question;
     }
 
-    public void setScore(Integer score) {
-        this.score = score;
+    public void setQuestion(Question question) {
+        this.question = question;
     }
 
-    public LocalDateTime getSubmittedAt() {
-        return submittedAt;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public Integer getAttemptNumber() {
-        return attemptNumber;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
-    public void setAttemptNumber(Integer attemptNumber) {
-        this.attemptNumber = attemptNumber;
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

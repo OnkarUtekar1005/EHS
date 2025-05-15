@@ -1,11 +1,8 @@
 package com.ehs.elearning.service;
 
 import com.ehs.elearning.model.Domain;
-import com.ehs.elearning.model.ModuleStatus;
-import com.ehs.elearning.model.TrainingModule;
 import com.ehs.elearning.model.Users;
 import com.ehs.elearning.repository.DomainRepository;
-import com.ehs.elearning.repository.TrainingModuleRepository;
 import com.ehs.elearning.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +20,6 @@ public class DomainService {
     @Autowired
     private DomainRepository domainRepository;
     
-    @Autowired
-    private TrainingModuleRepository moduleRepository;
     
     /**
      * Get all domains in the system
@@ -56,10 +51,6 @@ public class DomainService {
             domainInfo.put("name", domain.getName());
             domainInfo.put("description", domain.getDescription());
             domainInfo.put("isAssigned", user.getDomains().contains(domain));
-            
-            // Get count of published modules in this domain
-            long moduleCount = moduleRepository.findByDomainAndStatus(domain, ModuleStatus.PUBLISHED).size();
-            domainInfo.put("moduleCount", moduleCount);
             
             return domainInfo;
         }).collect(Collectors.toList());
@@ -155,82 +146,6 @@ public class DomainService {
         
         user.removeDomain(domain);
         return userRepository.save(user);
-    }
-    
-    /**
-     * Get published training modules from a specific domain
-     * 
-     * @param domainId The ID of the domain
-     * @return List of published modules in the domain
-     */
-    public List<TrainingModule> getPublishedModulesForDomain(UUID domainId) {
-        Optional<Domain> domainOpt = domainRepository.findById(domainId);
-        if (!domainOpt.isPresent()) {
-            throw new RuntimeException("Domain not found with ID: " + domainId);
-        }
-        
-        Domain domain = domainOpt.get();
-        return moduleRepository.findByDomainAndStatus(domain, ModuleStatus.PUBLISHED);
-    }
-    
-    /**
-     * Get all published training modules (across all domains)
-     * 
-     * @return List of all published modules
-     */
-    public List<TrainingModule> getAllPublishedModules() {
-        return moduleRepository.findByStatus(ModuleStatus.PUBLISHED);
-    }
-    
-    /**
-     * Get published training modules for a user based on their assigned domains
-     * 
-     * @param userId The ID of the user
-     * @return List of modules accessible to the user
-     */
-    public List<TrainingModule> getModulesForUserDomains(UUID userId) {
-        Optional<Users> userOpt = userRepository.findById(userId);
-        if (!userOpt.isPresent()) {
-            throw new RuntimeException("User not found with ID: " + userId);
-        }
-        
-        Users user = userOpt.get();
-        Set<Domain> userDomains = user.getDomains();
-        
-        if (userDomains.isEmpty()) {
-            // If user has no domain assignments, return all published modules
-            return moduleRepository.findByStatus(ModuleStatus.PUBLISHED);
-        }
-        
-        // Get all published modules
-        List<TrainingModule> publishedModules = moduleRepository.findByStatus(ModuleStatus.PUBLISHED);
-        
-        // Filter to include only modules from user's domains
-        return publishedModules.stream()
-                .filter(module -> userDomains.contains(module.getDomain()))
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * Get all domains with module counts for browsing
-     * 
-     * @return List of domains with module counts
-     */
-    public List<Map<String, Object>> getDomainsWithModuleCounts() {
-        List<Domain> allDomains = domainRepository.findAll();
-        
-        return allDomains.stream().map(domain -> {
-            Map<String, Object> domainInfo = new HashMap<>();
-            domainInfo.put("id", domain.getId());
-            domainInfo.put("name", domain.getName());
-            domainInfo.put("description", domain.getDescription());
-            
-            // Get count of published modules in this domain
-            long moduleCount = moduleRepository.findByDomainAndStatus(domain, ModuleStatus.PUBLISHED).size();
-            domainInfo.put("moduleCount", moduleCount);
-            
-            return domainInfo;
-        }).collect(Collectors.toList());
     }
     
     /**

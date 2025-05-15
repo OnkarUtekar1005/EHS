@@ -1,82 +1,84 @@
 package com.ehs.elearning.payload.request;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 import com.ehs.elearning.model.ComponentType;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Map;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class ComponentRequest {
+    
+    @NotBlank
+    @Size(max = 100)
     private String title;
-    private ComponentType type;
+    
+    @Size(max = 1000)
     private String description;
-    private String content;
+    
+    @NotNull
+    private ComponentType type;
+    
     private Integer sequenceOrder;
-    private Boolean requiredToAdvance;
-    private Integer estimatedDuration;
-    private Map<String, Object> data;
+    
+    private Boolean isRequired = true;
+    
+    private Integer timeLimit; // for assessment components
+    
+    private Integer passingScore; // for assessment components
 
-    // Getters and setters for all fields
     public String getTitle() {
         return title;
     }
-    
+
     public void setTitle(String title) {
         this.title = title;
     }
-    
-    public ComponentType getType() {
-        return type;
-    }
-    
-    public void setType(ComponentType type) {
-        this.type = type;
-    }
-    
+
     public String getDescription() {
         return description;
     }
-    
+
     public void setDescription(String description) {
         this.description = description;
     }
-    
-    public String getContent() {
-        return content;
+
+    public ComponentType getType() {
+        return type;
     }
-    
-    public void setContent(String content) {
-        this.content = content;
+
+    public void setType(ComponentType type) {
+        this.type = type;
     }
-    
+
     public Integer getSequenceOrder() {
         return sequenceOrder;
     }
-    
+
     public void setSequenceOrder(Integer sequenceOrder) {
         this.sequenceOrder = sequenceOrder;
     }
-    
-    public Boolean getRequiredToAdvance() {
-        return requiredToAdvance;
+
+    public Boolean getIsRequired() {
+        return isRequired;
     }
-    
-    public void setRequiredToAdvance(Boolean requiredToAdvance) {
-        this.requiredToAdvance = requiredToAdvance;
+
+    public void setIsRequired(Boolean isRequired) {
+        this.isRequired = isRequired;
     }
-    
-    public Integer getEstimatedDuration() {
-        return estimatedDuration;
+
+    public Integer getTimeLimit() {
+        return timeLimit;
     }
-    
-    public void setEstimatedDuration(Integer estimatedDuration) {
-        this.estimatedDuration = estimatedDuration;
+
+    public void setTimeLimit(Integer timeLimit) {
+        this.timeLimit = timeLimit;
     }
-    
-    public Map<String, Object> getData() {
-        return data;
+
+    public Integer getPassingScore() {
+        return passingScore;
     }
-    
-    public void setData(Map<String, Object> data) {
-        this.data = data;
+
+    public void setPassingScore(Integer passingScore) {
+        this.passingScore = passingScore;
     }
 }

@@ -1,31 +1,28 @@
 package com.ehs.elearning.payload.request;
 
-import com.ehs.elearning.model.QuestionType;
+import java.util.List;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import com.ehs.elearning.model.QuestionType;
+
 public class QuestionRequest {
     
     @NotBlank
-    @Size(max = 1000)
+    @Size(max = 500)
     private String text;
     
     @NotNull
     private QuestionType type;
     
-    private Integer points = 1;
-    
-    private String options; // JSON string of options
-    
-    private String correctAnswer; // JSON string of correct answer(s)
-    
-    @Size(max = 1000)
-    private String explanation; // Explanation of correct answer
-    
     private Integer sequenceOrder;
     
-    // Getters and Setters
+    private Integer points = 1;
+    
+    private List<AnswerRequest> answers;
+
     public String getText() {
         return text;
     }
@@ -42,6 +39,14 @@ public class QuestionRequest {
         this.type = type;
     }
 
+    public Integer getSequenceOrder() {
+        return sequenceOrder;
+    }
+
+    public void setSequenceOrder(Integer sequenceOrder) {
+        this.sequenceOrder = sequenceOrder;
+    }
+
     public Integer getPoints() {
         return points;
     }
@@ -50,35 +55,11 @@ public class QuestionRequest {
         this.points = points;
     }
 
-    public String getOptions() {
-        return options;
+    public List<AnswerRequest> getAnswers() {
+        return answers;
     }
 
-    public void setOptions(String options) {
-        this.options = options;
-    }
-
-    public String getCorrectAnswer() {
-        return correctAnswer;
-    }
-
-    public void setCorrectAnswer(String correctAnswer) {
-        this.correctAnswer = correctAnswer;
-    }
-
-    public String getExplanation() {
-        return explanation;
-    }
-
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
-    }
-
-    public Integer getSequenceOrder() {
-        return sequenceOrder;
-    }
-
-    public void setSequenceOrder(Integer sequenceOrder) {
-        this.sequenceOrder = sequenceOrder;
+    public void setAnswers(List<AnswerRequest> answers) {
+        this.answers = answers;
     }
 }

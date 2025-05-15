@@ -17,28 +17,21 @@ import AdminLayout from './components/layout/AdminLayout';
 
 // User Pages
 import Dashboard from './pages/Dashboard';
-import MyCourses from './pages/MyCourses';
-import Reports from './pages/Reports';
-import DomainView from './pages/DomainView';
-import ModuleView from './pages/ModuleView';
-import ModuleViewer from './pages/ModuleViewer'; 
-import LearningMaterialsPage from './pages/LearningMaterialsPage';
 import Profile from './pages/Profile';
 
-// Admin Pages - Updated imports using the new structure
+// Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
-import ModuleManagement from './pages/admin/ModuleManagement/ModuleManagement';
-import ModuleCreator from './pages/admin/ModuleManagement/ModuleCreator';
-import AssessmentCreator from './pages/admin/ModuleManagement/AssessmentCreator';
-import LearningMaterialManagement from './pages/admin/LearningMaterialManagment/LearningMaterialManagement';
-import LearningMaterialBrowser from './pages/admin/LearningMaterialManagment/LearningMaterialBrowser';
-import LearningMaterialCreator from './pages/admin/LearningMaterialManagment/LearningMaterialCreator';
-import MaterialEditor from './pages/admin/LearningMaterialManagment/MaterialEditor';
 import UserManagement from './pages/admin/UserManagement/UserManagement';
 import DomainManagement from './pages/admin/DomainManagement';
-import AdminReports from './pages/admin/AdminReports';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminProfile from './pages/admin/AdminProfile';
+
+// Course Management Pages
+import CourseManagement from './pages/admin/CourseManagement/CourseManagement';
+import CourseCreation from './pages/admin/CourseManagement/CourseCreation';
+import CourseEditor from './pages/admin/CourseManagement/CourseEditor';
+import AssessmentEditor from './pages/admin/CourseManagement/AssessmentEditor';
+import MaterialsEditor from './pages/admin/CourseManagement/MaterialsEditor';
 
 // Auth Pages
 import Login from './pages/Login';
@@ -147,14 +140,6 @@ function AppContent() {
           }
         >
           <Route index element={<Dashboard />} />
-          <Route path="/my-courses" element={<MyCourses />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/domains/:domainId" element={<DomainView />} />
-          <Route path="/modules/:moduleId" element={<ModuleView />} />
-          <Route path="/modules/:moduleId/viewer" element={<ModuleViewer />} />
-          <Route path="/learning-materials" element={<LearningMaterialsPage />} />
-          <Route path="/modules/:moduleId/materials" element={<LearningMaterialsPage />} />
-          <Route path="/modules/:moduleId/components/:componentId/materials" element={<LearningMaterialsPage />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
         
@@ -168,13 +153,18 @@ function AppContent() {
           }
         >
           <Route index element={<AdminDashboard />} />
-          <Route path="/admin/modules" element={<ModuleManagement />} />
-          <Route path="/admin/modules/create" element={<ModuleCreator />} />
-          <Route path="/admin/modules/edit/:moduleId" element={<ModuleCreator />} />
-          <Route path="/admin/materials" element={<LearningMaterialManagement />} />
+          
+          {/* Course Management Routes */}
+          <Route path="/admin/courses" element={<CourseManagement />} />
+          <Route path="/admin/courses/create" element={<CourseCreation />} />
+          <Route path="/admin/courses/edit/:id" element={<CourseCreation />} />
+          <Route path="/admin/courses/view/:id" element={<CourseEditor />} />
+          <Route path="/admin/courses/components/:componentId/assessment" element={<AssessmentEditor />} />
+          <Route path="/admin/courses/components/:componentId/materials" element={<MaterialsEditor />} />
+          
+          {/* User Management Routes */}
           <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/admin/domains" element={<DomainManagement />} />
-          <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
           <Route path="/admin/profile" element={<AdminProfile />} />
         </Route>

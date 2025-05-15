@@ -2,6 +2,7 @@ package com.ehs.elearning.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
@@ -9,76 +10,70 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Entity
 @Table(name = "training_modules")
 public class TrainingModule {
-    
+
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    
+
     @NotBlank
     @Size(max = 100)
     private String title;
-    
+
     @Size(max = 1000)
-    @Column(length = 1000)
     private String description;
-    
+
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "domain_id", nullable = false)
+    @JoinColumn(name = "domain_id")
+    @JsonIgnoreProperties({"trainingModules", "users"})
     private Domain domain;
     
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "created_by", nullable = false)
-    private Users createdBy;
-    
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-    
     @Enumerated(EnumType.STRING)
-    private ModuleStatus status;
+    private ModuleStatus status = ModuleStatus.DRAFT;
     
     @OneToMany(mappedBy = "trainingModule", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sequenceOrder ASC")
+    @JsonIgnoreProperties("trainingModule")
     private List<ModuleComponent> components = new ArrayList<>();
     
-    private Integer requiredCompletionScore;
+    private Integer passingScore = 70; // Default passing score is 70%
     
     private Integer estimatedDuration; // in minutes
     
+    private String iconUrl; // URL to the module icon
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        // Set default status to DRAFT
-        if (status == null) {
-            status = ModuleStatus.DRAFT;
-        }
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
     
-    // Utility method to add a component
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+    
+    // Helper methods for managing bidirectional relationships
     public void addComponent(ModuleComponent component) {
         components.add(component);
         component.setTrainingModule(this);
     }
     
-    // Utility method to remove a component
     public void removeComponent(ModuleComponent component) {
         components.remove(component);
         component.setTrainingModule(null);
     }
-    
-    // Constructors
-    public TrainingModule() {
-    }
-    
-    public TrainingModule(String title, String description, Domain domain, Users createdBy) {
-        this.title = title;
-        this.description = description;
-        this.domain = domain;
-        this.createdBy = createdBy;
-        this.status = ModuleStatus.DRAFT;
-    }
-    
+
     // Getters and Setters
     public UUID getId() {
         return id;
@@ -112,18 +107,6 @@ public class TrainingModule {
         this.domain = domain;
     }
 
-    public Users getCreatedBy() {
-        return createdBy;
-    }
-
-    public void setCreatedBy(Users createdBy) {
-        this.createdBy = createdBy;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
     public ModuleStatus getStatus() {
         return status;
     }
@@ -140,12 +123,12 @@ public class TrainingModule {
         this.components = components;
     }
 
-    public Integer getRequiredCompletionScore() {
-        return requiredCompletionScore;
+    public Integer getPassingScore() {
+        return passingScore;
     }
 
-    public void setRequiredCompletionScore(Integer requiredCompletionScore) {
-        this.requiredCompletionScore = requiredCompletionScore;
+    public void setPassingScore(Integer passingScore) {
+        this.passingScore = passingScore;
     }
 
     public Integer getEstimatedDuration() {
@@ -154,5 +137,29 @@ public class TrainingModule {
 
     public void setEstimatedDuration(Integer estimatedDuration) {
         this.estimatedDuration = estimatedDuration;
+    }
+
+    public String getIconUrl() {
+        return iconUrl;
+    }
+
+    public void setIconUrl(String iconUrl) {
+        this.iconUrl = iconUrl;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

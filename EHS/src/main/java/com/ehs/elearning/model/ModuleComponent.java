@@ -2,55 +2,82 @@ package com.ehs.elearning.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "module_components")
 public class ModuleComponent {
-    
+
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "module_id", nullable = false)
-    @JsonIgnore
+
+    @NotBlank
+    @Size(max = 100)
+    private String title;
+
+    @Size(max = 1000)
+    private String description;
+
+    @Enumerated(EnumType.STRING)
+    @NotNull
+    private ComponentType type;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "training_module_id")
+    @JsonIgnoreProperties({"components", "domain"})
     private TrainingModule trainingModule;
     
     private Integer sequenceOrder;
     
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ComponentType type;
+    private Boolean isRequired = true;
     
-    @NotBlank
-    @Size(max = 100)
-    private String title;
+    // For assessment components
+    private Integer timeLimit; // in minutes
+    private Integer passingScore; // percentage
     
-    @Size(max = 500)
-    @Column(length = 500)
-    private String description;
+    // For material components
+    @OneToMany(mappedBy = "moduleComponent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sequenceOrder ASC")
+    @JsonIgnoreProperties("moduleComponent")
+    private List<LearningMaterial> materials = new ArrayList<>();
     
-    @Column(columnDefinition = "text")
-    private String content; // JSON data specific to component type stored as text
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
     
-    private Boolean requiredToAdvance = true;
-    
-    private Integer estimatedDuration; // in minutes
-    
-    @OneToMany(mappedBy = "component", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private Set<ComponentMaterialAssociation> materialAssociations = new HashSet<>();
-    
-    // Constructors
-    public ModuleComponent() {
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
     
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+    
+    // Helper methods
+    public void addMaterial(LearningMaterial material) {
+        materials.add(material);
+        material.setModuleComponent(this);
+    }
+    
+    public void removeMaterial(LearningMaterial material) {
+        materials.remove(material);
+        material.setModuleComponent(null);
+    }
+
     // Getters and Setters
     public UUID getId() {
         return id;
@@ -58,30 +85,6 @@ public class ModuleComponent {
 
     public void setId(UUID id) {
         this.id = id;
-    }
-
-    public TrainingModule getTrainingModule() {
-        return trainingModule;
-    }
-
-    public void setTrainingModule(TrainingModule trainingModule) {
-        this.trainingModule = trainingModule;
-    }
-
-    public Integer getSequenceOrder() {
-        return sequenceOrder;
-    }
-
-    public void setSequenceOrder(Integer sequenceOrder) {
-        this.sequenceOrder = sequenceOrder;
-    }
-
-    public ComponentType getType() {
-        return type;
-    }
-
-    public void setType(ComponentType type) {
-        this.type = type;
     }
 
     public String getTitle() {
@@ -100,46 +103,75 @@ public class ModuleComponent {
         this.description = description;
     }
 
-    public String getContent() {
-        return content;
+    public ComponentType getType() {
+        return type;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    public void setType(ComponentType type) {
+        this.type = type;
     }
 
-    public Boolean getRequiredToAdvance() {
-        return requiredToAdvance;
+    public TrainingModule getTrainingModule() {
+        return trainingModule;
     }
 
-    public void setRequiredToAdvance(Boolean requiredToAdvance) {
-        this.requiredToAdvance = requiredToAdvance;
+    public void setTrainingModule(TrainingModule trainingModule) {
+        this.trainingModule = trainingModule;
     }
 
-    public Integer getEstimatedDuration() {
-        return estimatedDuration;
+    public Integer getSequenceOrder() {
+        return sequenceOrder;
     }
 
-    public void setEstimatedDuration(Integer estimatedDuration) {
-        this.estimatedDuration = estimatedDuration;
-    }
-    
-    public Set<ComponentMaterialAssociation> getMaterialAssociations() {
-        return materialAssociations;
+    public void setSequenceOrder(Integer sequenceOrder) {
+        this.sequenceOrder = sequenceOrder;
     }
 
-    public void setMaterialAssociations(Set<ComponentMaterialAssociation> materialAssociations) {
-        this.materialAssociations = materialAssociations;
+    public Boolean getIsRequired() {
+        return isRequired;
     }
 
-    // Helper methods
-    public void addMaterialAssociation(ComponentMaterialAssociation association) {
-        materialAssociations.add(association);
-        association.setComponent(this);
+    public void setIsRequired(Boolean isRequired) {
+        this.isRequired = isRequired;
     }
 
-    public void removeMaterialAssociation(ComponentMaterialAssociation association) {
-        materialAssociations.remove(association);
-        association.setComponent(null);
+    public Integer getTimeLimit() {
+        return timeLimit;
+    }
+
+    public void setTimeLimit(Integer timeLimit) {
+        this.timeLimit = timeLimit;
+    }
+
+    public Integer getPassingScore() {
+        return passingScore;
+    }
+
+    public void setPassingScore(Integer passingScore) {
+        this.passingScore = passingScore;
+    }
+
+    public List<LearningMaterial> getMaterials() {
+        return materials;
+    }
+
+    public void setMaterials(List<LearningMaterial> materials) {
+        this.materials = materials;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

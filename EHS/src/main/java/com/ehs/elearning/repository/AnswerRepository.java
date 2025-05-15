@@ -1,34 +1,26 @@
 package com.ehs.elearning.repository;
 
-import com.ehs.elearning.model.Answer;
-import com.ehs.elearning.model.ModuleComponent;
-import com.ehs.elearning.model.Question;
-import com.ehs.elearning.model.Users;
+import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import com.ehs.elearning.model.Answer;
+import com.ehs.elearning.model.Question;
 
 @Repository
 public interface AnswerRepository extends JpaRepository<Answer, UUID> {
+
+    // Find answers by question
     List<Answer> findByQuestion(Question question);
-    List<Answer> findByQuestionAndUser(Question question, Users user);
     
-    Optional<Answer> findByQuestionAndUserAndAttemptNumber(Question question, Users user, Integer attemptNumber);
+    // Find correct answers for a question
+    List<Answer> findByQuestionAndIsCorrect(Question question, Boolean isCorrect);
     
-    @Query("SELECT a FROM Answer a WHERE a.question.component = ?1 AND a.user = ?2")
-    List<Answer> findByComponentAndUser(ModuleComponent component, Users user);
+    // Count answers by question
+    long countByQuestion(Question question);
     
-    @Query("SELECT AVG(a.score) FROM Answer a WHERE a.question.component = ?1")
-    Double getAverageScoreForComponent(ModuleComponent component);
-    
-    @Query("SELECT COUNT(a) FROM Answer a WHERE a.question.component = ?1 AND a.isCorrect = true")
-    Long countCorrectAnswersForComponent(ModuleComponent component);
-    
-    @Query("SELECT COUNT(a) FROM Answer a WHERE a.question.component = ?1")
-    Long countTotalAnswersForComponent(ModuleComponent component);
+    // Count correct answers by question
+    long countByQuestionAndIsCorrect(Question question, Boolean isCorrect);
 }

@@ -1,33 +1,5 @@
 package com.ehs.elearning.controller;
 
-import com.ehs.elearning.model.ComponentMaterialAssociation;
-import com.ehs.elearning.model.ComponentType;
-import com.ehs.elearning.model.Domain;
-import com.ehs.elearning.model.ModuleComponent;
-import com.ehs.elearning.model.ModuleStatus;
-import com.ehs.elearning.model.Question;
-import com.ehs.elearning.model.QuestionType;
-import com.ehs.elearning.model.Role;
-import com.ehs.elearning.model.TrainingModule;
-import com.ehs.elearning.model.UserComponentProgress;
-import com.ehs.elearning.model.UserModuleProgress;
-import com.ehs.elearning.model.UserProgress;
-import com.ehs.elearning.model.Users;
-import com.ehs.elearning.payload.request.ComponentRequest;
-import com.ehs.elearning.payload.request.ModuleRequest;
-import com.ehs.elearning.payload.response.MessageResponse;
-import com.ehs.elearning.repository.ComponentMaterialAssociationRepository;
-import com.ehs.elearning.repository.DomainRepository;
-import com.ehs.elearning.repository.ModuleComponentRepository;
-import com.ehs.elearning.repository.QuestionRepository;
-import com.ehs.elearning.repository.TrainingModuleRepository;
-import com.ehs.elearning.repository.UserComponentProgressRepository;
-import com.ehs.elearning.repository.UserModuleProgressRepository;
-import com.ehs.elearning.repository.UserProgressRepository;
-import com.ehs.elearning.repository.UserRepository;
-import com.ehs.elearning.security.UserDetailsImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,1260 +7,529 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.ehs.elearning.model.Answer;
+import com.ehs.elearning.model.Domain;
+import com.ehs.elearning.model.LearningMaterial;
+import com.ehs.elearning.model.ModuleComponent;
+import com.ehs.elearning.model.ModuleStatus;
+import com.ehs.elearning.model.Question;
+import com.ehs.elearning.model.TrainingModule;
+import com.ehs.elearning.payload.request.AnswerRequest;
+import com.ehs.elearning.payload.request.ComponentRequest;
+import com.ehs.elearning.payload.request.ModuleRequest;
+import com.ehs.elearning.payload.request.QuestionRequest;
+import com.ehs.elearning.payload.response.MessageResponse;
+import com.ehs.elearning.repository.DomainRepository;
+import com.ehs.elearning.service.AssessmentService;
+import com.ehs.elearning.service.ModuleComponentService;
+import com.ehs.elearning.service.TrainingModuleService;
+
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/modules")
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class TrainingModuleController {
 
     @Autowired
-    private TrainingModuleRepository moduleRepository;
+    private TrainingModuleService trainingModuleService;
+    
+    @Autowired
+    private ModuleComponentService moduleComponentService;
+    
+    @Autowired
+    private AssessmentService assessmentService;
     
     @Autowired
     private DomainRepository domainRepository;
     
-    @Autowired
-    private UserRepository userRepository;
-    
-    @Autowired
-    private ModuleComponentRepository componentRepository;
-    
-    // Add this helper method to handle saving assessment questions
-    @Autowired
-    private QuestionRepository questionRepository;
-
-    @Autowired
-    private ComponentMaterialAssociationRepository associationRepository;
-    
-    @Autowired
-    private UserProgressRepository userProgressRepository;
-    
-    @Autowired
-    private UserModuleProgressRepository userModuleProgressRepository;
-    
-    @Autowired
-    private UserComponentProgressRepository userComponentProgressRepository;
-    
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-    
-    
-    // Get all published modules (for all users)
-    @GetMapping("/modules/all")
-    public ResponseEntity<List<TrainingModule>> getAllPublishedModules(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "title") String sortBy) {
-        
-        try {
-            // Create pageable object for pagination and sorting
-            Pageable paging = PageRequest.of(page, size, Sort.by(sortBy));
-            
-            // Get current user
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            UUID userId = userDetails.getId();
-            
-            Optional<Users> userOpt = userRepository.findById(userId);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.badRequest().body(new ArrayList<>());
-            }
-            
-            Users user = userOpt.get();
-            boolean isAdmin = user.getRole() == Role.ADMIN;
-            
-            Page<TrainingModule> pageModules;
-            
-            if (isAdmin) {
-                // Admins can see all modules
-                pageModules = moduleRepository.findAll(paging);
-            } else {
-                // Regular users can only see published modules
-                pageModules = moduleRepository.findByStatus(ModuleStatus.PUBLISHED, paging);
-            }
-            
-            return ResponseEntity.ok()
-                    .header("X-Total-Pages", String.valueOf(pageModules.getTotalPages()))
-                    .header("X-Total-Elements", String.valueOf(pageModules.getTotalElements()))
-                    .body(pageModules.getContent());
-            
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ArrayList<>());
-        }
-    }
-    
-    // Get all modules with filtering options (with domain access information)
-    @GetMapping("/modules")
-    public ResponseEntity<List<Map<String, Object>>> getAllModules(
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) UUID domainId,
-            @RequestParam(required = false) String status,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "title") String sortBy) {
-        
-        try {
-            // Get current authenticated user
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            UUID userId = userDetails.getId();
-            
-            // Fetch the user to access their domains
-            Optional<Users> userOpt = userRepository.findById(userId);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.badRequest().body(new ArrayList<>());
-            }
-            
-            Users user = userOpt.get();
-            boolean isAdmin = user.getRole() == Role.ADMIN;
-            Set<Domain> userDomains = user.getDomains();
-            
-            // Create pageable object for pagination and sorting
-            Pageable paging = PageRequest.of(page, size, Sort.by(sortBy));
-            Page<TrainingModule> pageModules;
-            
-            // Apply filters if provided
-            if (title != null && !title.isEmpty()) {
-                if (domainId != null && status != null && !status.isEmpty()) {
-                    // Filter by title, domain, and status
-                    Optional<Domain> domain = domainRepository.findById(domainId);
-                    if (domain.isPresent()) {
-                        pageModules = moduleRepository.findByTitleContainingIgnoreCaseAndDomainAndStatus(
-                                title, domain.get(), ModuleStatus.valueOf(status), paging);
-                    } else {
-                        return ResponseEntity.badRequest().body(new ArrayList<>());
-                    }
-                } else if (domainId != null) {
-                    // Filter by title and domain
-                    Optional<Domain> domain = domainRepository.findById(domainId);
-                    if (domain.isPresent()) {
-                        pageModules = moduleRepository.findByTitleContainingIgnoreCaseAndDomain(
-                                title, domain.get(), paging);
-                    } else {
-                        return ResponseEntity.badRequest().body(new ArrayList<>());
-                    }
-                } else if (status != null && !status.isEmpty()) {
-                    // Filter by title and status
-                    pageModules = moduleRepository.findByTitleContainingIgnoreCaseAndStatus(
-                            title, ModuleStatus.valueOf(status), paging);
-                } else {
-                    // Filter by title only
-                    pageModules = moduleRepository.findByTitleContainingIgnoreCase(title, paging);
-                }
-            } else if (domainId != null) {
-                Optional<Domain> domain = domainRepository.findById(domainId);
-                if (domain.isPresent()) {
-                    if (status != null && !status.isEmpty()) {
-                        // Filter by domain and status
-                        pageModules = moduleRepository.findByDomainAndStatus(
-                                domain.get(), ModuleStatus.valueOf(status), paging);
-                    } else {
-                        // Filter by domain only
-                        pageModules = moduleRepository.findByDomain(domain.get(), paging);
-                    }
-                } else {
-                    return ResponseEntity.badRequest().body(new ArrayList<>());
-                }
-            } else if (status != null && !status.isEmpty()) {
-                // Filter by status only
-                pageModules = moduleRepository.findByStatus(ModuleStatus.valueOf(status), paging);
-            } else {
-                // No filters - get modules based on user role
-                if (isAdmin) {
-                    pageModules = moduleRepository.findAll(paging);
-                } else {
-                    // Regular users can see all published modules
-                    pageModules = moduleRepository.findByStatus(ModuleStatus.PUBLISHED, paging);
-                }
-            }
-            
-            // Convert modules to include access information
-            List<Map<String, Object>> modulesWithAccessInfo = pageModules.getContent().stream()
-                    .map(module -> {
-                        Map<String, Object> moduleInfo = new HashMap<>();
-                        moduleInfo.put("id", module.getId());
-                        moduleInfo.put("title", module.getTitle());
-                        moduleInfo.put("description", module.getDescription());
-                        moduleInfo.put("domain", module.getDomain());
-                        moduleInfo.put("status", module.getStatus());
-                        moduleInfo.put("createdAt", module.getCreatedAt());
-                        moduleInfo.put("estimatedDuration", module.getEstimatedDuration());
-                        moduleInfo.put("requiredCompletionScore", module.getRequiredCompletionScore());
-                        
-                        // Check if user has access to this module
-                        boolean hasAccess = isAdmin || 
-                                (module.getStatus() == ModuleStatus.PUBLISHED && 
-                                 (userDomains.isEmpty() || userDomains.contains(module.getDomain())));
-                        
-                        moduleInfo.put("hasAccess", hasAccess);
-                        return moduleInfo;
-                    })
-                    .collect(Collectors.toList());
-            
-            return ResponseEntity.ok()
-                    .header("X-Total-Pages", String.valueOf(pageModules.getTotalPages()))
-                    .header("X-Total-Elements", String.valueOf(pageModules.getTotalElements()))
-                    .body(modulesWithAccessInfo);
-            
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ArrayList<>());
-        }
-    }
-    
-    // Get modules by domain
-    @GetMapping("/modules/domain/{domainId}")
-    public ResponseEntity<?> getModulesByDomain(@PathVariable UUID domainId) {
-        try {
-            Optional<Domain> domain = domainRepository.findById(domainId);
-            if (!domain.isPresent()) {
-                return ResponseEntity.notFound().build();
-            }
-            
-            // Get current user
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            UUID userId = userDetails.getId();
-            
-            Optional<Users> userOpt = userRepository.findById(userId);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.badRequest().body(new ArrayList<>());
-            }
-            
-            Users user = userOpt.get();
-            boolean isAdmin = user.getRole() == Role.ADMIN;
-            
-            List<TrainingModule> modules;
-            
-            if (isAdmin) {
-                // Admins can see all modules in the domain
-                modules = moduleRepository.findByDomain(domain.get());
-            } else {
-                // Regular users can only see published modules
-                modules = moduleRepository.findByDomainAndStatus(domain.get(), ModuleStatus.PUBLISHED);
-            }
-            
-            // Add access information to modules
-            List<Map<String, Object>> modulesWithAccess = modules.stream()
-                    .map(module -> {
-                        Map<String, Object> moduleInfo = new HashMap<>();
-                        moduleInfo.put("module", module);
-                        
-                        // Check if user has access
-                        boolean hasAccess = isAdmin || 
-                                (module.getStatus() == ModuleStatus.PUBLISHED && 
-                                 (user.getDomains().isEmpty() || user.getDomains().contains(module.getDomain())));
-                        
-                        moduleInfo.put("hasAccess", hasAccess);
-                        return moduleInfo;
-                    })
-                    .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(modulesWithAccess);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ArrayList<>());
-        }
-    }
-    
-    // Get module by ID
-    @GetMapping("/modules/{id}")
-    public ResponseEntity<?> getModuleById(@PathVariable UUID id) {
-        Optional<TrainingModule> moduleData = moduleRepository.findById(id);
-        
-        if (!moduleData.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        TrainingModule module = moduleData.get();
-        
-        // Get current user
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        UUID userId = userDetails.getId();
-        
-        Optional<Users> userOpt = userRepository.findById(userId);
-        if (!userOpt.isPresent()) {
-            return ResponseEntity.badRequest().build();
-        }
-        
-        Users user = userOpt.get();
-        boolean isAdmin = user.getRole() == Role.ADMIN;
-        
-        // Regular users can only access published modules
-        if (!isAdmin && module.getStatus() != ModuleStatus.PUBLISHED) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new MessageResponse("This module is not published"));
-        }
-        
-        // Create response with module and access information
-        Map<String, Object> response = new HashMap<>();
-        response.put("module", module);
-        
-        // Check if user has access to this module
-        boolean hasAccess = isAdmin || 
-                (module.getStatus() == ModuleStatus.PUBLISHED && 
-                 (user.getDomains().isEmpty() || user.getDomains().contains(module.getDomain())));
-        
-        // If user doesn't have domain access but module is public, they can still view it
-        response.put("hasAccess", hasAccess);
-        
-        // If user doesn't have direct domain access, provide information about joining
-        if (!isAdmin && module.getStatus() == ModuleStatus.PUBLISHED && 
-            !user.getDomains().isEmpty() && !user.getDomains().contains(module.getDomain())) {
-            response.put("requiresDomainAccess", true);
-            response.put("domainName", module.getDomain().getName());
-        } else {
-            response.put("requiresDomainAccess", false);
-        }
-        
-        return ResponseEntity.ok(response);
-    }
-    
-    // Get available modules for the current user
-    @GetMapping("/modules/available")
-    public ResponseEntity<?> getAvailableModules(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        
-        try {
-            // Get current user
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            UUID userId = userDetails.getId();
-            
-            Optional<Users> userOpt = userRepository.findById(userId);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.badRequest().body(new MessageResponse("User not found"));
-            }
-            
-            Users user = userOpt.get();
-            boolean isAdmin = user.getRole() == Role.ADMIN;
-            
-            Pageable pageable = PageRequest.of(page, size, Sort.by("title"));
-            Page<TrainingModule> modules;
-            
-            // For admins, return all modules
-            if (isAdmin) {
-                modules = moduleRepository.findAll(pageable);
-                return ResponseEntity.ok()
-                        .header("X-Total-Count", String.valueOf(modules.getTotalElements()))
-                        .header("X-Total-Pages", String.valueOf(modules.getTotalPages()))
-                        .body(modules.getContent());
-            }
-            
-            // For regular users, return all published modules
-            modules = moduleRepository.findByStatus(ModuleStatus.PUBLISHED, pageable);
-            
-            // Add access information
-            List<Map<String, Object>> modulesWithAccess = modules.getContent().stream()
-                    .map(module -> {
-                        Map<String, Object> moduleInfo = new HashMap<>();
-                        moduleInfo.put("id", module.getId());
-                        moduleInfo.put("title", module.getTitle());
-                        moduleInfo.put("description", module.getDescription());
-                        moduleInfo.put("domain", module.getDomain());
-                        moduleInfo.put("status", module.getStatus());
-                        moduleInfo.put("estimatedDuration", module.getEstimatedDuration());
-                        
-                        // Check if user has access to this module through domain assignment
-                        boolean assignedAccess = user.getDomains().isEmpty() || user.getDomains().contains(module.getDomain());
-                        moduleInfo.put("hasAssignedAccess", assignedAccess);
-                        
-                        // All published modules are available for browsing even without domain assignment
-                        moduleInfo.put("canView", true);
-                        
-                        return moduleInfo;
-                    })
-                    .collect(Collectors.toList());
-            
-            return ResponseEntity.ok()
-                    .header("X-Total-Count", String.valueOf(modules.getTotalElements()))
-                    .body(modulesWithAccess);
-            
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new MessageResponse("Error fetching available modules: " + e.getMessage()));
-        }
-    }
-    
-
-    @PostMapping("/modules")
+    // Create a new training module
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createModule(@Valid @RequestBody ModuleRequest moduleRequest) {
         try {
-            // Get current user as creator
-        	System.out.println("Received module request: " + moduleRequest);
-            UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext()
-                    .getAuthentication().getPrincipal();
-            Optional<Users> user = userRepository.findById(userDetails.getId());
+            Domain domain = domainRepository.findById(moduleRequest.getDomainId())
+                .orElseThrow(() -> new EntityNotFoundException("Domain not found with id: " + moduleRequest.getDomainId()));
             
-            if (!user.isPresent()) {
-                return ResponseEntity.badRequest()
-                        .body(new MessageResponse("Error: Invalid user."));
-            }
-            
-            // Get domain
-            Optional<Domain> domain = domainRepository.findById(moduleRequest.getDomainId());
-            if (!domain.isPresent()) {
-                return ResponseEntity.badRequest()
-                        .body(new MessageResponse("Error: Domain not found."));
-            }
-            
-            // Create new module
             TrainingModule module = new TrainingModule();
             module.setTitle(moduleRequest.getTitle());
             module.setDescription(moduleRequest.getDescription());
-            module.setDomain(domain.get());
-            module.setCreatedBy(user.get());
-            module.setStatus(ModuleStatus.DRAFT);
+            module.setDomain(domain);
+            module.setPassingScore(moduleRequest.getPassingScore());
+            module.setEstimatedDuration(moduleRequest.getEstimatedDuration());
+            module.setIconUrl(moduleRequest.getIconUrl());
             
-            if (moduleRequest.getEstimatedDuration() != null) {
-                module.setEstimatedDuration(moduleRequest.getEstimatedDuration());
-            }
+            TrainingModule createdModule = trainingModuleService.createTrainingModule(module);
             
-            if (moduleRequest.getRequiredCompletionScore() != null) {
-                module.setRequiredCompletionScore(moduleRequest.getRequiredCompletionScore());
-            }
-            
-            // Save module first to get the ID
-            TrainingModule savedModule = moduleRepository.save(module);
-            
-            // Process components if they exist
-            if (moduleRequest.getComponents() != null && !moduleRequest.getComponents().isEmpty()) {
-                int seqOrder = 1;
-                for (ComponentRequest compRequest : moduleRequest.getComponents()) {
-                    ModuleComponent component = new ModuleComponent();
-                    component.setTrainingModule(savedModule);
-                    component.setTitle(compRequest.getTitle());
-                    component.setType(compRequest.getType());
-                    component.setDescription(compRequest.getDescription());
-                    
-                    // Set sequence order either from request or incrementally
-                    if (compRequest.getSequenceOrder() != null) {
-                        component.setSequenceOrder(compRequest.getSequenceOrder());
-                    } else {
-                        component.setSequenceOrder(seqOrder++);
-                    }
-                    
-                    // Set other properties
-                    if (compRequest.getRequiredToAdvance() != null) {
-                        component.setRequiredToAdvance(compRequest.getRequiredToAdvance());
-                    } else {
-                        component.setRequiredToAdvance(true); // Default value
-                    }
-                    
-                    if (compRequest.getEstimatedDuration() != null) {
-                        component.setEstimatedDuration(compRequest.getEstimatedDuration());
-                    }
-                    
-                    // Convert component data to JSON string if necessary
-                    if (compRequest.getData() != null) {
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        try {
-                            // Store data as JSON in content field
-                            component.setContent(objectMapper.writeValueAsString(compRequest.getData()));
-                            
-                            // Save the component first to get its ID
-                            ModuleComponent savedComponent = componentRepository.save(component);
-                            
-                            // If this is an assessment component, extract and save questions
-                            if (component.getType() == ComponentType.PRE_ASSESSMENT || 
-                                component.getType() == ComponentType.POST_ASSESSMENT) {
-                                saveAssessmentQuestions(savedComponent, compRequest.getData());
-                            }
-                        } catch (Exception e) {
-                            System.err.println("Error serializing component data: " + e.getMessage());
-                            e.printStackTrace();
-                        }
-                    } else {
-                        // Use content field from request if data is null
-                        component.setContent(compRequest.getContent());
-                        
-                        // Save the component without special processing
-                        componentRepository.save(component);
-                    }
-                }
-            }
-            
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedModule);
-            
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdModule);
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new MessageResponse("Error creating module: " + e.getMessage()));
-        }
-    }
-
-    private void saveAssessmentQuestions(ModuleComponent component, Map<String, Object> data) {
-        try {
-            if (data == null || !data.containsKey("questions")) {
-                return;
-            }
-            
-            List<Map<String, Object>> questionsList = (List<Map<String, Object>>) data.get("questions");
-            
-            int sequenceOrder = 1;
-            for (Map<String, Object> questionData : questionsList) {
-                Question question = new Question();
-                question.setComponent(component);
-                question.setText((String) questionData.get("text"));
-                question.setType(QuestionType.valueOf((String) questionData.get("type")));
-                question.setSequenceOrder(sequenceOrder++);
-                
-                // Handle points
-                if (questionData.containsKey("points")) {
-                    question.setPoints((Integer) questionData.get("points"));
-                } else {
-                    question.setPoints(1); // Default points
-                }
-                
-                // Handle options
-                if (questionData.containsKey("options")) {
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    question.setOptions(objectMapper.writeValueAsString(questionData.get("options")));
-                    
-                    // Find correct answer
-                    List<Map<String, Object>> options = (List<Map<String, Object>>) questionData.get("options");
-                    for (Map<String, Object> option : options) {
-                        if (Boolean.TRUE.equals(option.get("correct"))) {
-                            question.setCorrectAnswer((String) option.get("text"));
-                            break;
-                        }
-                    }
-                }
-                
-                // Handle explanation
-                if (questionData.containsKey("explanation")) {
-                    question.setExplanation((String) questionData.get("explanation"));
-                }
-                
-                // Save the question
-                questionRepository.save(question);
-            }
-        } catch (Exception e) {
-            System.err.println("Error saving assessment questions: " + e.getMessage());
-            e.printStackTrace();
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
     
-    // Update module
-    @PutMapping("/modules/{id}")
-    public ResponseEntity<?> updateModule(
-            @PathVariable UUID id,
-            @Valid @RequestBody ModuleRequest moduleRequest) {
-        
-        Optional<TrainingModule> moduleData = moduleRepository.findById(id);
-        
-        if (moduleData.isPresent()) {
-            TrainingModule module = moduleData.get();
-            
-            // Check if current user is authorized to edit this module
-            UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext()
-                    .getAuthentication().getPrincipal();
-            
-            // Admin can edit any module, normal users can only edit their own
-            if (!userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")) && 
-                    !module.getCreatedBy().getId().equals(userDetails.getId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new MessageResponse("Error: You are not authorized to edit this module."));
-            }
-            
-            // Update basic properties
-            module.setTitle(moduleRequest.getTitle());
-            module.setDescription(moduleRequest.getDescription());
-            
-            if (moduleRequest.getEstimatedDuration() != null) {
-                module.setEstimatedDuration(moduleRequest.getEstimatedDuration());
-            }
-            
-            if (moduleRequest.getRequiredCompletionScore() != null) {
-                module.setRequiredCompletionScore(moduleRequest.getRequiredCompletionScore());
-            }
-            
-            // Update domain if provided
-            if (moduleRequest.getDomainId() != null) {
-                Optional<Domain> domain = domainRepository.findById(moduleRequest.getDomainId());
-                if (domain.isPresent()) {
-                    module.setDomain(domain.get());
-                } else {
-                    return ResponseEntity.badRequest()
-                            .body(new MessageResponse("Error: Domain not found."));
-                }
-            }
-            
-            // Update status if provided and user is admin
-            if (moduleRequest.getStatus() != null && 
-                    userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-                try {
-                    module.setStatus(ModuleStatus.valueOf(moduleRequest.getStatus()));
-                } catch (IllegalArgumentException e) {
-                    return ResponseEntity.badRequest()
-                            .body(new MessageResponse("Error: Invalid status value."));
-                }
-            }
-            
-            TrainingModule updatedModule = moduleRepository.save(module);
-            return ResponseEntity.ok(updatedModule);
-            
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-    
-    // Delete module
-    @DeleteMapping("/modules/{id}")
-    @org.springframework.transaction.annotation.Transactional
-    public ResponseEntity<MessageResponse> deleteModule(@PathVariable UUID id) {
-        try {
-            // Check if current user is authorized to delete this module
-            UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext()
-                    .getAuthentication().getPrincipal();
-
-            // Only admins can delete modules
-            if (!userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new MessageResponse("Error: You are not authorized to delete modules."));
-            }
-
-            // Check if module exists
-            Optional<TrainingModule> moduleOpt = moduleRepository.findById(id);
-            if (!moduleOpt.isPresent()) {
-                return ResponseEntity.notFound().build();
-            }
-
-            TrainingModule module = moduleOpt.get();
-            System.out.println("Starting deletion of module: " + module.getTitle() + " (ID: " + id + ")");
-
-            // Find all components for this module - we'll need their IDs for direct SQL deletion
-            List<ModuleComponent> components = componentRepository.findByTrainingModuleOrderBySequenceOrderAsc(module);
-            System.out.println("Found " + components.size() + " components to delete");
-
-            if (!components.isEmpty()) {
-                // Collect all component IDs
-                List<UUID> componentIds = components.stream()
-                    .map(ModuleComponent::getId)
-                    .collect(java.util.stream.Collectors.toList());
-                
-                // Convert UUID list to string for SQL IN clause
-                String componentIdsStr = componentIds.stream()
-                    .map(uuid -> "'" + uuid.toString() + "'")
-                    .collect(java.util.stream.Collectors.joining(","));
-                
-                System.out.println("Component IDs to process: " + componentIdsStr);
-                
-                // Step 1: Directly delete all user_progress records that reference these components using SQL
-                try {
-                    String deleteUserProgressSQL = "DELETE FROM user_progress WHERE component_id IN (" + componentIdsStr + ")";
-                    int deletedRows = jdbcTemplate.update(deleteUserProgressSQL);
-                    System.out.println("Deleted " + deletedRows + " user_progress records directly via SQL");
-                
-                    // Also delete user_progress records for the module
-                    String deleteModuleProgressSQL = "DELETE FROM user_progress WHERE module_id = ?";
-                    deletedRows = jdbcTemplate.update(deleteModuleProgressSQL, id.toString());
-                    System.out.println("Deleted " + deletedRows + " module user_progress records directly via SQL");
-                } catch (Exception e) {
-                    System.err.println("Error with direct SQL deletion of user_progress: " + e.getMessage());
-                    e.printStackTrace();
-                }
-                
-                // Step 2: Delete user_component_progress records
-                try {
-                    String deleteComponentProgressSQL = "DELETE FROM user_component_progress WHERE component_id IN (" + componentIdsStr + ")";
-                    int deletedRows = jdbcTemplate.update(deleteComponentProgressSQL);
-                    System.out.println("Deleted " + deletedRows + " user_component_progress records directly via SQL");
-                } catch (Exception e) {
-                    System.err.println("Error with direct SQL deletion of user_component_progress: " + e.getMessage());
-                    e.printStackTrace();
-                }
-                
-                // Step 3: Delete user_module_progress records
-                try {
-                    String deleteModuleProgressSQL = "DELETE FROM user_module_progress WHERE module_id = ?";
-                    int deletedRows = jdbcTemplate.update(deleteModuleProgressSQL, id.toString());
-                    System.out.println("Deleted " + deletedRows + " user_module_progress records directly via SQL");
-                } catch (Exception e) {
-                    System.err.println("Error with direct SQL deletion of user_module_progress: " + e.getMessage());
-                    e.printStackTrace();
-                }
-                
-                // Step 4: Delete material progress records
-                try {
-                    String deleteMaterialProgressSQL = "DELETE FROM material_progress WHERE component_id IN (" + componentIdsStr + ")";
-                    int deletedRows = jdbcTemplate.update(deleteMaterialProgressSQL);
-                    System.out.println("Deleted " + deletedRows + " material_progress records directly via SQL");
-                } catch (Exception e) {
-                    System.err.println("Error with direct SQL deletion of material_progress: " + e.getMessage());
-                    e.printStackTrace();
-                }
-                
-                // Step 5: Delete component material associations
-                try {
-                    String deleteAssociationsSQL = "DELETE FROM component_material_association WHERE component_id IN (" + componentIdsStr + ")";
-                    int deletedRows = jdbcTemplate.update(deleteAssociationsSQL);
-                    System.out.println("Deleted " + deletedRows + " component_material_association records directly via SQL");
-                } catch (Exception e) {
-                    System.err.println("Error with direct SQL deletion of component_material_association: " + e.getMessage());
-                    e.printStackTrace();
-                }
-                
-                // Step 6: Delete questions
-                try {
-                    String deleteQuestionsSQL = "DELETE FROM question WHERE component_id IN (" + componentIdsStr + ")";
-                    int deletedRows = jdbcTemplate.update(deleteQuestionsSQL);
-                    System.out.println("Deleted " + deletedRows + " questions directly via SQL");
-                } catch (Exception e) {
-                    System.err.println("Error with direct SQL deletion of questions: " + e.getMessage());
-                    e.printStackTrace();
-                }
-                
-                // Finally delete the components themselves
-                try {
-                    String deleteComponentsSQL = "DELETE FROM module_components WHERE id IN (" + componentIdsStr + ")";
-                    int deletedRows = jdbcTemplate.update(deleteComponentsSQL);
-                    System.out.println("Deleted " + deletedRows + " module components directly via SQL");
-                } catch (Exception e) {
-                    System.err.println("Error with direct SQL deletion of module_components: " + e.getMessage());
-                    e.printStackTrace();
-                    throw e; // Rethrow to abort the transaction
-                }
-            }
-
-            // Finally delete the module
-            System.out.println("Deleting module: " + id);
-            String deleteModuleSQL = "DELETE FROM training_module WHERE id = ?";
-            int deletedRows = jdbcTemplate.update(deleteModuleSQL, id.toString());
-            System.out.println("Module successfully deleted: " + id + " (Rows affected: " + deletedRows + ")");
-            
-            return ResponseEntity.ok(new MessageResponse("Module deleted successfully."));
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("ERROR deleting module: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new MessageResponse("Error deleting module: " + e.getMessage()));
-        }
-    }
-    // Publish module (change status to PUBLISHED)
-    @PostMapping("/modules/{id}/publish")
-    public ResponseEntity<?> publishModule(@PathVariable UUID id) {
-        Optional<TrainingModule> moduleData = moduleRepository.findById(id);
-        
-        if (moduleData.isPresent()) {
-            // Check if current user is authorized to publish this module
-            UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext()
-                    .getAuthentication().getPrincipal();
-            
-            // Only admins can publish modules
-            if (!userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new MessageResponse("Error: You are not authorized to publish modules."));
-            }
-            
-            TrainingModule module = moduleData.get();
-            module.setStatus(ModuleStatus.PUBLISHED);
-            
-            moduleRepository.save(module);
-            return ResponseEntity.ok(new MessageResponse("Module published successfully."));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-    
-    // Archive module (change status to ARCHIVED)
-    @PostMapping("/modules/{id}/archive")
-    public ResponseEntity<?> archiveModule(@PathVariable UUID id) {
-        Optional<TrainingModule> moduleData = moduleRepository.findById(id);
-        
-        if (moduleData.isPresent()) {
-            // Check if current user is authorized to archive this module
-            UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext()
-                    .getAuthentication().getPrincipal();
-            
-            // Only admins can archive modules
-            if (!userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new MessageResponse("Error: You are not authorized to archive modules."));
-            }
-            
-            TrainingModule module = moduleData.get();
-            module.setStatus(ModuleStatus.ARCHIVED);
-            
-            moduleRepository.save(module);
-            return ResponseEntity.ok(new MessageResponse("Module archived successfully."));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-    
-    // Clone module
-    @PostMapping("/modules/{id}/clone")
-    public ResponseEntity<?> cloneModule(@PathVariable UUID id) {
-        Optional<TrainingModule> moduleData = moduleRepository.findById(id);
-        
-        if (moduleData.isPresent()) {
-            TrainingModule originalModule = moduleData.get();
-            
-            // Get current user as creator for the clone
-            UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext()
-                    .getAuthentication().getPrincipal();
-            Optional<Users> user = userRepository.findById(userDetails.getId());
-            
-            if (!user.isPresent()) {
-                return ResponseEntity.badRequest()
-                        .body(new MessageResponse("Error: Invalid user."));
-            }
-            
-            // Create new module as a clone
-            TrainingModule clonedModule = new TrainingModule();
-            clonedModule.setTitle(originalModule.getTitle() + " (Clone)");
-            clonedModule.setDescription(originalModule.getDescription());
-            clonedModule.setDomain(originalModule.getDomain());
-            clonedModule.setCreatedBy(user.get());
-            clonedModule.setStatus(ModuleStatus.DRAFT); // Always set cloned modules to DRAFT
-            clonedModule.setEstimatedDuration(originalModule.getEstimatedDuration());
-            clonedModule.setRequiredCompletionScore(originalModule.getRequiredCompletionScore());
-            
-            TrainingModule savedClone = moduleRepository.save(clonedModule);
-            
-            // TODO: Clone components and their associated data (questions, materials, etc.)
-            // This would typically be handled by a service layer
-            
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedClone);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-    
-    // Get module statistics
-    @GetMapping("/modules/{id}/stats")
-    public ResponseEntity<?> getModuleStats(@PathVariable UUID id) {
-        // Check if current user is authorized to view module statistics
-        UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
-        
-        // Only admins can view module statistics
-        if (!userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new MessageResponse("Error: You are not authorized to view module statistics."));
-        }
-        
-        Optional<TrainingModule> moduleData = moduleRepository.findById(id);
-        
-        if (moduleData.isPresent()) {
-            TrainingModule module = moduleData.get();
-            
-            // Create a response with module statistics
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("id", module.getId());
-            stats.put("title", module.getTitle());
-            stats.put("status", module.getStatus());
-            stats.put("domain", module.getDomain().getName());
-            
-            // In a real implementation, you would fetch actual statistics here
-            // such as completion rates, average scores, etc.
-            stats.put("enrolledUsers", 0); // Placeholder
-            stats.put("completedUsers", 0); // Placeholder
-            stats.put("averageScore", 0.0); // Placeholder
-            
-            return ResponseEntity.ok(stats);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-    
-    // Get modules for user's interest domains (even if not assigned)
-    @GetMapping("/modules/interests")
-    public ResponseEntity<?> getModulesByUserInterests(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        
-        try {
-            // Get current user
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            UUID userId = userDetails.getId();
-            
-            Optional<Users> userOpt = userRepository.findById(userId);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.badRequest().body(new MessageResponse("User not found"));
-            }
-            
-            // Get all published modules
-            Pageable pageable = PageRequest.of(page, size, Sort.by("title"));
-            Page<TrainingModule> modules = moduleRepository.findByStatus(ModuleStatus.PUBLISHED, pageable);
-            
-            // Group modules by domain for easier browsing
-            Map<String, List<Map<String, Object>>> modulesByDomain = new HashMap<>();
-            
-            for (TrainingModule module : modules.getContent()) {
-                String domainName = module.getDomain().getName();
-                
-                if (!modulesByDomain.containsKey(domainName)) {
-                    modulesByDomain.put(domainName, new ArrayList<>());
-                }
-                
-                Map<String, Object> moduleInfo = new HashMap<>();
-                moduleInfo.put("id", module.getId());
-                moduleInfo.put("title", module.getTitle());
-                moduleInfo.put("description", module.getDescription());
-                moduleInfo.put("estimatedDuration", module.getEstimatedDuration());
-                moduleInfo.put("domainId", module.getDomain().getId());
-                
-                modulesByDomain.get(domainName).add(moduleInfo);
-            }
-            
-            return ResponseEntity.ok()
-                    .header("X-Total-Count", String.valueOf(modules.getTotalElements()))
-                    .body(modulesByDomain);
-            
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new MessageResponse("Error fetching modules by interests: " + e.getMessage()));
-        }
-    }
-    
-    // Request access to a module's domain
-    @PostMapping("/modules/{id}/request-access")
-    public ResponseEntity<?> requestModuleAccess(@PathVariable UUID id) {
-        try {
-            // Get current user
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            UUID userId = userDetails.getId();
-            
-            Optional<Users> userOpt = userRepository.findById(userId);
-            Optional<TrainingModule> moduleOpt = moduleRepository.findById(id);
-            
-            if (!userOpt.isPresent() || !moduleOpt.isPresent()) {
-                return ResponseEntity.notFound().build();
-            }
-            
-            Users user = userOpt.get();
-            TrainingModule module = moduleOpt.get();
-            Domain domain = module.getDomain();
-            
-            // Check if user already has access to this domain
-            if (user.getDomains().contains(domain)) {
-                return ResponseEntity.badRequest()
-                        .body(new MessageResponse("You already have access to this domain"));
-            }
-            
-            // In a real implementation, you would:
-            // 1. Create a domain access request record
-            // 2. Notify administrators
-            // 3. Track the status of the request
-            
-            // Return a success message
-            return ResponseEntity.ok(new MessageResponse(
-                    "Access request submitted for domain: " + domain.getName() + 
-                    ". An administrator will review your request."));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new MessageResponse("Error requesting module access: " + e.getMessage()));
-        }
-    }
-    
-    // Get recommended modules for the current user
-    @GetMapping("/modules/recommended")
-    public ResponseEntity<?> getRecommendedModules(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
-        
-        try {
-            // Get current user
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            UUID userId = userDetails.getId();
-            
-            Optional<Users> userOpt = userRepository.findById(userId);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.badRequest().body(new MessageResponse("User not found"));
-            }
-            
-            Users user = userOpt.get();
-            
-            // In a real implementation, you would have sophisticated recommendation logic
-            // For now, simply return the most recent published modules
-            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-            Page<TrainingModule> modules = moduleRepository.findByStatus(ModuleStatus.PUBLISHED, pageable);
-            
-            // Add recommendation reason to each module
-            List<Map<String, Object>> recommendedModules = modules.getContent().stream()
-                    .map(module -> {
-                        Map<String, Object> moduleInfo = new HashMap<>();
-                        moduleInfo.put("id", module.getId());
-                        moduleInfo.put("title", module.getTitle());
-                        moduleInfo.put("description", module.getDescription());
-                        moduleInfo.put("domain", module.getDomain().getName());
-                        moduleInfo.put("estimatedDuration", module.getEstimatedDuration());
-                        
-                        // Determine recommendation reason (placeholder logic)
-                        String reason = "Recently added";
-                        if (user.getDomains().contains(module.getDomain())) {
-                            reason = "Matches your domain interests";
-                        }
-                        
-                        moduleInfo.put("recommendationReason", reason);
-                        return moduleInfo;
-                    })
-                    .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(recommendedModules);
-            
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new MessageResponse("Error fetching recommended modules: " + e.getMessage()));
-        }
-    }
-    
-    // Get recently added modules
-    @GetMapping("/modules/recent")
-    public ResponseEntity<?> getRecentModules(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
-        
-        try {
-            // Get current user
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            UUID userId = userDetails.getId();
-            
-            Optional<Users> userOpt = userRepository.findById(userId);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.badRequest().body(new MessageResponse("User not found"));
-            }
-            
-            Users user = userOpt.get();
-            boolean isAdmin = user.getRole() == Role.ADMIN;
-            
-            // Get recently added modules
-            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-            Page<TrainingModule> modules;
-            
-            if (isAdmin) {
-                // Admins can see all recently added modules
-                modules = moduleRepository.findAll(pageable);
-            } else {
-                // Regular users can only see recently added published modules
-                modules = moduleRepository.findByStatus(ModuleStatus.PUBLISHED, pageable);
-            }
-            
-            return ResponseEntity.ok()
-                    .header("X-Total-Count", String.valueOf(modules.getTotalElements()))
-                    .body(modules.getContent());
-            
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new MessageResponse("Error fetching recent modules: " + e.getMessage()));
-        }
-    }
-    
-    // Get popular modules (placeholder - in a real implementation, this would be based on enrollment/completion data)
-    @GetMapping("/modules/popular")
-    public ResponseEntity<?> getPopularModules(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
-        
-        try {
-            // For now, this is the same implementation as recent modules
-            // In a real application, you would track module popularity metrics
-            
-            // Get current user
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            UUID userId = userDetails.getId();
-            
-            Optional<Users> userOpt = userRepository.findById(userId);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.badRequest().body(new MessageResponse("User not found"));
-            }
-            
-            // Get published modules (the order would normally be by popularity metrics)
-            Pageable pageable = PageRequest.of(page, size, Sort.by("title"));
-            Page<TrainingModule> modules = moduleRepository.findByStatus(ModuleStatus.PUBLISHED, pageable);
-            
-            // Add placeholder popularity metrics
-            List<Map<String, Object>> popularModules = modules.getContent().stream()
-                    .map(module -> {
-                        Map<String, Object> moduleInfo = new HashMap<>();
-                        moduleInfo.put("id", module.getId());
-                        moduleInfo.put("title", module.getTitle());
-                        moduleInfo.put("description", module.getDescription());
-                        moduleInfo.put("domain", module.getDomain().getName());
-                        
-                        // Placeholder metrics
-                        moduleInfo.put("enrollments", new Random().nextInt(100) + 50);
-                        moduleInfo.put("completionRate", (new Random().nextInt(60) + 40) + "%");
-                        moduleInfo.put("averageRating", 4.0 + (new Random().nextDouble() * 1.0));
-                        
-                        return moduleInfo;
-                    })
-                    .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(popularModules);
-            
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new MessageResponse("Error fetching popular modules: " + e.getMessage()));
-        }
-    }
-    
-    // Get modules by specific category/tag (sample implementation)
-    @GetMapping("/modules/category/{category}")
-    public ResponseEntity<?> getModulesByCategory(
-            @PathVariable String category,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        
-        try {
-            // Get current user
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            UUID userId = userDetails.getId();
-            
-            Optional<Users> userOpt = userRepository.findById(userId);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.badRequest().body(new MessageResponse("User not found"));
-            }
-            
-            Users user = userOpt.get();
-            boolean isAdmin = user.getRole() == Role.ADMIN;
-            
-            // In a real implementation, you would have a module_category or module_tag relationship
-            // For now, we'll just filter by title containing the category name
-            Pageable pageable = PageRequest.of(page, size, Sort.by("title"));
-            Page<TrainingModule> modules;
-            
-            if (isAdmin) {
-                modules = moduleRepository.findByTitleContainingIgnoreCase(category, pageable);
-            } else {
-                modules = moduleRepository.findByTitleContainingIgnoreCaseAndStatus(
-                        category, ModuleStatus.PUBLISHED, pageable);
-            }
-            
-            return ResponseEntity.ok()
-                    .header("X-Total-Count", String.valueOf(modules.getTotalElements()))
-                    .body(modules.getContent());
-            
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new MessageResponse("Error fetching modules by category: " + e.getMessage()));
-        }
-    }
-    
-    // Search modules with comprehensive filtering
-    @GetMapping("/modules/search")
-    public ResponseEntity<?> searchModules(
-            @RequestParam(required = false) String query,
+    // Get all modules with pagination, search and filtering
+    @GetMapping
+    public ResponseEntity<?> getModules(
+            @RequestParam(required = false) String search,
             @RequestParam(required = false) UUID domainId,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "title") String sortBy) {
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "createdAt,desc") String[] sort) {
         
         try {
-            // Get current authenticated user
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            UUID userId = userDetails.getId();
+            List<Sort.Order> orders = new ArrayList<>();
             
-            // Fetch the user to access their domains
-            Optional<Users> userOpt = userRepository.findById(userId);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.badRequest().body(new ArrayList<>());
+            for (String sortItem : sort) {
+                String[] parts = sortItem.split(",");
+                orders.add(new Sort.Order(
+                    parts.length > 1 && parts[1].equalsIgnoreCase("desc") ? 
+                        Sort.Direction.DESC : Sort.Direction.ASC, 
+                    parts[0]));
             }
             
-            Users user = userOpt.get();
-            boolean isAdmin = user.getRole() == Role.ADMIN;
+            Pageable pageable = PageRequest.of(page, size, Sort.by(orders));
             
-            // Create pageable object for pagination and sorting
-            Pageable paging = PageRequest.of(page, size, Sort.by(sortBy));
-            Page<TrainingModule> pageModules;
-            
-            // Apply filters based on query parameters
-            if (query != null && !query.isEmpty()) {
-                if (domainId != null && status != null && !status.isEmpty()) {
-                    // Search by query, domain, and status
-                    Optional<Domain> domain = domainRepository.findById(domainId);
-                    if (domain.isPresent()) {
-                        pageModules = moduleRepository.findByTitleContainingIgnoreCaseAndDomainAndStatus(
-                                query, domain.get(), ModuleStatus.valueOf(status), paging);
-                    } else {
-                        return ResponseEntity.badRequest().body(new ArrayList<>());
-                    }
-                } else if (domainId != null) {
-                    // Search by query and domain
-                    Optional<Domain> domain = domainRepository.findById(domainId);
-                    if (domain.isPresent()) {
-                        pageModules = moduleRepository.findByTitleContainingIgnoreCaseAndDomain(
-                                query, domain.get(), paging);
-                    } else {
-                        return ResponseEntity.badRequest().body(new ArrayList<>());
-                    }
-                } else if (status != null && !status.isEmpty()) {
-                    // Search by query and status
-                    pageModules = moduleRepository.findByTitleContainingIgnoreCaseAndStatus(
-                            query, ModuleStatus.valueOf(status), paging);
-                } else {
-                    // Search by query only
-                    pageModules = moduleRepository.findByTitleContainingIgnoreCase(query, paging);
-                }
-            } else {
-                // No search query provided, apply other filters
-                if (domainId != null) {
-                    Optional<Domain> domain = domainRepository.findById(domainId);
-                    if (domain.isPresent()) {
-                        if (status != null && !status.isEmpty()) {
-                            // Filter by domain and status
-                            pageModules = moduleRepository.findByDomainAndStatus(
-                                    domain.get(), ModuleStatus.valueOf(status), paging);
-                        } else {
-                            // Filter by domain only
-                            pageModules = moduleRepository.findByDomain(domain.get(), paging);
-                        }
-                    } else {
-                        return ResponseEntity.badRequest().body(new ArrayList<>());
-                    }
-                } else if (status != null && !status.isEmpty()) {
-                    // Filter by status only
-                    pageModules = moduleRepository.findByStatus(ModuleStatus.valueOf(status), paging);
-                } else {
-                    // No filters - get all modules or published modules based on user role
-                    if (isAdmin) {
-                        pageModules = moduleRepository.findAll(paging);
-                    } else {
-                        pageModules = moduleRepository.findByStatus(ModuleStatus.PUBLISHED, paging);
-                    }
+            ModuleStatus moduleStatus = null;
+            if (status != null && !status.isEmpty()) {
+                try {
+                    moduleStatus = ModuleStatus.valueOf(status.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().body(new MessageResponse("Invalid status value"));
                 }
             }
             
-            // If not admin, filter to only show published modules
-            if (!isAdmin && pageModules.getContent().stream()
-                    .anyMatch(module -> module.getStatus() != ModuleStatus.PUBLISHED)) {
-                
-                List<TrainingModule> filteredModules = pageModules.getContent().stream()
-                        .filter(module -> module.getStatus() == ModuleStatus.PUBLISHED)
-                        .collect(Collectors.toList());
-                
-                return ResponseEntity.ok()
-                        .header("X-Total-Count", String.valueOf(filteredModules.size()))
-                        .body(filteredModules);
-            }
+            Page<TrainingModule> modules = trainingModuleService.getTrainingModules(search, domainId, moduleStatus, pageable);
             
-            return ResponseEntity.ok()
-                    .header("X-Total-Pages", String.valueOf(pageModules.getTotalPages()))
-                    .header("X-Total-Elements", String.valueOf(pageModules.getTotalElements()))
-                    .body(pageModules.getContent());
+            Map<String, Object> response = new HashMap<>();
+            response.put("modules", modules.getContent());
+            response.put("currentPage", modules.getNumber());
+            response.put("totalItems", modules.getTotalElements());
+            response.put("totalPages", modules.getTotalPages());
             
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new MessageResponse("Error searching modules: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Get a module by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getModuleById(@PathVariable UUID id) {
+        try {
+            TrainingModule module = trainingModuleService.getTrainingModuleById(id);
+            return ResponseEntity.ok(module);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Update a module
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateModule(@PathVariable UUID id, @Valid @RequestBody ModuleRequest moduleRequest) {
+        try {
+            TrainingModule module = new TrainingModule();
+            
+            // Only set fields that are provided
+            module.setTitle(moduleRequest.getTitle());
+            module.setDescription(moduleRequest.getDescription());
+            
+            if (moduleRequest.getDomainId() != null) {
+                Domain domain = domainRepository.findById(moduleRequest.getDomainId())
+                    .orElseThrow(() -> new EntityNotFoundException("Domain not found with id: " + moduleRequest.getDomainId()));
+                module.setDomain(domain);
+            }
+            
+            module.setPassingScore(moduleRequest.getPassingScore());
+            module.setEstimatedDuration(moduleRequest.getEstimatedDuration());
+            module.setIconUrl(moduleRequest.getIconUrl());
+            
+            TrainingModule updatedModule = trainingModuleService.updateTrainingModule(id, module);
+            
+            return ResponseEntity.ok(updatedModule);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Delete a module
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteModule(@PathVariable UUID id) {
+        try {
+            trainingModuleService.deleteTrainingModule(id);
+            return ResponseEntity.ok(new MessageResponse("Module deleted successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Publish a module
+    @PutMapping("/{id}/publish")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> publishModule(@PathVariable UUID id) {
+        try {
+            TrainingModule module = trainingModuleService.publishModule(id);
+            return ResponseEntity.ok(module);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Archive a module
+    @PutMapping("/{id}/archive")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> archiveModule(@PathVariable UUID id) {
+        try {
+            TrainingModule module = trainingModuleService.archiveModule(id);
+            return ResponseEntity.ok(module);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Clone a module
+    @PostMapping("/{id}/clone")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> cloneModule(@PathVariable UUID id) {
+        try {
+            TrainingModule clonedModule = trainingModuleService.cloneModule(id);
+            return ResponseEntity.status(HttpStatus.CREATED).body(clonedModule);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // MODULE COMPONENTS
+    
+    // Create a component for a module
+    @PostMapping("/{moduleId}/components")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> createComponent(
+            @PathVariable UUID moduleId, 
+            @Valid @RequestBody ComponentRequest componentRequest) {
+        try {
+            ModuleComponent component = new ModuleComponent();
+            component.setTitle(componentRequest.getTitle());
+            component.setDescription(componentRequest.getDescription());
+            component.setType(componentRequest.getType());
+            component.setSequenceOrder(componentRequest.getSequenceOrder());
+            component.setIsRequired(componentRequest.getIsRequired());
+            component.setTimeLimit(componentRequest.getTimeLimit());
+            component.setPassingScore(componentRequest.getPassingScore());
+            
+            ModuleComponent createdComponent = moduleComponentService.createModuleComponent(component, moduleId);
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdComponent);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Get all components for a module
+    @GetMapping("/{moduleId}/components")
+    public ResponseEntity<?> getModuleComponents(@PathVariable UUID moduleId) {
+        try {
+            List<ModuleComponent> components = moduleComponentService.getComponentsByModule(moduleId);
+            return ResponseEntity.ok(components);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Get a component by ID
+    @GetMapping("/components/{id}")
+    public ResponseEntity<?> getComponentById(@PathVariable UUID id) {
+        try {
+            ModuleComponent component = moduleComponentService.getComponentById(id);
+            return ResponseEntity.ok(component);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Update a component
+    @PutMapping("/components/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateComponent(
+            @PathVariable UUID id, 
+            @Valid @RequestBody ComponentRequest componentRequest) {
+        try {
+            ModuleComponent component = new ModuleComponent();
+            component.setTitle(componentRequest.getTitle());
+            component.setDescription(componentRequest.getDescription());
+            component.setType(componentRequest.getType());
+            component.setIsRequired(componentRequest.getIsRequired());
+            component.setTimeLimit(componentRequest.getTimeLimit());
+            component.setPassingScore(componentRequest.getPassingScore());
+            
+            ModuleComponent updatedComponent = moduleComponentService.updateComponent(id, component);
+            
+            return ResponseEntity.ok(updatedComponent);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Delete a component
+    @DeleteMapping("/components/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteComponent(@PathVariable UUID id) {
+        try {
+            moduleComponentService.deleteComponent(id);
+            return ResponseEntity.ok(new MessageResponse("Component deleted successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Update component order
+    @PutMapping("/{moduleId}/components/order")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateComponentOrder(
+            @PathVariable UUID moduleId,
+            @RequestBody List<UUID> componentIds) {
+        try {
+            moduleComponentService.updateComponentOrder(moduleId, componentIds);
+            return ResponseEntity.ok(new MessageResponse("Component order updated successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // ASSESSMENTS
+    
+    // Create a question for a component
+    @PostMapping("/components/{componentId}/questions")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> createQuestion(
+            @PathVariable UUID componentId,
+            @Valid @RequestBody QuestionRequest questionRequest) {
+        try {
+            Question question = new Question();
+            question.setText(questionRequest.getText());
+            question.setType(questionRequest.getType());
+            question.setSequenceOrder(questionRequest.getSequenceOrder());
+            question.setPoints(questionRequest.getPoints());
+            
+            // Create answers if provided
+            if (questionRequest.getAnswers() != null) {
+                List<Answer> answers = new ArrayList<>();
+                for (AnswerRequest answerRequest : questionRequest.getAnswers()) {
+                    Answer answer = new Answer();
+                    answer.setText(answerRequest.getText());
+                    answer.setIsCorrect(answerRequest.getIsCorrect());
+                    answers.add(answer);
+                }
+                question.setAnswers(answers);
+            }
+            
+            Question createdQuestion = assessmentService.createQuestion(question, componentId);
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdQuestion);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Get all questions for a component
+    @GetMapping("/components/{componentId}/questions")
+    public ResponseEntity<?> getComponentQuestions(@PathVariable UUID componentId) {
+        try {
+            List<Question> questions = assessmentService.getQuestionsByComponent(componentId);
+            return ResponseEntity.ok(questions);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Get a question by ID
+    @GetMapping("/questions/{id}")
+    public ResponseEntity<?> getQuestionById(@PathVariable UUID id) {
+        try {
+            Question question = assessmentService.getQuestionById(id);
+            return ResponseEntity.ok(question);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Update a question
+    @PutMapping("/questions/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateQuestion(
+            @PathVariable UUID id,
+            @Valid @RequestBody QuestionRequest questionRequest) {
+        try {
+            Question question = new Question();
+            question.setText(questionRequest.getText());
+            question.setType(questionRequest.getType());
+            question.setPoints(questionRequest.getPoints());
+            
+            Question updatedQuestion = assessmentService.updateQuestion(id, question);
+            
+            return ResponseEntity.ok(updatedQuestion);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Delete a question
+    @DeleteMapping("/questions/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteQuestion(@PathVariable UUID id) {
+        try {
+            assessmentService.deleteQuestion(id);
+            return ResponseEntity.ok(new MessageResponse("Question deleted successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Create an answer for a question
+    @PostMapping("/questions/{questionId}/answers")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> createAnswer(
+            @PathVariable UUID questionId,
+            @Valid @RequestBody AnswerRequest answerRequest) {
+        try {
+            Answer answer = new Answer();
+            answer.setText(answerRequest.getText());
+            answer.setIsCorrect(answerRequest.getIsCorrect());
+            
+            Answer createdAnswer = assessmentService.createAnswer(answer, questionId);
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdAnswer);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Update an answer
+    @PutMapping("/answers/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateAnswer(
+            @PathVariable UUID id,
+            @Valid @RequestBody AnswerRequest answerRequest) {
+        try {
+            Answer answer = new Answer();
+            answer.setText(answerRequest.getText());
+            answer.setIsCorrect(answerRequest.getIsCorrect());
+            
+            Answer updatedAnswer = assessmentService.updateAnswer(id, answer);
+            
+            return ResponseEntity.ok(updatedAnswer);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Delete an answer
+    @DeleteMapping("/answers/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteAnswer(@PathVariable UUID id) {
+        try {
+            assessmentService.deleteAnswer(id);
+            return ResponseEntity.ok(new MessageResponse("Answer deleted successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    // Update question order
+    @PutMapping("/components/{componentId}/questions/order")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateQuestionOrder(
+            @PathVariable UUID componentId,
+            @RequestBody List<UUID> questionIds) {
+        try {
+            assessmentService.updateQuestionOrder(componentId, questionIds);
+            return ResponseEntity.ok(new MessageResponse("Question order updated successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
 }

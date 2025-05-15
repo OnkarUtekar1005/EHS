@@ -5,69 +5,70 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Entity
 @Table(name = "questions")
 public class Question {
-    
+
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "component_id", nullable = false)
-    private ModuleComponent component;
-    
+
     @NotBlank
-    @Size(max = 1000)
+    @Size(max = 500)
     private String text;
-    
-    @NotNull
+
     @Enumerated(EnumType.STRING)
+    @NotNull
     private QuestionType type;
     
-    private Integer points = 1;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "module_component_id")
+    @JsonIgnoreProperties({"questions", "trainingModule", "materials"})
+    private ModuleComponent moduleComponent;
     
-    @Column(columnDefinition = "text")
-    private String options; // JSON string of options
-    
-    @Column(columnDefinition = "text")
-    private String correctAnswer; // JSON string of correct answer(s)
-    
-    @Size(max = 1000)
-    private String explanation; // Explanation of correct answer
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("question")
+    private List<Answer> answers = new ArrayList<>();
     
     private Integer sequenceOrder;
     
-    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Answer> answers = new ArrayList<>();
+    private Integer points = 1; // Default point value
     
-    // Constructors
-    public Question() {
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
     
-    public Question(ModuleComponent component, String text, QuestionType type, Integer sequenceOrder) {
-        this.component = component;
-        this.text = text;
-        this.type = type;
-        this.sequenceOrder = sequenceOrder;
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
     
-    // Helper method to add an answer
+    // Helper methods
     public void addAnswer(Answer answer) {
         answers.add(answer);
         answer.setQuestion(this);
     }
     
-    // Helper method to remove an answer
     public void removeAnswer(Answer answer) {
         answers.remove(answer);
         answer.setQuestion(null);
     }
-    
+
     // Getters and Setters
     public UUID getId() {
         return id;
@@ -75,14 +76,6 @@ public class Question {
 
     public void setId(UUID id) {
         this.id = id;
-    }
-
-    public ModuleComponent getComponent() {
-        return component;
-    }
-
-    public void setComponent(ModuleComponent component) {
-        this.component = component;
     }
 
     public String getText() {
@@ -101,36 +94,20 @@ public class Question {
         this.type = type;
     }
 
-    public Integer getPoints() {
-        return points;
+    public ModuleComponent getModuleComponent() {
+        return moduleComponent;
     }
 
-    public void setPoints(Integer points) {
-        this.points = points;
+    public void setModuleComponent(ModuleComponent moduleComponent) {
+        this.moduleComponent = moduleComponent;
     }
 
-    public String getOptions() {
-        return options;
+    public List<Answer> getAnswers() {
+        return answers;
     }
 
-    public void setOptions(String options) {
-        this.options = options;
-    }
-
-    public String getCorrectAnswer() {
-        return correctAnswer;
-    }
-
-    public void setCorrectAnswer(String correctAnswer) {
-        this.correctAnswer = correctAnswer;
-    }
-
-    public String getExplanation() {
-        return explanation;
-    }
-
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
+    public void setAnswers(List<Answer> answers) {
+        this.answers = answers;
     }
 
     public Integer getSequenceOrder() {
@@ -141,11 +118,27 @@ public class Question {
         this.sequenceOrder = sequenceOrder;
     }
 
-    public List<Answer> getAnswers() {
-        return answers;
+    public Integer getPoints() {
+        return points;
     }
 
-    public void setAnswers(List<Answer> answers) {
-        this.answers = answers;
+    public void setPoints(Integer points) {
+        this.points = points;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
