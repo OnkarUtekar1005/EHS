@@ -19,6 +19,9 @@ public interface ComponentMaterialAssociationRepository extends JpaRepository<Co
     
     List<ComponentMaterialAssociation> findByMaterial(LearningMaterial material);
     
+    // Added this method to fix the deleteModule functionality
+    List<ComponentMaterialAssociation> findByComponent(ModuleComponent component);
+    
     @Query("SELECT cma FROM ComponentMaterialAssociation cma WHERE cma.component.id = :componentId ORDER BY cma.sequenceOrder ASC")
     List<ComponentMaterialAssociation> findByComponentIdOrderBySequenceOrderAsc(@Param("componentId") UUID componentId);
     

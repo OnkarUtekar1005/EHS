@@ -36,7 +36,7 @@ import {
   Schedule as ScheduleIcon
 } from '@mui/icons-material';
 import { moduleService, progressService, assessmentService, learningMaterialService } from '../services/api';
-import LearningMaterialViewer from '../components/learning/LearningMaterialViewer';
+import SimpleLearningMaterialsViewer from './users/module/SimpleLearningMaterialsViewer';
 
 const ModuleViewer = () => {
   const { moduleId } = useParams();
@@ -612,105 +612,12 @@ const ModuleViewer = () => {
             {/* Learning material content */}
             {(activeComponent.type === 'LEARNING_MATERIAL' || activeComponent.type === 'LEARNING_MATERIAL') && (
               <Box>
-                {activeComponent.materials && activeComponent.materials.length > 0 ? (
-                  <Grid container spacing={3}>
-                    {activeComponent.materials.map((material) => (
-                      <Grid item xs={12} key={material.id}>
-                        <Card variant="outlined">
-                          <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                              {material.title}
-                            </Typography>
-                            
-                            {material.description && (
-                              <Typography variant="body2" color="text.secondary" paragraph>
-                                {material.description}
-                              </Typography>
-                            )}
-                            
-                            <Box display="flex" alignItems="center" mb={1}>
-                              <ScheduleIcon fontSize="small" color="action" />
-                              <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                                {material.estimatedDuration 
-                                  ? `${material.estimatedDuration} min` 
-                                  : 'Duration not specified'}
-                              </Typography>
-                            </Box>
-                            
-                            {/* Progress indicator */}
-                            {material.progress !== undefined && (
-                              <>
-                                <Typography variant="body2" color="text.secondary" gutterBottom>
-                                  Progress:
-                                </Typography>
-                                <LinearProgress 
-                                  variant="determinate" 
-                                  value={material.progress} 
-                                  sx={{ height: 8, borderRadius: 5, mb: 1 }} 
-                                />
-                                <Typography variant="body2" align="right" color="text.secondary">
-                                  {material.progress}%
-                                </Typography>
-                              </>
-                            )}
-                          </CardContent>
-                          <CardActions>
-                            <Button 
-                              size="small" 
-                              variant="contained"
-                              onClick={() => {
-                                // Handle different file types appropriately
-                                if (material.fileType === 'PDF' || 
-                                    material.fileType === 'VIDEO' || 
-                                    material.fileType === 'DOCUMENT') {
-                                  window.open(`/api/materials/${material.id}/stream`, '_blank');
-                                  
-                                  // Track progress
-                                  learningMaterialService.updateProgress(material.id, {
-                                    progress: 100,
-                                    timeSpent: material.estimatedDuration || 5
-                                  });
-                                } else if (material.content) {
-                                  // Show content in dialog or new page
-                                  // For simplicity, mark as viewed
-                                  learningMaterialService.updateProgress(material.id, {
-                                    progress: 100,
-                                    timeSpent: material.estimatedDuration || 5
-                                  });
-                                } else if (material.externalUrl) {
-                                  window.open(material.externalUrl, '_blank');
-                                  
-                                  // Track progress
-                                  learningMaterialService.updateProgress(material.id, {
-                                    progress: 100,
-                                    timeSpent: material.estimatedDuration || 5
-                                  });
-                                }
-                              }}
-                            >
-                              View Material
-                            </Button>
-                            {material.completed && (
-                              <Chip 
-                                icon={<CheckCircleIcon />} 
-                                label="Completed"
-                                color="success"
-                                size="small"
-                                sx={{ ml: 1 }}
-                              />
-                            )}
-                          </CardActions>
-                        </Card>
-                      </Grid>
-                    ))}
-                  </Grid>
-                ) : (
-                  <Box>
-                    <Typography variant="body1" sx={{ mb: 3 }}>
-                      {activeComponent.content || 'No content available for this learning material.'}
-                    </Typography>
-                  </Box>
-                )}
+                {/* Use the SimpleLearningMaterialsViewer component for a more reliable approach */}
+                <SimpleLearningMaterialsViewer 
+                  componentId={activeComponent.id}
+                  isCompleted={isComponentCompleted(activeComponent.id)}
+                  onComplete={() => handleCompleteLearningMaterial()}
+                />
                 
                 <Box mt={3} display="flex" justifyContent="space-between">
                   <Button
@@ -723,11 +630,11 @@ const ModuleViewer = () => {
                   </Button>
                   <Button
                     variant="contained"
-                    onClick={handleCompleteLearningMaterial}
-                    endIcon={<DoneIcon />}
-                    disabled={componentLoading}
+                    onClick={handleNext}
+                    endIcon={<ArrowForwardIcon />}
+                    disabled={currentStep === moduleData.components.length - 1 || !isComponentCompleted(activeComponent.id)}
                   >
-                    {componentLoading ? <CircularProgress size={24} /> : 'Mark as Completed'}
+                    Next
                   </Button>
                 </Box>
               </Box>

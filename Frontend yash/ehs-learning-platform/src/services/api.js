@@ -208,7 +208,17 @@ export const moduleService = {
   getById: (id) => api.get(`/modules/${id}`),
   create: (moduleData) => api.post('/modules', moduleData),
   update: (id, moduleData) => api.put(`/modules/${id}`, moduleData),
-  delete: (id) => api.delete(`/modules/${id}`),
+  delete: (id) => {
+    console.log(`[API] Deleting module with ID: ${id}`);
+    // Use a longer timeout for delete operations (5 minutes)
+    return api.delete(`/modules/${id}`, {
+      timeout: 300000, // 5 minutes in milliseconds
+      headers: {
+        // Force content type for consistent handling
+        'Content-Type': 'application/json'
+      }
+    });
+  },
   getByDomain: (domainId) => api.get(`/modules/domain/${domainId}`),
   publish: (id) => api.post(`/modules/${id}/publish`),
   archive: (id) => api.post(`/modules/${id}/archive`),

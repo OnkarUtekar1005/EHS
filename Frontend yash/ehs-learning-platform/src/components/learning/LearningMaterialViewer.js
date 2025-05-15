@@ -3,18 +3,25 @@ import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, Card, CardContent, CardActions, 
   Button, CircularProgress, Alert, Divider,
-  List, ListItemIcon, ListItemText, Chip, Paper
+  ListItemIcon, Chip
 } from '@mui/material';
 import {
   PictureAsPdf, VideoLibrary, Description, Link, Image,
   Article, CheckCircle, Done, InsertDriveFile
 } from '@mui/icons-material';
 import { learningMaterialService } from '../../services/api';
+import EnhancedMaterialViewer from './EnhancedMaterialViewer';
 
+/**
+ * LearningMaterialViewer
+ * This component has been updated to use the EnhancedMaterialViewer for file rendering
+ * while maintaining its original API for backward compatibility.
+ */
 const LearningMaterialViewer = ({ materialId, showControls = true, onComplete }) => {
   const [material, setMaterial] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [viewerMode, setViewerMode] = useState(false);
   
   useEffect(() => {
     if (!materialId) {
@@ -50,13 +57,15 @@ const LearningMaterialViewer = ({ materialId, showControls = true, onComplete })
   }, [materialId]);
   
   // Update material progress
-  const updateProgress = async (progress = 100) => {
+  const updateProgress = async (materialId, data = { progress: 100 }) => {
     if (!material || !material.id) return;
+    
+    const progress = data.progress || 100;
     
     try {
       await learningMaterialService.updateProgress(material.id, {
         progress: progress,
-        timeSpent: 1 // Default time spent
+        timeSpent: data.timeSpent || 1 // Default time spent
       });
       
       // Update local state
@@ -72,13 +81,20 @@ const LearningMaterialViewer = ({ materialId, showControls = true, onComplete })
       }
     } catch (err) {
       console.error("Error updating material progress:", err);
-      setError("Failed to update progress. Please try again.");
+      console.warn("Progress tracking failed but content viewing will continue");
+      
+      // Update local state anyway for better UX
+      setMaterial(prevMaterial => ({
+        ...prevMaterial,
+        progress: progress,
+        completed: progress >= 100
+      }));
     }
   };
   
   // Handle material completion
   const handleComplete = () => {
-    updateProgress(100);
+    updateProgress(material.id, { progress: 100 });
   };
   
   // Get appropriate icon for material type
@@ -94,6 +110,11 @@ const LearningMaterialViewer = ({ materialId, showControls = true, onComplete })
     if (type === 'EXTERNAL') return <Link />;
     
     return <InsertDriveFile />;
+  };
+  
+  // Toggle viewer mode
+  const toggleViewerMode = () => {
+    setViewerMode(!viewerMode);
   };
   
   if (loading) {
@@ -112,140 +133,29 @@ const LearningMaterialViewer = ({ materialId, showControls = true, onComplete })
     return <Alert severity="info">No material found.</Alert>;
   }
   
-  // Render material content based on type
-  const renderMaterialContent = () => {
-    if (material.content) {
-      return (
-        <Paper elevation={0} sx={{ p: 2 }}>
-          <div dangerouslySetInnerHTML={{ __html: material.content }} />
-        </Paper>
-      );
-    }
-    
-    if (material.externalUrl) {
-      return (
-        <Box>
-          <Alert severity="info" sx={{ mb: 2 }}>
-            This material links to an external resource. Click the button below to view it.
-          </Alert>
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Button 
-              variant="contained"
-              onClick={() => {
-                window.open(material.externalUrl, '_blank', 'noopener,noreferrer');
-                updateProgress();
-              }}
-            >
-              Open External Link
-            </Button>
-          </Box>
-        </Box>
-      );
-    }
-    
-    if (material.filePath) {
-      const fileType = material.fileType?.toUpperCase();
-      // Ensure we're constructing the URL correctly
-      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-      const fileUrl = `${baseUrl}/api/materials/${material.id}/stream`;
-      
-      console.log("File URL for streaming:", fileUrl);
-      
-      if (fileType === 'PDF') {
-        return (
-          <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-              <Button 
-                variant="contained"
-                onClick={() => {
-                  window.open(fileUrl, '_blank', 'noopener,noreferrer');
-                  updateProgress();
-                }}
-              >
-                Open PDF in New Tab
-              </Button>
-            </Box>
-            <Box sx={{ height: '70vh', width: '100%', border: '1px solid #ddd' }}>
-              <iframe 
-                src={fileUrl}
-                style={{ width: '100%', height: '100%', border: 'none' }}
-                title={material.title}
-                onLoad={() => updateProgress(50)}
-              />
-            </Box>
-          </Box>
-        );
-      }
-      
-      if (fileType === 'VIDEO' || fileType === 'MP4') {
-        return (
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <video 
-              controls 
-              autoPlay
-              width="100%"
-              style={{ maxHeight: '70vh' }}
-              onEnded={() => updateProgress()}
-            >
-              <source src={fileUrl} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </Box>
-        );
-      }
-      
-      if (fileType === 'IMAGE' || fileType === 'JPG' || fileType === 'JPEG' || fileType === 'PNG' || fileType === 'GIF') {
-        return (
-          <Box sx={{ display: 'flex', justifyContent: 'center' }} onClick={() => updateProgress()}>
-            <img 
-              src={fileUrl}
-              alt={material.title}
-              style={{ maxWidth: '100%', maxHeight: '70vh' }}
-            />
-          </Box>
-        );
-      }
-      
-      if (fileType === 'DOCUMENT' || fileType === 'DOC' || fileType === 'DOCX') {
-        return (
-          <Box>
-            <Alert severity="info" sx={{ mb: 2 }}>
-              This document may not display properly in the browser. Click the button below to open it in a new tab.
-            </Alert>
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-              <Button 
-                variant="contained"
-                onClick={() => {
-                  window.open(fileUrl, '_blank', 'noopener,noreferrer');
-                  updateProgress();
-                }}
-              >
-                Open Document
-              </Button>
-            </Box>
-          </Box>
-        );
-      }
-      
-      // Generic file download for other types
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <Button 
-            variant="contained"
-            onClick={() => {
-              window.open(fileUrl, '_blank', 'noopener,noreferrer');
-              updateProgress();
-            }}
-          >
-            Download File
-          </Button>
-        </Box>
-      );
-    }
-    
-    return <Typography>No viewable content available for this material.</Typography>;
-  };
+  // Display in enhanced viewer mode
+  if (viewerMode) {
+    return (
+      <Box>
+        <Button 
+          variant="outlined" 
+          size="small" 
+          onClick={toggleViewerMode}
+          sx={{ mb: 2 }}
+        >
+          Back to Standard View
+        </Button>
+        
+        <EnhancedMaterialViewer 
+          material={material}
+          onComplete={updateProgress}
+          onError={(err) => console.error("Error in material viewer:", err)}
+        />
+      </Box>
+    );
+  }
   
+  // Standard card view with button to launch enhanced viewer
   return (
     <Box>
       <Card variant="outlined">
@@ -275,7 +185,14 @@ const LearningMaterialViewer = ({ materialId, showControls = true, onComplete })
           
           <Divider sx={{ mb: 2 }} />
           
-          {renderMaterialContent()}
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Button 
+              variant="contained"
+              onClick={toggleViewerMode}
+            >
+              View Material
+            </Button>
+          </Box>
         </CardContent>
         
         {showControls && (

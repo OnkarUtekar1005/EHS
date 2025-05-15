@@ -1,100 +1,127 @@
-# User Password Reset Testing Procedure
+# Password Reset Flow Testing Guide
 
-This document outlines the testing procedure for the password reset functionality in the EHS Learning Platform.
+This document outlines the steps to test the password reset functionality implemented in the EHS Learning Platform.
 
 ## Prerequisites
 
-1. Access to a development or testing environment
-2. Access to the application's database to verify user accounts
-3. Access to browser developer tools (Chrome DevTools or Firefox Developer Tools)
-4. A valid user account in the system
+- The EHS Learning Platform backend server must be running
+- The EHS Learning Platform frontend application must be running
+- SMTP settings must be configured in `application.properties` (or the app should be running in email-disabled mode for testing)
 
-## Testing Procedure
+## Test Scenarios
 
-### 1. Request Password Reset
+### 1. Basic Password Reset Flow (Happy Path)
 
-1. Navigate to the login page
-2. Click on the "Forgot Password" link
-3. Enter a valid email address for an existing user account
-4. Click the "Send Reset Link" button
-5. Verify that the success message appears
-6. **Console Check**: Open the browser console and verify:
-   - The request to `/api/auth/forgot-password` is sent
-   - The response is successful (200 OK)
+#### Steps:
+1. Go to the login page
+2. Click on "Forgot your password?" link
+3. Enter a valid email address associated with an existing account
+4. Verify that a success message is displayed
+5. Check the console logs for the password reset token (in email-disabled mode)
+6. Access the reset link from the console logs or email
+7. Enter a new valid password and confirm it
+8. Submit the form
+9. Verify that a success message is displayed and you're redirected to the login page
+10. Log in with the new password
+11. Verify that you can access your account successfully
 
-### 2. Retrieve Reset Token
+### 2. Security Test Cases
 
-1. Check the application console logs for the password reset token
-   - The token should be logged in a section like `PASSWORD RESET TOKEN DETAILS`
-2. Copy the token and the reset URL for later use
-3. **Note**: In a production environment, you would receive this link via email
+#### Scenario 2.1: Requesting Reset for Non-Existent Email
+1. Go to the forgot password page
+2. Enter an email that doesn't exist in the system
+3. Verify that the same success message is shown as for valid emails (for security reasons)
+4. Verify no reset token is generated in the backend logs
 
-### 3. Access Reset Page
+#### Scenario 2.2: Invalid Token
+1. Attempt to access the password reset page with an invalid token: `/reset-password?token=invalidtoken123`
+2. Verify that an error message is displayed
+3. Verify that the password reset form is not shown
 
-1. Open the reset URL from the logs (or manually navigate to `/reset-password?token={token}`)
-2. Verify that the page loads and shows the password reset form
-3. **Console Check**: Verify that:
-   - The token validation request is sent to `/api/auth/reset-password/validate`
-   - The response is successful (200 OK)
-   - The token is recognized as valid
+#### Scenario 2.3: Expired Token
+1. Generate a password reset token
+2. Wait for the token to expire (24 hours, or modify the token's expiry date in the database for testing)
+3. Try to use the expired token
+4. Verify that an error message is displayed
+5. Verify that the password reset form is not shown
 
-### 4. Submit New Password
+#### Scenario 2.4: Already Used Token
+1. Generate a password reset token
+2. Successfully reset the password using the token
+3. Try to use the same token again
+4. Verify that an error message is displayed
+5. Verify that the password reset form is not shown
 
-1. Enter a new password that meets the validation requirements:
-   - At least 8 characters
-   - Contains uppercase and lowercase letters
-   - Contains numbers
-   - Contains special characters
-   - Does not contain common terms like "password" or "safety"
-2. Confirm the password in the confirmation field
-3. Click the "Reset Password" button
-4. **Console Check**: Open the browser's network tab and verify:
-   - The request to `/api/auth/reset-password` is sent
-   - The request payload contains both `token` and `password` fields
-   - The Content-Type header is set to `application/json`
+#### Scenario 2.5: Password Validation
+1. Generate a valid password reset token
+2. Access the reset page with the valid token
+3. Enter passwords that fail validation rules:
+   - Too short (less than 8 characters)
+   - Missing uppercase letter
+   - Missing lowercase letter
+   - Missing number
+   - Missing special character
+   - Containing forbidden terms like "password", "ehs", "safety"
+4. Verify that appropriate error messages are displayed
+5. Verify that the form cannot be submitted
 
-### 5. Verify Success
+#### Scenario 2.6: Password Mismatch
+1. Generate a valid password reset token
+2. Access the reset page with the valid token
+3. Enter a valid new password
+4. Enter a different password in the confirm password field
+5. Verify that an error message is displayed
+6. Verify that the form cannot be submitted
 
-1. Verify that the success message appears
-2. Wait for the automatic redirect to the login page (or click "Back to Login")
-3. **Console Check**: Verify that:
-   - The response is successful (200 OK)
-   - There are no error messages in the console
+### 3. Edge Cases
 
-### 6. Test Login with New Password
+#### Scenario 3.1: Multiple Reset Requests
+1. Request a password reset for an email
+2. Without using the first token, request another reset for the same email
+3. Verify that the first token is invalidated
+4. Try to use the first token and verify it fails
+5. Verify that the second token works correctly
 
-1. On the login page, enter the user's username/email
-2. Enter the new password you just set
-3. Click "Sign In"
-4. Verify that the login is successful and you are redirected to the dashboard
+#### Scenario 3.2: Network Issues
+1. Start the password reset process
+2. Disable network connection before submitting the form
+3. Submit the form
+4. Verify that appropriate error handling occurs
+5. Re-enable network and retry
+6. Verify that the process completes successfully
 
-## Error Testing
+## Test Environment Setup Notes
 
-Additionally, test these error scenarios:
+### For Testing Without Email Server
 
-1. **Invalid Token**:
-   - Try to access `/reset-password?token=invalid-token`
-   - Verify that the proper error message is displayed
+In `application.properties`, set:
+```properties
+app.email.enabled=false
+```
 
-2. **Expired Token**:
-   - Modify your system clock to simulate token expiration
-   - Or wait for more than 24 hours if using a real token
-   - Verify the expiration error is displayed
+This will disable actual email sending. The tokens will be logged to the console, and you can manually navigate to the reset URL:
+```
+http://localhost:3000/reset-password?token=YOUR_TOKEN_HERE
+```
 
-3. **Already Used Token**:
-   - After successfully resetting a password, try to use the same token again
-   - Verify that the "already used" error is shown
+### For Testing with Email Server
 
-4. **Password Validation**:
-   - Try to submit a password that doesn't meet the requirements
-   - Verify that appropriate validation errors are displayed
+In `application.properties`, set:
+```properties
+app.email.enabled=true
+spring.mail.host=your-smtp-server
+spring.mail.port=587
+spring.mail.username=your-username
+spring.mail.password=your-password
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+app.frontend.url=http://localhost:3000
+```
 
-## Documentation
+## Database Verification
 
-For each test, document:
-1. The test procedure followed
-2. Screenshots of key steps
-3. Console logs showing requests and responses
-4. Any errors encountered
-5. The final outcome (success/failure)
-EOF < /dev/null
+You can verify the proper functioning of the system by checking the `password_reset_tokens` table in the database. Look for:
+
+1. Token creation when a reset is requested
+2. Token marked as "used" after successful password reset
+3. New tokens invalidating old ones for the same user

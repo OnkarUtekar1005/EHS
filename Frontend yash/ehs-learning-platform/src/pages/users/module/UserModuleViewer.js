@@ -11,7 +11,7 @@ import {
 } from '@mui/icons-material';
 import { moduleService, progressService, componentService } from '../../services/api';
 import AssessmentViewer from './AssessmentViewer';
-import LearningMaterialsViewer from './LearningMaterialsViewer';
+import SimpleLearningMaterialsViewer from './SimpleLearningMaterialsViewer';
 
 const UserModuleViewer = () => {
   const { moduleId } = useParams();
@@ -366,7 +366,7 @@ const UserModuleViewer = () => {
                   onComplete={handleComponentComplete}
                 />
               ) : (
-                <LearningMaterialsViewer 
+                <SimpleLearningMaterialsViewer 
                   componentId={activeComponent.id}
                   isCompleted={componentProgress[activeComponent.id]?.completed}
                   onComplete={handleComponentComplete}

@@ -130,15 +130,22 @@ public class LearningMaterialController {
     }
 
     /**
-     * Stream or download a learning material file
+     * Stream or download a learning material file with improved support for byte-range requests
+     * This implementation supports video streaming and PDF reading with range requests
+     * 
      * @param id The ID of the learning material
      * @param preview If true, don't track progress for this view
+     * @param download If true, serve as an attachment instead of inline
+     * @param rangeHeader The HTTP Range header for byte-range requests
      */
     @GetMapping("/materials/{id}/stream")
     public ResponseEntity<?> streamFile(
             @PathVariable UUID id,
-            @RequestParam(required = false, defaultValue = "false") boolean preview) {
+            @RequestParam(required = false, defaultValue = "false") boolean preview,
+            @RequestParam(required = false, defaultValue = "false") boolean download,
+            @RequestHeader(value = "Range", required = false) String rangeHeader) {
         try {
+            // Find the material
             Optional<LearningMaterial> materialOpt = materialRepository.findById(id);
             if (!materialOpt.isPresent()) {
                 return ResponseEntity.notFound().build();
@@ -146,6 +153,7 @@ public class LearningMaterialController {
             
             LearningMaterial material = materialOpt.get();
             
+            // Check if there's a file path
             if (material.getFilePath() == null || material.getFilePath().isEmpty()) {
                 return ResponseEntity.badRequest()
                     .body(new MessageResponse("No file associated with this material"));
@@ -167,10 +175,11 @@ public class LearningMaterialController {
                         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
                         
                         // Track material progress (only if not in preview mode)
+                        // Use a lower completion value to encourage clicking "Mark as Completed"
                         learningMaterialService.updateProgress(
                             material.getId(), 
                             userDetails.getId(), 
-                            100, // Mark as completed
+                            75, // Set to 75% progress
                             0    // No time spent tracking for auto-completion
                         );
                     }
@@ -180,36 +189,138 @@ public class LearningMaterialController {
                 }
             }
             
-            // Get file resource
+            // Get file resource and path
             Path filePath = fileStorageService.getFilePath(material.getFilePath());
+            java.io.File file = filePath.toFile();
             Resource resource = new UrlResource(filePath.toUri());
             
-            // Determine content type
-            String contentType = determineContentType(material.getFileType());
+            // Determine content type - simple approach using file extension
+            String contentType;
+            String filename = material.getFilePath().toLowerCase();
+            if (filename.endsWith(".pdf")) {
+                contentType = "application/pdf";
+            } else if (filename.endsWith(".mp4")) {
+                contentType = "video/mp4";
+            } else if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) {
+                contentType = "image/jpeg";
+            } else if (filename.endsWith(".png")) {
+                contentType = "image/png";
+            } else if (filename.endsWith(".gif")) {
+                contentType = "image/gif";
+            } else if (filename.endsWith(".docx")) {
+                contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            } else if (filename.endsWith(".doc")) {
+                contentType = "application/msword";
+            } else if (filename.endsWith(".pptx")) {
+                contentType = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+            } else if (filename.endsWith(".ppt")) {
+                contentType = "application/vnd.ms-powerpoint";
+            } else {
+                contentType = "application/octet-stream";
+            }
             
             // Build response headers
             HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + material.getTitle() + "\"");
+            
+            // Decide whether to serve as attachment or inline
+            if (download) {
+                headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + material.getTitle() + "\"");
+            } else {
+                headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + material.getTitle() + "\"");
+            }
 
             // Always add CORS headers for consistent behavior
             headers.add("Access-Control-Allow-Origin", "*");
-            headers.add("Access-Control-Allow-Methods", "GET, OPTIONS");
-            headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            headers.add("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+            headers.add("Access-Control-Allow-Headers", "Content-Type, Range, Authorization");
+            headers.add("Access-Control-Expose-Headers", 
+                     "Accept-Ranges, Content-Range, Content-Length, Content-Type, Content-Disposition");
 
             // Add headers for iframe embedding
             headers.add("X-Frame-Options", "ALLOWALL");
+            
+            // Allow embedding in iframes from any origin
             headers.add("Content-Security-Policy", "frame-ancestors *");
+            
+            // Add Accept-Ranges header to indicate we support range requests
+            headers.add(HttpHeaders.ACCEPT_RANGES, "bytes");
 
-            // Add caching headers for preview requests to improve performance
+            // Set cache control headers
             if (preview) {
                 headers.setCacheControl("max-age=3600"); // Cache for 1 hour
+            } else {
+                headers.setCacheControl("no-cache, no-store, must-revalidate");
+                headers.setPragma("no-cache");
+                headers.setExpires(0);
             }
+            
+            // Get file length
+            long contentLength = file.length();
+            
+            // Handle range requests (important for video streaming and PDFs)
+            if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
+                // Parse range header
+                java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("bytes=(\\d+)-(\\d*)");
+                java.util.regex.Matcher matcher = pattern.matcher(rangeHeader);
+                
+                if (matcher.matches()) {
+                    long start = Long.parseLong(matcher.group(1));
+                    String endGroup = matcher.group(2);
+                    long end;
+                    
+                    if (endGroup == null || endGroup.isEmpty()) {
+                        // If end is not specified, use the entire remaining content
+                        end = contentLength - 1;
+                    } else {
+                        end = Long.parseLong(endGroup);
+                    }
+                    
+                    // Ensure end doesn't exceed file size
+                    if (end >= contentLength) {
+                        end = contentLength - 1;
+                    }
+                    
+                    long rangeLength = end - start + 1;
+                    
+                    if (start >= contentLength) {
+                        // Return 416 Range Not Satisfiable if start is beyond file size
+                        headers.set(HttpHeaders.CONTENT_RANGE, "bytes */" + contentLength);
+                        return ResponseEntity.status(org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+                                .headers(headers).build();
+                    }
+                    
+                    // Set Content-Range header
+                    headers.set(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + contentLength);
+                    headers.setContentLength(rangeLength);
+                    
+                    try {
+                        java.io.RandomAccessFile randomAccessFile = new java.io.RandomAccessFile(file, "r");
+                        randomAccessFile.seek(start);
+                        
+                        byte[] data = new byte[(int) rangeLength];
+                        randomAccessFile.read(data);
+                        
+                        return ResponseEntity.status(org.springframework.http.HttpStatus.PARTIAL_CONTENT)
+                                .headers(headers)
+                                .contentType(MediaType.parseMediaType(contentType))
+                                .body(new org.springframework.core.io.ByteArrayResource(data));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return ResponseEntity.badRequest()
+                                .body(new MessageResponse("Error processing range request: " + e.getMessage()));
+                    }
+                }
+            }
+            
+            // If not a range request, return the full resource
+            headers.setContentLength(contentLength);
             
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
                     .headers(headers)
                     .body(resource);
-        } catch (MalformedURLException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest()
                 .body(new MessageResponse("Error streaming file: " + e.getMessage()));
         }

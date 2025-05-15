@@ -12,10 +12,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.apache.tika.Tika;
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
+import org.springframework.http.HttpRange;
 
 @RestController
 @RequestMapping("/api/files")
@@ -25,11 +38,16 @@ public class FileController {
     @Autowired
     private FileStorageService fileStorageService;
     
+    private final Tika tika = new Tika();
+    
     /**
-     * Serve a stored file
+     * Serve a stored file with support for byte-range requests (needed for video streaming and PDF viewing)
      */
     @GetMapping("/{fileName:.+}")
-    public ResponseEntity<Resource> serveFile(@PathVariable String fileName) {
+    public ResponseEntity<Resource> serveFile(
+            @PathVariable String fileName,
+            @RequestHeader(value = "Range", required = false) String rangeHeader,
+            @RequestParam(value = "preview", required = false, defaultValue = "false") boolean preview) {
         try {
             // Sanitize file name to prevent path traversal
             fileName = sanitizeFileName(fileName);
@@ -40,20 +58,99 @@ public class FileController {
             }
             
             Path filePath = fileStorageService.getFilePath(fileName);
+            File file = filePath.toFile();
             Resource resource = new UrlResource(filePath.toUri());
             
             if (resource.exists() && resource.isReadable()) {
-                // Determine content type
-                String contentType = determineContentType(fileName);
+                // Determine content type with Apache Tika for more accurate detection
+                String contentType;
+                try (InputStream is = Files.newInputStream(filePath)) {
+                    contentType = tika.detect(is, fileName);
+                }
+                
+                HttpHeaders headers = new HttpHeaders();
+                
+                // Set CORS headers
+                headers.add(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+                headers.add(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET, HEAD, OPTIONS");
+                headers.add(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "Content-Type, Range, Authorization");
+                headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, 
+                        "Accept-Ranges, Content-Range, Content-Length, Content-Type");
+                
+                // Allow embedding in iframes
+                headers.add("X-Frame-Options", "ALLOWALL");
+                headers.add("Content-Security-Policy", "frame-ancestors *");
+                
+                // Set caching headers for preview requests
+                if (preview) {
+                    headers.setCacheControl("max-age=3600"); // Cache for 1 hour
+                } else {
+                    headers.setCacheControl("no-cache, no-store, must-revalidate");
+                }
+                
+                long contentLength = file.length();
+                long start = 0;
+                long end = contentLength - 1;
+                
+                headers.add(HttpHeaders.ACCEPT_RANGES, "bytes");
+                
+                // Handle byte-range requests for video streaming and PDF viewing
+                if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
+                    // Parse range header
+                    Pattern pattern = Pattern.compile("bytes=(\\d+)-(\\d*)");
+                    Matcher matcher = pattern.matcher(rangeHeader);
+                    
+                    if (matcher.matches()) {
+                        start = Long.parseLong(matcher.group(1));
+                        String endGroup = matcher.group(2);
+                        if (endGroup != null && !endGroup.isEmpty()) {
+                            end = Long.parseLong(endGroup);
+                        }
+                        
+                        // Limit the end to the actual file size
+                        if (end >= contentLength) {
+                            end = contentLength - 1;
+                        }
+                        
+                        // Calculate the actual content length to be sent
+                        long contentLengthToSend = end - start + 1;
+                        
+                        // Create a custom resource for the range
+                        RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
+                        randomAccessFile.seek(start);
+                        byte[] data = new byte[(int) contentLengthToSend];
+                        randomAccessFile.read(data);
+                        
+                        // Set Content-Range header
+                        headers.add(HttpHeaders.CONTENT_RANGE, 
+                                String.format("bytes %d-%d/%d", start, end, contentLength));
+                        headers.setContentLength(contentLengthToSend);
+                        
+                        // Set disposition header
+                        headers.add(HttpHeaders.CONTENT_DISPOSITION, 
+                                "inline; filename=\"" + resource.getFilename() + "\"");
+                        
+                        return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
+                                .headers(headers)
+                                .contentType(MediaType.parseMediaType(contentType))
+                                .body(new ByteArrayResource(data, resource.getFilename()));
+                    }
+                }
+                
+                // If not a range request, return the full resource
+                headers.setContentLength(contentLength);
+                headers.add(HttpHeaders.CONTENT_DISPOSITION, 
+                        "inline; filename=\"" + resource.getFilename() + "\"");
                 
                 return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
-                    .body(resource);
+                        .headers(headers)
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .body(resource);
             } else {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -70,9 +167,13 @@ public class FileController {
             
             String fileName = fileStorageService.storeFile(file);
             
+            // Get actual MIME type using Apache Tika
+            String mimeType = tika.detect(file.getInputStream(), file.getOriginalFilename());
+            
             Map<String, String> response = new HashMap<>();
             response.put("fileName", fileName);
             response.put("fileType", determineFileType(file.getOriginalFilename()));
+            response.put("mimeType", mimeType);
             response.put("size", String.valueOf(file.getSize()));
             
             return ResponseEntity.ok(response);
@@ -100,6 +201,42 @@ public class FileController {
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new MessageResponse("Failed to delete file: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Get info about a file (for previewing)
+     */
+    @GetMapping("/{fileName:.+}/info")
+    public ResponseEntity<?> getFileInfo(@PathVariable String fileName) {
+        try {
+            // Sanitize file name to prevent path traversal
+            fileName = sanitizeFileName(fileName);
+            
+            if (!fileStorageService.fileExists(fileName)) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Path filePath = fileStorageService.getFilePath(fileName);
+            File file = filePath.toFile();
+            
+            // Detect MIME type
+            String mimeType;
+            try (InputStream is = Files.newInputStream(filePath)) {
+                mimeType = tika.detect(is, fileName);
+            }
+            
+            Map<String, Object> fileInfo = new HashMap<>();
+            fileInfo.put("fileName", fileName);
+            fileInfo.put("size", file.length());
+            fileInfo.put("mimeType", mimeType);
+            fileInfo.put("fileType", determineFileType(fileName));
+            fileInfo.put("lastModified", file.lastModified());
+            
+            return ResponseEntity.ok(fileInfo);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new MessageResponse("Failed to get file info: " + e.getMessage()));
         }
     }
     
@@ -176,6 +313,44 @@ public class FileController {
             return "IMAGE";
         } else {
             return "OTHER";
+        }
+    }
+    
+    /**
+     * Custom resource class for byte range responses
+     */
+    private static class ByteArrayResource extends Resource {
+        private final byte[] data;
+        private final String filename;
+        
+        public ByteArrayResource(byte[] data, String filename) {
+            this.data = data;
+            this.filename = filename;
+        }
+        
+        @Override
+        public InputStream getInputStream() throws IOException {
+            return new java.io.ByteArrayInputStream(data);
+        }
+        
+        @Override
+        public boolean exists() {
+            return true;
+        }
+        
+        @Override
+        public long contentLength() {
+            return data.length;
+        }
+        
+        @Override
+        public String getFilename() {
+            return filename;
+        }
+        
+        @Override
+        public String getDescription() {
+            return "Byte array resource for " + filename;
         }
     }
 }

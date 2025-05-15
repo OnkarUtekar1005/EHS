@@ -9,6 +9,9 @@ import com.ehs.elearning.model.Question;
 import com.ehs.elearning.model.QuestionType;
 import com.ehs.elearning.model.Role;
 import com.ehs.elearning.model.TrainingModule;
+import com.ehs.elearning.model.UserComponentProgress;
+import com.ehs.elearning.model.UserModuleProgress;
+import com.ehs.elearning.model.UserProgress;
 import com.ehs.elearning.model.Users;
 import com.ehs.elearning.payload.request.ComponentRequest;
 import com.ehs.elearning.payload.request.ModuleRequest;
@@ -18,6 +21,9 @@ import com.ehs.elearning.repository.DomainRepository;
 import com.ehs.elearning.repository.ModuleComponentRepository;
 import com.ehs.elearning.repository.QuestionRepository;
 import com.ehs.elearning.repository.TrainingModuleRepository;
+import com.ehs.elearning.repository.UserComponentProgressRepository;
+import com.ehs.elearning.repository.UserModuleProgressRepository;
+import com.ehs.elearning.repository.UserProgressRepository;
 import com.ehs.elearning.repository.UserRepository;
 import com.ehs.elearning.security.UserDetailsImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +35,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -61,6 +68,18 @@ public class TrainingModuleController {
 
     @Autowired
     private ComponentMaterialAssociationRepository associationRepository;
+    
+    @Autowired
+    private UserProgressRepository userProgressRepository;
+    
+    @Autowired
+    private UserModuleProgressRepository userModuleProgressRepository;
+    
+    @Autowired
+    private UserComponentProgressRepository userComponentProgressRepository;
+    
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
     
     
     // Get all published modules (for all users)
@@ -625,6 +644,7 @@ public class TrainingModuleController {
     
     // Delete module
     @DeleteMapping("/modules/{id}")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<MessageResponse> deleteModule(@PathVariable UUID id) {
         try {
             // Check if current user is authorized to delete this module
@@ -644,42 +664,112 @@ public class TrainingModuleController {
             }
 
             TrainingModule module = moduleOpt.get();
+            System.out.println("Starting deletion of module: " + module.getTitle() + " (ID: " + id + ")");
 
-            // Find all components for this module
+            // Find all components for this module - we'll need their IDs for direct SQL deletion
             List<ModuleComponent> components = componentRepository.findByTrainingModuleOrderBySequenceOrderAsc(module);
+            System.out.println("Found " + components.size() + " components to delete");
 
-            // For each component, handle dependencies
-            for (ModuleComponent component : components) {
-                // 1. Delete related questions
-                List<Question> questions = questionRepository.findByComponentOrderBySequenceOrderAsc(component);
-                if (!questions.isEmpty()) {
-                    questionRepository.deleteAll(questions);
-                }
-
-                // 2. Delete component material associations (not automatically handled by cascade)
+            if (!components.isEmpty()) {
+                // Collect all component IDs
+                List<UUID> componentIds = components.stream()
+                    .map(ModuleComponent::getId)
+                    .collect(java.util.stream.Collectors.toList());
+                
+                // Convert UUID list to string for SQL IN clause
+                String componentIdsStr = componentIds.stream()
+                    .map(uuid -> "'" + uuid.toString() + "'")
+                    .collect(java.util.stream.Collectors.joining(","));
+                
+                System.out.println("Component IDs to process: " + componentIdsStr);
+                
+                // Step 1: Directly delete all user_progress records that reference these components using SQL
                 try {
-                    // Find all associations for this component
-                    List<ComponentMaterialAssociation> associations =
-                        associationRepository.findByComponent(component);
-
-                    // Delete all found associations
-                    if (!associations.isEmpty()) {
-                        associationRepository.deleteAll(associations);
-                    }
+                    String deleteUserProgressSQL = "DELETE FROM user_progress WHERE component_id IN (" + componentIdsStr + ")";
+                    int deletedRows = jdbcTemplate.update(deleteUserProgressSQL);
+                    System.out.println("Deleted " + deletedRows + " user_progress records directly via SQL");
+                
+                    // Also delete user_progress records for the module
+                    String deleteModuleProgressSQL = "DELETE FROM user_progress WHERE module_id = ?";
+                    deletedRows = jdbcTemplate.update(deleteModuleProgressSQL, id.toString());
+                    System.out.println("Deleted " + deletedRows + " module user_progress records directly via SQL");
                 } catch (Exception e) {
-                    System.err.println("Error deleting component material associations: " + e.getMessage());
+                    System.err.println("Error with direct SQL deletion of user_progress: " + e.getMessage());
                     e.printStackTrace();
+                }
+                
+                // Step 2: Delete user_component_progress records
+                try {
+                    String deleteComponentProgressSQL = "DELETE FROM user_component_progress WHERE component_id IN (" + componentIdsStr + ")";
+                    int deletedRows = jdbcTemplate.update(deleteComponentProgressSQL);
+                    System.out.println("Deleted " + deletedRows + " user_component_progress records directly via SQL");
+                } catch (Exception e) {
+                    System.err.println("Error with direct SQL deletion of user_component_progress: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                
+                // Step 3: Delete user_module_progress records
+                try {
+                    String deleteModuleProgressSQL = "DELETE FROM user_module_progress WHERE module_id = ?";
+                    int deletedRows = jdbcTemplate.update(deleteModuleProgressSQL, id.toString());
+                    System.out.println("Deleted " + deletedRows + " user_module_progress records directly via SQL");
+                } catch (Exception e) {
+                    System.err.println("Error with direct SQL deletion of user_module_progress: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                
+                // Step 4: Delete material progress records
+                try {
+                    String deleteMaterialProgressSQL = "DELETE FROM material_progress WHERE component_id IN (" + componentIdsStr + ")";
+                    int deletedRows = jdbcTemplate.update(deleteMaterialProgressSQL);
+                    System.out.println("Deleted " + deletedRows + " material_progress records directly via SQL");
+                } catch (Exception e) {
+                    System.err.println("Error with direct SQL deletion of material_progress: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                
+                // Step 5: Delete component material associations
+                try {
+                    String deleteAssociationsSQL = "DELETE FROM component_material_association WHERE component_id IN (" + componentIdsStr + ")";
+                    int deletedRows = jdbcTemplate.update(deleteAssociationsSQL);
+                    System.out.println("Deleted " + deletedRows + " component_material_association records directly via SQL");
+                } catch (Exception e) {
+                    System.err.println("Error with direct SQL deletion of component_material_association: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                
+                // Step 6: Delete questions
+                try {
+                    String deleteQuestionsSQL = "DELETE FROM question WHERE component_id IN (" + componentIdsStr + ")";
+                    int deletedRows = jdbcTemplate.update(deleteQuestionsSQL);
+                    System.out.println("Deleted " + deletedRows + " questions directly via SQL");
+                } catch (Exception e) {
+                    System.err.println("Error with direct SQL deletion of questions: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                
+                // Finally delete the components themselves
+                try {
+                    String deleteComponentsSQL = "DELETE FROM module_components WHERE id IN (" + componentIdsStr + ")";
+                    int deletedRows = jdbcTemplate.update(deleteComponentsSQL);
+                    System.out.println("Deleted " + deletedRows + " module components directly via SQL");
+                } catch (Exception e) {
+                    System.err.println("Error with direct SQL deletion of module_components: " + e.getMessage());
+                    e.printStackTrace();
+                    throw e; // Rethrow to abort the transaction
                 }
             }
 
-            // Now safely delete all components
-            componentRepository.deleteAll(components);
-
             // Finally delete the module
-            moduleRepository.deleteById(id);
+            System.out.println("Deleting module: " + id);
+            String deleteModuleSQL = "DELETE FROM training_module WHERE id = ?";
+            int deletedRows = jdbcTemplate.update(deleteModuleSQL, id.toString());
+            System.out.println("Module successfully deleted: " + id + " (Rows affected: " + deletedRows + ")");
+            
             return ResponseEntity.ok(new MessageResponse("Module deleted successfully."));
         } catch (Exception e) {
             e.printStackTrace();
+            System.err.println("ERROR deleting module: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new MessageResponse("Error deleting module: " + e.getMessage()));
         }

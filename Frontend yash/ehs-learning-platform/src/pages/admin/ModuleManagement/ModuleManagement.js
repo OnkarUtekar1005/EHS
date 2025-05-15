@@ -178,12 +178,25 @@ const ModuleManagement = () => {
   const handleDelete = async (moduleId) => {
     if (window.confirm('Are you sure you want to delete this module? This action cannot be undone.')) {
       try {
+        setLoading(true);
+        setError('');
+        console.log(`Starting deletion of module: ${moduleId}`);
+        
+        // Show a message to user that deletion is in progress
+        setError('Deletion in progress. This may take a moment for complex modules...');
+        
         await moduleService.delete(moduleId);
-        // Refresh the module list
+        console.log(`Module ${moduleId} deleted successfully`);
+        
+        // Clear error message and refresh the module list
+        setError('');
         fetchModules();
       } catch (err) {
         console.error('Error deleting module:', err);
-        setError('Failed to delete module');
+        const errorMessage = err.response?.data?.message || 'Failed to delete module. Please try again.';
+        setError(`Delete failed: ${errorMessage}`);
+      } finally {
+        setLoading(false);
       }
     }
   };

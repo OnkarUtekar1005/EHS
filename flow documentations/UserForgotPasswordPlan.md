@@ -1,98 +1,104 @@
-# User Forgot Password Issue Analysis and Plan
+# User Forgot Password Implementation Plan
 
-## Current Implementation
+## Problem Overview
 
-The EHS Learning Platform has a multi-step forgot password flow:
+The forgot password functionality in the EHS Learning Platform is currently not working properly. When a user clicks the "Forgot Password" link on the login page and enters their email, the system sends an email with a reset link. However, when the user clicks on this reset link, they are redirected to a 404 page instead of the password reset page.
 
-1. **Request Password Reset**:
-   - User enters email on `/forgot-password` page
-   - Frontend sends request to `/api/auth/forgot-password` API endpoint
-   - Backend generates a token, saves it to the database, and sends an email with reset link
-   - For security, frontend always shows success message regardless of whether email exists
+## Root Cause Analysis
 
-2. **Token Validation**:
-   - User clicks link in email, which navigates to `/reset-password?token={token}`
-   - Frontend validates token via `/api/auth/reset-password/validate`
-   - If valid, shows password reset form; if invalid, shows error
+After examining the codebase, several potential issues have been identified:
 
-3. **Password Reset**:
-   - User enters new password (with confirmation)
-   - Frontend sends request to `/api/auth/reset-password` with token and new password
-   - Backend validates token again, updates user password, and marks token as used
-   - Frontend redirects to login page on success
+1. **Frontend URL Configuration**: The backend is using `app.frontend.url=http://localhost:3000` in the application.properties, which may not match the actual deployed URL of the frontend application.
 
-## Identified Issue
+2. **Email Reset Link Format**: The EmailService generates a reset link in the format `frontendUrl + "/reset-password?token=" + token`, which may not be correctly handled by the frontend routing.
 
-When a user clicks the reset link in the email and attempts to set a new password, they receive the error:
-- "Error: Password is required" with 400 status code in the API response.
+3. **Route Configuration**: The React Router configuration in App.js includes a route for `/reset-password`, but it may not be correctly handling the token parameter or may be affected by other routing issues.
 
-## Analysis
+4. **Token Validation**: While the token validation appears to be correctly implemented in both the frontend and backend, the issue occurs before this step when the user is trying to access the reset password page.
 
-Based on the code review, the issue seems to be related to how the password reset data is sent to the backend:
+## Implementation Plan
 
-1. **Frontend Implementation (ResetPassword.js)**:
-   - The frontend is sending the following data to the API:
-     ```javascript
-     await authService.resetPassword({
-       token,
-       password: passwords.password
-     });
-     ```
+### 1. Fix Frontend URL Configuration
 
-2. **Backend Implementation (AuthController.java)**:
-   - The backend expects a JSON object with `token` and `password` fields.
-   - It performs validation checks:
-     ```java
-     if (password == null || password.isEmpty()) {
-         return ResponseEntity.badRequest()
-             .body(new MessageResponse("Error: Password is required"));
-     }
-     ```
+**Changes needed:**
+- Update the `app.frontend.url` in application.properties to match the actual deployed URL of the frontend application
+- Ensure this value is correctly passed to the EmailService
 
-3. **API Service (api.js)**:
-   - Contains debug logs showing payload being sent:
-     ```javascript
-     console.log('Reset password payload:', JSON.stringify(resetData, null, 2));
-     ```
+### 2. Verify Email Service Implementation
 
-The error suggests that either:
-1. The payload structure is incorrect
-2. The password value is not being properly sent in the request
-3. The backend is not properly parsing the request body
+**Changes needed:**
+- Review the EmailService implementation to ensure emails are being sent correctly
+- Verify the reset link format is correct for the frontend routing
+- Test the email sending functionality with actual email addresses
 
-## Action Plan
+### 3. Update Frontend Routes and Token Handling
 
-1. **Debug Request/Response**:
-   - Enhance frontend logging to capture exact payload and response
-   - Verify token format and structure in console logs
+**Changes needed:**
+- Ensure the Reset Password component correctly handles URL parameters
+- Verify that the token extraction logic correctly parses the token from the URL
+- Test the token validation logic to ensure it works with valid tokens
 
-2. **Test Password Reset Flow**:
-   - Run controlled test of the reset password flow
-   - Capture all request/response pairs
+### 4. Testing the Complete Flow
 
-3. **Fix Implementation**:
-   - Update ResetPassword.js to ensure correct payload structure
-   - Verify proper error handling in the UI
+1. **Reset Request Testing**:
+   - Submit a forgot password request
+   - Verify the email is sent with the correct reset link
+   - Confirm the token is stored in the database
 
-4. **Test Solution**:
-   - Verify complete flow from email request to password reset
-   - Document testing process and results
+2. **Reset Link Testing**:
+   - Click the reset link in the email
+   - Verify the user is directed to the reset password page
+   - Confirm the token is correctly extracted from the URL
 
-## Implementation Steps
+3. **Password Reset Testing**:
+   - Submit a new password
+   - Verify the password is updated in the database
+   - Confirm the token is marked as used
+   - Test logging in with the new password
 
-1. **Frontend Updates**:
-   - Add additional debugging in ResetPassword.js to log complete request/response cycle
-   - Ensure password field is correctly named and populated in request
+### 5. Security Considerations
 
-2. **Test End-to-End Flow**:
-   - Request password reset for a test account
-   - Use token from console logs to test reset page
-   - Monitor network requests during form submission
+- Ensure tokens expire after a reasonable time (currently set to 24 hours)
+- Verify tokens can only be used once
+- Validate password strength requirements
+- Implement rate limiting for password reset requests
 
-3. **Implement Fix**:
-   - Based on testing results, update resetPassword function in ResetPassword.js
-   - Add additional validation if needed
+## Implementation Details
 
-4. **Verify Solution**:
-   - Run the complete flow to ensure it works correctly
-   - Test with various password combinations
+### Backend Changes
+
+1. **Email Service Configuration**:
+   - Verify the `app.frontend.url` is correctly set
+   - Log the complete reset URL for debugging purposes
+
+2. **Token Validation Endpoint**:
+   - Verify the `/api/auth/reset-password/validate` endpoint correctly validates tokens
+   - Ensure error responses are clear and helpful
+
+3. **Password Reset Endpoint**:
+   - Verify the `/api/auth/reset-password` endpoint correctly updates passwords
+   - Ensure tokens are marked as used after password reset
+
+### Frontend Changes
+
+1. **Reset Password Component**:
+   - Verify the URL parameter extraction logic
+   - Ensure token validation is performed immediately on page load
+   - Provide clear error messages for invalid or expired tokens
+
+2. **API Service**:
+   - Verify the `resetPassword` function correctly sends the token and new password
+   - Ensure error handling is robust
+
+## Timeline
+
+1. **Investigation and Analysis**: Complete (current document)
+2. **Implementation of Fixes**: 1-2 days
+3. **Testing**: 1 day
+4. **Deployment**: 1 day
+
+## Conclusion
+
+The forgot password functionality is not working due to issues with the reset link URL and routing. By updating the frontend URL configuration and ensuring the reset link is correctly formatted and handled, we can fix this functionality and provide users with a working password reset flow.
+
+This implementation plan covers the necessary changes to both the backend and frontend components to ensure a seamless password reset experience for users.
