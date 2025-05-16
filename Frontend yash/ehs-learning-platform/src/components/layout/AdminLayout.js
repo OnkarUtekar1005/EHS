@@ -32,6 +32,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import CategoryIcon from '@mui/icons-material/Category';
+import BookIcon from '@mui/icons-material/Book';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -64,6 +65,7 @@ const AdminLayout = () => {
     { path: '/admin', icon: <DashboardIcon />, label: 'Dashboard' },
     { path: '/admin/users', icon: <PeopleIcon />, label: 'Users' },
     { path: '/admin/domains', icon: <CategoryIcon />, label: 'Domains' },
+    { path: '/admin/courses', icon: <BookIcon />, label: 'Courses' },
     { path: '/admin/settings', icon: <SettingsIcon />, label: 'Settings' }
   ], []);
 

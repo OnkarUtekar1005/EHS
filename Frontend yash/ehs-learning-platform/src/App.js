@@ -23,6 +23,7 @@ import Profile from './pages/Profile';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement/UserManagement';
 import DomainManagement from './pages/admin/DomainManagement';
+import CourseManagement from './pages/admin/CourseManagement/CourseManagement';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminProfile from './pages/admin/AdminProfile';
 
@@ -150,6 +151,7 @@ function AppContent() {
           {/* User Management Routes */}
           <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/admin/domains" element={<DomainManagement />} />
+          <Route path="/admin/courses" element={<CourseManagement />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
           <Route path="/admin/profile" element={<AdminProfile />} />
         </Route>

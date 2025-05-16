@@ -623,32 +623,4 @@ public class UserController {
         return ResponseEntity.ok(exportData);
     }
 
-    // Emergency password reset endpoint for testing
-    @PutMapping("/reset-password-by-email")
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<?> resetPasswordByEmail(@RequestBody Map<String, String> resetData) {
-        String email = resetData.get("email");
-        String newPassword = resetData.get("password");
-
-        if (email == null || email.isEmpty()) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Email is required"));
-        }
-
-        if (newPassword == null || newPassword.isEmpty()) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: New password is required"));
-        }
-
-        // Find user by email
-        Optional<Users> userOptional = userRepository.findByEmail(email);
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: User not found with email: " + email));
-        }
-
-        // Update password
-        Users user = userOptional.get();
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-
-        return ResponseEntity.ok(new MessageResponse("Password has been reset successfully for: " + email));
-    }
 }

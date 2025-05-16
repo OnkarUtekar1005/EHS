@@ -122,6 +122,9 @@ public class SecurityConfig {
                     // AI content generation endpoints
                     .requestMatchers("/api/ai/**").hasAuthority("ROLE_ADMIN")  // All AI endpoints are admin only
                     
+                    // V2 Course management endpoints
+                    .requestMatchers("/api/v2/admin/courses/**").hasAuthority("ROLE_ADMIN")  // Course admin endpoints
+                    
                     // Module management endpoints
                     .requestMatchers(HttpMethod.GET, "/api/modules/**").authenticated()  // All users can read
                     .requestMatchers(HttpMethod.POST, "/api/modules/**").hasAuthority("ROLE_ADMIN")  // Only ADMIN can create
