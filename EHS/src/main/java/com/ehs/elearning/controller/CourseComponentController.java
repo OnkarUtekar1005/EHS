@@ -193,8 +193,7 @@ public class CourseComponentController {
             case MATERIAL:
                 // Validate material data
                 return data.containsKey("title") && 
-                       data.containsKey("type") &&
-                       (data.containsKey("driveFileId") || data.containsKey("fileUrl") || true); // Allow empty for now
+                       (data.containsKey("materialId") || data.containsKey("materialUrl"));
                 
             default:
                 return false;

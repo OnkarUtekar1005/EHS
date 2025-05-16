@@ -4,6 +4,7 @@ import com.ehs.elearning.model.Material;
 import com.ehs.elearning.payload.response.MaterialResponse;
 import com.ehs.elearning.payload.response.MessageResponse;
 import com.ehs.elearning.service.MaterialService;
+import com.ehs.elearning.service.GoogleDriveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,9 @@ public class MaterialController {
     
     @Autowired
     private MaterialService materialService;
+    
+    @Autowired
+    private GoogleDriveService googleDriveService;
     
     @PostMapping("/upload")
     @PreAuthorize("hasRole('ADMIN')")
@@ -95,6 +99,26 @@ public class MaterialController {
                 .map(MaterialResponse::new)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
+    }
+    
+    @PostMapping("/{id}/fix-permissions")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> fixMaterialPermissions(@PathVariable UUID id) {
+        try {
+            Material material = materialService.getMaterial(id);
+            
+            // Fix Google Drive permissions using the service
+            googleDriveService.fixFilePermissions(material.getDriveFileId());
+            
+            logger.info("Fixed permissions for material: {} (Drive ID: {})", 
+                material.getTitle(), material.getDriveFileId());
+            
+            return ResponseEntity.ok(new MessageResponse("Permissions updated successfully"));
+        } catch (Exception e) {
+            logger.error("Error fixing permissions: ", e);
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Failed to fix permissions: " + e.getMessage()));
+        }
     }
     
     @GetMapping("/search")

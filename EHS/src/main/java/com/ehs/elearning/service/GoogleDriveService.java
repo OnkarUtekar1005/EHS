@@ -56,14 +56,18 @@ public class GoogleDriveService {
             
             logger.info("File uploaded successfully. ID: {}", uploadedFile.getId());
             
-            // Set sharing permissions if enabled
-            if (enableSharing) {
-                Permission permission = new Permission();
-                permission.setType("anyone");
-                permission.setRole("reader");
-                driveService.permissions().create(uploadedFile.getId(), permission).execute();
-                logger.info("Sharing permissions set for file: {}", uploadedFile.getId());
-            }
+            // Always set sharing permissions for embeddable preview
+            Permission permission = new Permission();
+            permission.setType("anyone");
+            permission.setRole("reader");
+            permission.setAllowFileDiscovery(false); // This makes it accessible only with the link
+            driveService.permissions().create(uploadedFile.getId(), permission).execute();
+            logger.info("Sharing permissions set for file: {}", uploadedFile.getId());
+            
+            // Also update file metadata to ensure it's viewable
+            File updatedFile = new File();
+            updatedFile.setViewersCanCopyContent(true);
+            driveService.files().update(uploadedFile.getId(), updatedFile).execute();
             
             // Get the proper view URL based on file type
             String viewUrl = getViewUrl(uploadedFile, type);
@@ -92,6 +96,24 @@ public class GoogleDriveService {
         }
     }
     
+    public void fixFilePermissions(String fileId) throws IOException {
+        logger.info("Fixing permissions for file: {}", fileId);
+        
+        try {
+            // Set permission to make the file accessible
+            Permission permission = new Permission();
+            permission.setType("anyone");
+            permission.setRole("reader");
+            permission.setAllowFileDiscovery(false);
+            
+            driveService.permissions().create(fileId, permission).execute();
+            logger.info("Permissions fixed for file: {}", fileId);
+        } catch (IOException e) {
+            logger.error("Error fixing permissions for file: {}", fileId, e);
+            throw e;
+        }
+    }
+    
     private String generateFileName(String originalFilename) {
         // Generate unique filename to avoid collisions
         String extension = "";
@@ -111,17 +133,14 @@ public class GoogleDriveService {
                 // For PDFs, use the preview URL
                 return "https://drive.google.com/file/d/" + fileId + "/preview";
             case "VIDEO":
-                // For videos, use the view URL to avoid iframe restrictions
-                return file.getWebViewLink() != null ? file.getWebViewLink() 
-                    : "https://drive.google.com/file/d/" + fileId + "/view";
+                // For videos, also use the preview URL for consistent embedding
+                return "https://drive.google.com/file/d/" + fileId + "/preview";
             case "PPT":
-                // For PowerPoint, use the view URL
-                return file.getWebViewLink() != null ? file.getWebViewLink() 
-                    : "https://drive.google.com/file/d/" + fileId + "/view";
+                // For PowerPoint, use the preview URL for embedding
+                return "https://drive.google.com/file/d/" + fileId + "/preview";
             default:
-                // Default to web view link
-                return file.getWebViewLink() != null ? file.getWebViewLink() 
-                    : "https://drive.google.com/file/d/" + fileId + "/view";
+                // Default to preview URL for embedding
+                return "https://drive.google.com/file/d/" + fileId + "/preview";
         }
     }
     
