@@ -22,8 +22,8 @@ const Dashboard = () => {
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>Welcome, {currentUser?.name || 'User'}!</Typography>
             <Typography variant="body1">
-              Welcome to the EHS E-Learning Platform. This is your dashboard where you'll be able to track your progress 
-              and access training materials.
+              Welcome to the EHS Platform. This is your dashboard where you'll be able to view your domain assignments 
+              and access reports.
             </Typography>
           </Paper>
         </Grid>
@@ -32,8 +32,8 @@ const Dashboard = () => {
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>System Notification</Typography>
             <Typography variant="body1">
-              The training module system is currently undergoing maintenance and upgrades. 
-              New features will be released soon. Please check back later.
+              The platform is currently being optimized with new features. 
+              Stay tuned for updates. Please check back later.
             </Typography>
           </Paper>
         </Grid>

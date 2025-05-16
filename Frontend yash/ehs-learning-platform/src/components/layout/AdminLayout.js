@@ -36,7 +36,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 
 // Constants
@@ -63,14 +62,12 @@ const AdminLayout = () => {
   // Memoize navigation items to prevent unnecessary re-renders
   const navigationItems = useMemo(() => [
     { path: '/admin', icon: <DashboardIcon />, label: 'Dashboard' },
-    { path: '/admin/courses', icon: <MenuBookIcon />, label: 'Courses' },
     { path: '/admin/users', icon: <PeopleIcon />, label: 'Users' },
     { path: '/admin/domains', icon: <CategoryIcon />, label: 'Domains' },
     { path: '/admin/settings', icon: <SettingsIcon />, label: 'Settings' }
   ], []);
 
   const quickActions = useMemo(() => [
-    { path: '/admin/courses/create', icon: <AddBoxIcon />, label: 'New Course' },
     { path: '/admin/users/new', icon: <PersonAddIcon />, label: 'New User' }
   ], []);
 

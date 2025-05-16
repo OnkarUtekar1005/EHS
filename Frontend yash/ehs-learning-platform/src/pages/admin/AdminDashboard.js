@@ -33,46 +33,46 @@ const AdminDashboard = () => {
           </Card>
         </Grid>
         
-        {/* Module Completion Card */}
+        {/* Total Domains Card */}
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>Module Completion</Typography>
+              <Typography variant="h6" gutterBottom>Total Domains</Typography>
               <Typography variant="h3" component="div">
-                78%
+                5
               </Typography>
               <Typography variant="body2" color="success.main">
-                ▲ 5% this month
+                ▲ 1 new domain
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         
-        {/* Avg. Improvement Card */}
+        {/* User Assignments Card */}
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>Avg. Improvement</Typography>
+              <Typography variant="h6" gutterBottom>User Assignments</Typography>
               <Typography variant="h3" component="div">
-                23.4%
+                134
               </Typography>
               <Typography variant="body2" color="error.main">
-                ▼ 2% this month
+                ▼ 3 this month
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         
-        {/* Pending Reviews Card */}
+        {/* Pending Actions Card */}
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>Pending Reviews</Typography>
+              <Typography variant="h6" gutterBottom>Pending Actions</Typography>
               <Typography variant="h3" component="div">
-                7
+                4
               </Typography>
-              <Typography variant="body2" component="a" href="/admin/modules" sx={{ textDecoration: 'none' }}>
-                Review Now
+              <Typography variant="body2" component="a" href="/admin/users" sx={{ textDecoration: 'none' }}>
+                View Now
               </Typography>
             </CardContent>
           </Card>
@@ -84,16 +84,16 @@ const AdminDashboard = () => {
             <Typography variant="h6" gutterBottom>Recent Activity</Typography>
             <Box>
               <Typography sx={{ py: 1, borderBottom: '1px solid #eee' }}>
-                ▪ John Smith completed "Fire Safety" - 92%
+                ▪ John Smith was assigned to Fire Safety domain
               </Typography>
               <Typography sx={{ py: 1, borderBottom: '1px solid #eee' }}>
-                ▪ New module "OSHA Guidelines" created
+                ▪ New domain "OSHA Guidelines" was created
               </Typography>
               <Typography sx={{ py: 1, borderBottom: '1px solid #eee' }}>
-                ▪ Sarah Lee failed "Chemical Safety" - 62%
+                ▪ Sarah Lee was removed from Chemical Safety domain
               </Typography>
               <Typography sx={{ py: 1 }}>
-                ▪ 12 users assigned to "Emergency Response"
+                ▪ 12 users were assigned to Emergency Response domain
               </Typography>
             </Box>
           </Paper>

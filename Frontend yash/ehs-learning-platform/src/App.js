@@ -26,13 +26,6 @@ import DomainManagement from './pages/admin/DomainManagement';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminProfile from './pages/admin/AdminProfile';
 
-// Course Management Pages
-import CourseManagement from './pages/admin/CourseManagement/CourseManagement';
-import CourseCreation from './pages/admin/CourseManagement/CourseCreation';
-import CourseEditor from './pages/admin/CourseManagement/CourseEditor';
-import AssessmentEditor from './pages/admin/CourseManagement/AssessmentEditor';
-import MaterialsEditor from './pages/admin/CourseManagement/MaterialsEditor';
-
 // Auth Pages
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
@@ -153,14 +146,6 @@ function AppContent() {
           }
         >
           <Route index element={<AdminDashboard />} />
-          
-          {/* Course Management Routes */}
-          <Route path="/admin/courses" element={<CourseManagement />} />
-          <Route path="/admin/courses/create" element={<CourseCreation />} />
-          <Route path="/admin/courses/edit/:id" element={<CourseCreation />} />
-          <Route path="/admin/courses/view/:id" element={<CourseEditor />} />
-          <Route path="/admin/courses/components/:componentId/assessment" element={<AssessmentEditor />} />
-          <Route path="/admin/courses/components/:componentId/materials" element={<MaterialsEditor />} />
           
           {/* User Management Routes */}
           <Route path="/admin/users" element={<UserManagement />} />

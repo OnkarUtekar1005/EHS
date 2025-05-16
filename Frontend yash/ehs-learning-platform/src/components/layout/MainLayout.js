@@ -28,14 +28,12 @@ import { useAuth } from '../../contexts/AuthContext';
 // Icons
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import SchoolIcon from '@mui/icons-material/School';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SecurityIcon from '@mui/icons-material/Security';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import DomainIcon from '@mui/icons-material/Domain';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
-import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 
 // Drawer width
 const drawerWidth = 240;
@@ -114,33 +112,6 @@ const MainLayout = () => {
               <DashboardIcon />
             </ListItemIcon>
             <ListItemText primary="Dashboard" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/my-courses"
-            selected={location.pathname === '/my-courses'}
-            className="sidebar-list-item"
-          >
-            <ListItemIcon>
-              <SchoolIcon />
-            </ListItemIcon>
-            <ListItemText primary="My Courses" />
-          </ListItemButton>
-        </ListItem>
-        
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/learning-materials"
-            selected={location.pathname === '/learning-materials'}
-            className="sidebar-list-item"
-          >
-            <ListItemIcon>
-              <LibraryBooksIcon />
-            </ListItemIcon>
-            <ListItemText primary="Learning Materials" />
           </ListItemButton>
         </ListItem>
         
