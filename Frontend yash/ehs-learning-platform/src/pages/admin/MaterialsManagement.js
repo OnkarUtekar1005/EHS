@@ -1,0 +1,451 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Paper,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  IconButton,
+  Chip,
+  TextField,
+  InputAdornment,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  LinearProgress,
+  Alert,
+  Tooltip
+} from '@mui/material';
+import {
+  CloudUpload as UploadIcon,
+  Search as SearchIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Visibility as ViewIcon,
+  Description as FileIcon,
+  PictureAsPdf as PdfIcon,
+  VideoLibrary as VideoIcon,
+  Slideshow as PptIcon
+} from '@mui/icons-material';
+import api from '../../services/api';
+import MaterialViewer from '../../components/MaterialViewer';
+
+const MaterialsManagement = () => {
+  const [materials, setMaterials] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [openUploadDialog, setOpenUploadDialog] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [uploadError, setUploadError] = useState('');
+  const [previewMaterial, setPreviewMaterial] = useState(null);
+  const [openPreview, setOpenPreview] = useState(false);
+  
+  const [uploadData, setUploadData] = useState({
+    title: '',
+    description: '',
+    file: null,
+    type: ''
+  });
+
+  useEffect(() => {
+    fetchMaterials();
+  }, []);
+
+  const fetchMaterials = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/admin/materials');
+      setMaterials(response.data || []);
+    } catch (error) {
+      console.error('Error fetching materials:', error);
+      setMaterials([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenUploadDialog = (material = null) => {
+    if (material) {
+      setSelectedMaterial(material);
+      setUploadData({
+        title: material.title,
+        description: material.description || '',
+        file: null,
+        type: material.type
+      });
+    } else {
+      setSelectedMaterial(null);
+      setUploadData({
+        title: '',
+        description: '',
+        file: null,
+        type: ''
+      });
+    }
+    setOpenUploadDialog(true);
+    setUploadError('');
+  };
+
+  const handleCloseUploadDialog = () => {
+    setOpenUploadDialog(false);
+    setSelectedMaterial(null);
+    setUploadData({
+      title: '',
+      description: '',
+      file: null,
+      type: ''
+    });
+    setUploadError('');
+  };
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Determine file type
+    const extension = file.name.toLowerCase();
+    let type = '';
+    
+    if (extension.endsWith('.pdf')) {
+      type = 'PDF';
+    } else if (extension.match(/\.(mp4|webm|ogg)$/)) {
+      type = 'VIDEO';
+    } else if (extension.match(/\.(ppt|pptx)$/)) {
+      type = 'PPT';
+    } else {
+      setUploadError('Invalid file type. Only PDF, videos (MP4, WebM, OGG), and PowerPoint files are allowed.');
+      return;
+    }
+
+    setUploadData(prev => ({
+      ...prev,
+      file: file,
+      type: type,
+      title: prev.title || file.name.replace(/\.[^/.]+$/, '') // Set title from filename if empty
+    }));
+    setUploadError('');
+  };
+
+  const handleUpload = async () => {
+    if (!uploadData.file || !uploadData.title) {
+      setUploadError('Please select a file and provide a title');
+      return;
+    }
+
+    setUploading(true);
+    setUploadError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadData.file);
+      formData.append('title', uploadData.title);
+      formData.append('description', uploadData.description);
+      formData.append('type', uploadData.type);
+
+      const response = await api.post('/admin/materials/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      await fetchMaterials();
+      handleCloseUploadDialog();
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadError(error.response?.data?.message || 'Failed to upload file. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (materialId) => {
+    if (!window.confirm('Are you sure you want to delete this material?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/admin/materials/${materialId}`);
+      await fetchMaterials();
+    } catch (error) {
+      console.error('Error deleting material:', error);
+      alert('Failed to delete material');
+    }
+  };
+
+  const getFileIcon = (type) => {
+    switch (type) {
+      case 'PDF':
+        return <PdfIcon />;
+      case 'VIDEO':
+        return <VideoIcon />;
+      case 'PPT':
+        return <PptIcon />;
+      default:
+        return <FileIcon />;
+    }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleRowsPerPageChange = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const filteredMaterials = materials.filter(material =>
+    material.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    material.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <Container maxWidth="lg">
+      <Box sx={{ py: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Materials Management
+        </Typography>
+        <Typography variant="body1" color="textSecondary" gutterBottom>
+          Upload and manage learning materials for courses
+        </Typography>
+
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+          <TextField
+            placeholder="Search materials..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            sx={{ flex: 1, minWidth: '300px' }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          <Button
+            variant="contained"
+            startIcon={<UploadIcon />}
+            onClick={() => handleOpenUploadDialog()}
+          >
+            Upload Material
+          </Button>
+        </Box>
+
+        {loading ? (
+          <LinearProgress />
+        ) : filteredMaterials.length === 0 ? (
+          <Paper sx={{ p: 4, textAlign: 'center' }}>
+            <Typography variant="body1" color="textSecondary">
+              No materials found. Upload your first material to get started.
+            </Typography>
+          </Paper>
+        ) : (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Title</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Size</TableCell>
+                  <TableCell>Uploaded</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredMaterials
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((material) => (
+                    <TableRow key={material.id}>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {getFileIcon(material.type)}
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                              {material.title}
+                            </Typography>
+                            {material.description && (
+                              <Typography variant="caption" color="textSecondary">
+                                {material.description}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Chip label={material.type} size="small" />
+                      </TableCell>
+                      <TableCell>{formatFileSize(material.fileSize)}</TableCell>
+                      <TableCell>
+                        {new Date(material.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title="View">
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setPreviewMaterial(material);
+                              setOpenPreview(true);
+                            }}
+                          >
+                            <ViewIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Edit">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpenUploadDialog(material)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDelete(material.id)}
+                            color="error"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+            <TablePagination
+              component="div"
+              count={filteredMaterials.length}
+              page={page}
+              onPageChange={handlePageChange}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleRowsPerPageChange}
+              rowsPerPageOptions={[5, 10, 25]}
+            />
+          </TableContainer>
+        )}
+      </Box>
+
+      {/* Upload/Edit Dialog */}
+      <Dialog open={openUploadDialog} onClose={handleCloseUploadDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {selectedMaterial ? 'Edit Material' : 'Upload New Material'}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <TextField
+              fullWidth
+              label="Title"
+              value={uploadData.title}
+              onChange={(e) => setUploadData(prev => ({ ...prev, title: e.target.value }))}
+              sx={{ mb: 2 }}
+              required
+            />
+
+            <TextField
+              fullWidth
+              label="Description"
+              value={uploadData.description}
+              onChange={(e) => setUploadData(prev => ({ ...prev, description: e.target.value }))}
+              multiline
+              rows={3}
+              sx={{ mb: 2 }}
+            />
+
+            {!selectedMaterial && (
+              <Box sx={{ mb: 2 }}>
+                <input
+                  type="file"
+                  id="file-upload"
+                  style={{ display: 'none' }}
+                  onChange={handleFileSelect}
+                  accept=".pdf,.mp4,.webm,.ogg,.ppt,.pptx"
+                />
+                <label htmlFor="file-upload">
+                  <Button
+                    component="span"
+                    variant="outlined"
+                    startIcon={<UploadIcon />}
+                    fullWidth
+                  >
+                    Select File
+                  </Button>
+                </label>
+
+                {uploadData.file && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2" gutterBottom>
+                      Selected: {uploadData.file.name}
+                    </Typography>
+                    <Typography variant="body2" gutterBottom>
+                      Type: {uploadData.type}
+                    </Typography>
+                    <Typography variant="body2">
+                      Size: {formatFileSize(uploadData.file.size)}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+
+            {uploadError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {uploadError}
+              </Alert>
+            )}
+
+            {uploading && <LinearProgress sx={{ mb: 2 }} />}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseUploadDialog} disabled={uploading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleUpload}
+            variant="contained"
+            disabled={uploading || !uploadData.title || (!selectedMaterial && !uploadData.file)}
+          >
+            {uploading ? 'Uploading...' : selectedMaterial ? 'Update' : 'Upload'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Material Preview */}
+      <MaterialViewer
+        open={openPreview}
+        onClose={() => {
+          setOpenPreview(false);
+          setPreviewMaterial(null);
+        }}
+        material={previewMaterial}
+      />
+    </Container>
+  );
+};
+
+export default MaterialsManagement;

@@ -16,13 +16,11 @@ import {
   ExpandMore as ExpandMoreIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  MenuBook as MaterialIcon,
   Quiz as AssessmentIcon
 } from '@mui/icons-material';
 import api from '../../../../services/api';
 import ComponentList from './ComponentList';
 import AssessmentForm from './ComponentForm/AssessmentForm';
-import MaterialForm from './ComponentForm/MaterialForm';
 
 const CourseBuilder = ({ courseId, onUpdate }) => {
   const [components, setComponents] = useState([]);
@@ -165,14 +163,6 @@ const CourseBuilder = ({ courseId, onUpdate }) => {
             startIcon={<AddIcon />}
             variant="outlined"
             size="small"
-            onClick={() => handleAddComponent('MATERIAL')}
-          >
-            Material
-          </Button>
-          <Button
-            startIcon={<AddIcon />}
-            variant="outlined"
-            size="small"
             onClick={() => handleAddComponent('POST_ASSESSMENT')}
           >
             Post-Assessment
@@ -198,24 +188,13 @@ const CourseBuilder = ({ courseId, onUpdate }) => {
 
       {/* Component Form Dialog */}
       {openAddDialog && selectedType && (
-        <>
-          {selectedType.includes('ASSESSMENT') ? (
-            <AssessmentForm
-              open={openAddDialog}
-              onClose={handleCloseDialog}
-              onSave={handleSaveComponent}
-              component={editingComponent}
-              type={selectedType}
-            />
-          ) : (
-            <MaterialForm
-              open={openAddDialog}
-              onClose={handleCloseDialog}
-              onSave={handleSaveComponent}
-              component={editingComponent}
-            />
-          )}
-        </>
+        <AssessmentForm
+          open={openAddDialog}
+          onClose={handleCloseDialog}
+          onSave={handleSaveComponent}
+          component={editingComponent}
+          type={selectedType}
+        />
       )}
     </Box>
   );

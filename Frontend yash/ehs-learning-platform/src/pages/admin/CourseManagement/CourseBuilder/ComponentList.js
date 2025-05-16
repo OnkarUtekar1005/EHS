@@ -14,7 +14,6 @@ import {
   ArrowDownward as ArrowDownIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  MenuBook as MaterialIcon,
   Quiz as QuizIcon,
   Assignment as AssignmentIcon,
   AssignmentTurnedIn as PostAssessmentIcon
@@ -26,8 +25,6 @@ const getComponentIcon = (type) => {
       return <AssignmentIcon />;
     case 'POST_ASSESSMENT':
       return <PostAssessmentIcon />;
-    case 'MATERIAL':
-      return <MaterialIcon />;
     default:
       return <QuizIcon />;
   }
@@ -39,8 +36,6 @@ const getComponentTitle = (component) => {
       return 'Pre-Assessment';
     case 'POST_ASSESSMENT':
       return 'Post-Assessment';
-    case 'MATERIAL':
-      return component.data?.title || 'Learning Material';
     default:
       return 'Component';
   }
@@ -53,9 +48,8 @@ const getComponentDetails = (component) => {
     case 'PRE_ASSESSMENT':
     case 'POST_ASSESSMENT':
       const questions = data.questions || [];
-      return `${questions.length} question${questions.length !== 1 ? 's' : ''}`;
-    case 'MATERIAL':
-      return data.type || 'File';
+      const title = data.title || 'Assessment';
+      return `${title} - ${questions.length} question${questions.length !== 1 ? 's' : ''}`;
     default:
       return '';
   }

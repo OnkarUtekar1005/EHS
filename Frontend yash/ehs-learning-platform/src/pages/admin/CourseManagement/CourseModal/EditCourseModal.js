@@ -298,6 +298,7 @@ const EditCourseModal = ({ open, onClose, courseId, onSuccess }) => {
             />
           </Box>
         )}
+
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={loading}>

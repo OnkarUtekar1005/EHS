@@ -38,6 +38,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import AddBoxIcon from '@mui/icons-material/AddBox';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 // Constants
 const DRAWER_WIDTH = 240;
@@ -66,6 +67,7 @@ const AdminLayout = () => {
     { path: '/admin/users', icon: <PeopleIcon />, label: 'Users' },
     { path: '/admin/domains', icon: <CategoryIcon />, label: 'Domains' },
     { path: '/admin/courses', icon: <BookIcon />, label: 'Courses' },
+    { path: '/admin/materials', icon: <CloudUploadIcon />, label: 'Materials' },
     { path: '/admin/settings', icon: <SettingsIcon />, label: 'Settings' }
   ], []);
 
