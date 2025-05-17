@@ -18,6 +18,11 @@ import AdminLayout from './components/layout/AdminLayout';
 // User Pages
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import MyCourses from './pages/users/MyCourses';
+import CourseDetail from './pages/users/CourseDetail';
+import CourseView from './pages/users/CourseView';
+import MaterialView from './pages/users/MaterialView';
+import AssessmentView from './pages/users/AssessmentView';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -136,6 +141,11 @@ function AppContent() {
         >
           <Route index element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/my-courses" element={<MyCourses />} />
+          <Route path="/courses/:courseId" element={<CourseDetail />} />
+          <Route path="/course/:courseId" element={<CourseView />} />
+          <Route path="/course/:courseId/material/:componentId" element={<MaterialView />} />
+          <Route path="/course/:courseId/assessment/:componentId" element={<AssessmentView />} />
         </Route>
         
         {/* Admin routes */}

@@ -21,39 +21,39 @@ import java.util.Collections;
 
 @Configuration
 public class GoogleDriveConfig {
-    
-    @Value("${google.drive.service-account-key-path:}")
-    private String serviceAccountKeyPath;
-    
-    @Value("${google.drive.application-name:EHS E-Learning Platform}")
-    private String applicationName;
-    
-    @Bean
-    public Drive drive() throws IOException, GeneralSecurityException {
-        HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-        JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
-        
-        GoogleCredentials credentials;
-        
-        // Check if service account key path is provided
-        if (serviceAccountKeyPath != null && !serviceAccountKeyPath.isEmpty()) {
-            // Try to load from file system first
-            Resource resource = new FileSystemResource(serviceAccountKeyPath);
-            if (!resource.exists()) {
-                // Try to load from classpath
-                resource = new ClassPathResource(serviceAccountKeyPath);
-            }
-            
-            credentials = GoogleCredentials.fromStream(resource.getInputStream())
-                    .createScoped(Collections.singleton(DriveScopes.DRIVE));
-        } else {
-            // For development, use default credentials (requires gcloud auth application-default login)
-            credentials = GoogleCredentials.getApplicationDefault()
-                    .createScoped(Collections.singleton(DriveScopes.DRIVE));
-        }
-        
-        return new Drive.Builder(httpTransport, jsonFactory, new HttpCredentialsAdapter(credentials))
-                .setApplicationName(applicationName)
-                .build();
-    }
+
+	@Value("${google.drive.service-account-key-path:}")
+	private String serviceAccountKeyPath;
+
+	@Value("${google.drive.application-name:EHS E-Learning Platform}")
+	private String applicationName;
+
+	@Bean
+	public Drive drive() throws IOException, GeneralSecurityException {
+		HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+		JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
+
+		GoogleCredentials credentials;
+
+		// Check if service account key path is provided
+		if (serviceAccountKeyPath != null && !serviceAccountKeyPath.isEmpty()) {
+			// Try to load from file system first
+			Resource resource = new FileSystemResource(serviceAccountKeyPath);
+			if (!resource.exists()) {
+				// Try to load from classpath
+				resource = new ClassPathResource(serviceAccountKeyPath);
+			}
+
+			credentials = GoogleCredentials.fromStream(resource.getInputStream())
+					.createScoped(Collections.singleton(DriveScopes.DRIVE));
+		} else {
+			// For development, use default credentials (requires gcloud auth
+			// application-default login)
+			credentials = GoogleCredentials.getApplicationDefault()
+					.createScoped(Collections.singleton(DriveScopes.DRIVE));
+		}
+
+		return new Drive.Builder(httpTransport, jsonFactory, new HttpCredentialsAdapter(credentials))
+				.setApplicationName(applicationName).build();
+	}
 }

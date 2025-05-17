@@ -75,7 +75,7 @@ public class EmailService {
             message.setSubject("Password Reset Request");
             message.setText("You have requested to reset your password for the EHS Learning Platform.\n\n" +
                     "Please click on the link below to reset your password:\n" +
-                    resetUrl + "\n\n" +
+                    resetUrl + " \n\n" +
                     "This link will expire in 24 hours.\n\n" +
                     "If you did not request a password reset, please ignore this email.\n\n" +
                     "Regards,\nEHS Learning Platform Team");

@@ -3,6 +3,8 @@ package com.ehs.elearning.service;
 import com.ehs.elearning.model.Course;
 import com.ehs.elearning.model.CourseComponent;
 import com.ehs.elearning.model.CourseComponent.ComponentType;
+import com.ehs.elearning.repository.AssessmentAttemptRepository;
+import com.ehs.elearning.repository.ComponentProgressRepository;
 import com.ehs.elearning.repository.CourseComponentRepository;
 import com.ehs.elearning.repository.CourseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,12 @@ public class CourseComponentService {
     
     @Autowired
     private CourseRepository courseRepository;
+    
+    @Autowired
+    private AssessmentAttemptRepository assessmentAttemptRepository;
+    
+    @Autowired
+    private ComponentProgressRepository componentProgressRepository;
     
     // Add a component to a course
     public CourseComponent addComponent(UUID courseId, CourseComponent component) {
@@ -94,6 +102,9 @@ public class CourseComponentService {
             throw new RuntimeException("Component does not belong to this course");
         }
         
+        // Delete related data first
+        deleteComponentRelatedData(componentId);
+        
         course.removeComponent(component);
         componentRepository.delete(component);
         
@@ -143,5 +154,16 @@ public class CourseComponentService {
             components.get(i).setOrderIndex(i + 1);
             componentRepository.save(components.get(i));
         }
+    }
+    
+    // Delete all related data before deleting a component
+    private void deleteComponentRelatedData(UUID componentId) {
+        // Delete all assessment attempts for this component
+        assessmentAttemptRepository.findByComponentId(componentId)
+            .forEach(assessmentAttemptRepository::delete);
+        
+        // Delete all component progress records
+        componentProgressRepository.findByComponentId(componentId)
+            .forEach(componentProgressRepository::delete);
     }
 }

@@ -34,6 +34,7 @@ import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import DomainIcon from '@mui/icons-material/Domain';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
+import SchoolIcon from '@mui/icons-material/School';
 
 // Drawer width
 const drawerWidth = 240;
@@ -112,6 +113,20 @@ const MainLayout = () => {
               <DashboardIcon />
             </ListItemIcon>
             <ListItemText primary="Dashboard" />
+          </ListItemButton>
+        </ListItem>
+        
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to="/my-courses"
+            selected={location.pathname === '/my-courses'}
+            className="sidebar-list-item"
+          >
+            <ListItemIcon>
+              <SchoolIcon />
+            </ListItemIcon>
+            <ListItemText primary="My Courses" />
           </ListItemButton>
         </ListItem>
         

@@ -13,7 +13,8 @@ import {
 } from '@mui/material';
 import { 
   Dashboard as DashboardIcon,
-  Person as ProfileIcon
+  Person as ProfileIcon,
+  School as CourseIcon
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -61,6 +62,20 @@ const Sidebar = ({ isOpen, drawerWidth }) => {
               <DashboardIcon />
             </ListItemIcon>
             <ListItemText primary="Dashboard" />
+          </ListItem>
+          
+          {/* My Courses */}
+          <ListItem 
+            button 
+            component={Link} 
+            to="/my-courses" 
+            selected={selectedItem === '/my-courses'}
+            onClick={() => setSelectedItem('/my-courses')}
+          >
+            <ListItemIcon>
+              <CourseIcon />
+            </ListItemIcon>
+            <ListItemText primary="My Courses" />
           </ListItem>
           
           {/* Profile */}

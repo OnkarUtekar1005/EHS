@@ -200,4 +200,85 @@ export const domainService = {
   delete: (id) => api.delete(`/domains/${id}`)
 };
 
+// Course services
+export const courseService = {
+  // Admin course endpoints
+  getAllCourses: (params) => api.get('/v2/admin/courses', { params }),
+  getCourseById: (id) => api.get(`/v2/admin/courses/${id}`),
+  createCourse: (courseData) => api.post('/v2/admin/courses', courseData),
+  updateCourse: (id, courseData) => api.put(`/v2/admin/courses/${id}`, courseData),
+  deleteCourse: (id) => api.delete(`/v2/admin/courses/${id}`),
+  publishCourse: (id) => api.post(`/v2/admin/courses/${id}/publish`),
+  takeDownCourse: (id) => api.post(`/v2/admin/courses/${id}/takedown`),
+  cloneCourse: (id) => api.post(`/v2/admin/courses/${id}/clone`),
+  
+  // User course endpoints
+  getUserCourses: (params) => api.get('/v2/user/courses', { params }),
+  getUserCourseById: (id) => api.get(`/v2/user/courses/${id}`)
+};
+
+// Progress services
+export const progressService = {
+  // Get user's course progress
+  getUserCourseProgress: () => api.get('/v2/user/progress/courses'),
+  
+  // Get specific course progress
+  getCourseProgress: (courseId) => api.get(`/v2/user/progress/courses/${courseId}`),
+  
+  // Enroll in a course
+  enrollInCourse: (courseId) => api.post(`/v2/user/progress/courses/${courseId}/enroll`),
+  
+  // Start a component
+  startComponent: (componentId) => api.post(`/v2/user/progress/components/${componentId}/start`),
+  
+  // Update component progress
+  updateComponentProgress: (componentId, progressPercentage) => 
+    api.put(`/v2/user/progress/components/${componentId}/progress`, { progressPercentage }),
+  
+  // Complete a component
+  completeComponent: (componentId, score = null) => 
+    api.post(`/v2/user/progress/components/${componentId}/complete`, score ? { score } : {}),
+  
+  // Update time spent
+  updateTimeSpent: (componentId, additionalSeconds) => 
+    api.put(`/v2/user/progress/components/${componentId}/time`, { additionalSeconds }),
+  
+  // Check component access
+  checkComponentAccess: (componentId) => api.get(`/v2/user/progress/components/${componentId}/access`)
+};
+
+// Assessment services
+export const assessmentService = {
+  // Get assessment questions
+  getQuestions: (componentId) => api.get(`/v2/user/assessments/${componentId}/questions`),
+  
+  // Start assessment attempt
+  startAttempt: (componentId) => api.post(`/v2/user/assessments/${componentId}/start`),
+  
+  // Submit assessment
+  submitAttempt: (attemptId, answers) => 
+    api.post(`/v2/user/assessments/attempts/${attemptId}/submit`, answers),
+  
+  // Get user attempts
+  getUserAttempts: (componentId) => api.get(`/v2/user/assessments/${componentId}/attempts`),
+  
+  // Get latest attempt
+  getLatestAttempt: (componentId) => api.get(`/v2/user/assessments/${componentId}/latest-attempt`),
+  
+  // Check if can retry
+  canRetry: (componentId) => api.get(`/v2/user/assessments/${componentId}/can-retry`),
+  
+  // Get incomplete attempts
+  getIncompleteAttempts: () => api.get('/v2/user/assessments/incomplete'),
+  
+  // Auto-submit incomplete attempt
+  autoSubmitAttempt: (attemptId) => api.post(`/v2/user/assessments/attempts/${attemptId}/auto-submit`)
+};
+
+// Material services
+export const materialService = {
+  getMaterialById: (id) => api.get(`/v2/admin/materials/${id}`),
+  getAllMaterials: () => api.get('/v2/admin/materials')
+};
+
 export default api;
