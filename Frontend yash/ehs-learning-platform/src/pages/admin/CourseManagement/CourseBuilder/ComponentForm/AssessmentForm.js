@@ -81,7 +81,14 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
   const handleOptionChange = (questionIndex, optionIndex, value) => {
     const updatedQuestions = [...formData.data.questions];
     const options = [...(updatedQuestions[questionIndex].options || [])];
-    options[optionIndex] = value;
+    
+    // Handle both string and object options
+    if (typeof options[optionIndex] === 'object' && options[optionIndex] !== null) {
+      options[optionIndex] = { ...options[optionIndex], text: value };
+    } else {
+      options[optionIndex] = value;
+    }
+    
     updatedQuestions[questionIndex].options = options;
     setFormData(prev => ({
       ...prev,
@@ -183,10 +190,40 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
 
   const handleSubmit = () => {
     if (validateForm()) {
+      // Transform the questions data to the expected format
+      const transformedQuestions = formData.data.questions.map(q => {
+        const transformedQuestion = {
+          id: q.id || `q${Date.now()}_${Math.random()}`,
+          question: q.question,
+          type: q.type,
+          points: q.points || 10,
+          required: q.required !== false,
+          explanation: q.explanation || ''
+        };
+
+        if (q.type === 'MCQ') {
+          // Transform options to objects with id and text
+          transformedQuestion.options = q.options.map((optionText, index) => ({
+            id: `opt${Date.now()}_${index}_${Math.random()}`,
+            text: optionText,
+            isCorrect: optionText === q.correctAnswer
+          }));
+          transformedQuestion.correctAnswer = q.correctAnswer;
+        } else if (q.type === 'TRUE_FALSE') {
+          transformedQuestion.correctAnswer = q.correctAnswer;
+        }
+
+        return transformedQuestion;
+      });
+
       // Add orderIndex if not present
       const dataToSave = {
         ...formData,
-        orderIndex: formData.orderIndex || null
+        orderIndex: formData.orderIndex || null,
+        data: {
+          ...formData.data,
+          questions: transformedQuestions
+        }
       };
       console.log('Assessment form data being saved:', dataToSave);
       onSave(dataToSave);
@@ -354,31 +391,36 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
                         </Typography>
                       )}
                     </Typography>
-                    {question.options.map((option, oIndex) => (
-                      <Box key={oIndex} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <Radio
-                          checked={question.correctAnswer === option}
-                          onChange={() => handleQuestionChange(qIndex, 'correctAnswer', option)}
-                          value={option}
-                        />
-                        <TextField
-                          fullWidth
-                          size="small"
-                          value={option}
-                          onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
-                          placeholder={`Option ${oIndex + 1}`}
-                        />
-                        {question.options.length > 2 && (
-                          <IconButton
+                    {question.options.map((option, oIndex) => {
+                      const optionText = typeof option === 'object' ? option.text : option;
+                      const isChecked = question.correctAnswer === optionText;
+                      
+                      return (
+                        <Box key={oIndex} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <Radio
+                            checked={isChecked}
+                            onChange={() => handleQuestionChange(qIndex, 'correctAnswer', optionText)}
+                            value={optionText}
+                          />
+                          <TextField
+                            fullWidth
                             size="small"
-                            color="error"
-                            onClick={() => removeOption(qIndex, oIndex)}
-                          >
-                            <CloseIcon fontSize="small" />
-                          </IconButton>
-                        )}
-                      </Box>
-                    ))}
+                            value={optionText}
+                            onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
+                            placeholder={`Option ${oIndex + 1}`}
+                          />
+                          {question.options.length > 2 && (
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => removeOption(qIndex, oIndex)}
+                            >
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          )}
+                        </Box>
+                      );
+                    })}
                     <Button
                       size="small"
                       onClick={() => addOption(qIndex)}

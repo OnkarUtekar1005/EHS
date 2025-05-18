@@ -18,7 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/admin/materials")
+@RequestMapping("/api/v2/materials")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class MaterialController {
     

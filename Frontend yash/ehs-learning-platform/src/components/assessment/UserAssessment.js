@@ -218,15 +218,21 @@ const UserAssessment = ({ componentId, onComplete }) => {
               value={answers[question.id] || ''}
               onChange={(e) => handleAnswerChange(question.id, e.target.value)}
             >
-              {question.options.map((option) => (
-                <FormControlLabel
-                  key={option.value}
-                  value={option.value}
-                  control={<Radio />}
-                  label={option.text}
-                  sx={{ py: 0.5 }}
-                />
-              ))}
+              {question.options.map((option, index) => {
+                // Handle both object and string formats
+                const optionText = typeof option === 'object' ? option.text : option;
+                const optionValue = typeof option === 'object' ? option.text : option;
+                
+                return (
+                  <FormControlLabel
+                    key={index}
+                    value={optionValue}
+                    control={<Radio />}
+                    label={optionText}
+                    sx={{ py: 0.5 }}
+                  />
+                );
+              })}
             </RadioGroup>
           )}
 

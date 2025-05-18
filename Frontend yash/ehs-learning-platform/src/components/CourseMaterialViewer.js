@@ -17,6 +17,7 @@ import {
   Fullscreen,
   FullscreenExit
 } from '@mui/icons-material';
+import { materialService } from '../services/api';
 
 const CourseMaterialViewer = ({ materialData, materialId, onProgressUpdate, initialProgress = 0 }) => {
   const [material, setMaterial] = useState(materialData);
@@ -46,22 +47,18 @@ const CourseMaterialViewer = ({ materialData, materialId, onProgressUpdate, init
   const loadMaterial = async () => {
     try {
       setLoading(true);
-      // This assumes we have an endpoint to get material details
-      // For now, we'll use the material data passed as prop
+      setError(null);
+      
       if (materialId) {
-        // Mock material data structure based on the ID
-        const mockMaterial = {
-          id: materialId,
-          title: 'Material',
-          type: 'PDF',
-          driveFileId: materialId,
-          driveFileUrl: `https://drive.google.com/file/d/${materialId}/view`
-        };
-        setMaterial(mockMaterial);
+        // Load material details from API
+        const response = await materialService.getMaterialById(materialId);
+        console.log('Material response:', response.data);
+        setMaterial(response.data);
       } else {
         setError('No material ID provided');
       }
     } catch (err) {
+      console.error('Error loading material:', err);
       setError('Failed to load material');
     } finally {
       setLoading(false);
@@ -132,13 +129,79 @@ const CourseMaterialViewer = ({ materialData, materialId, onProgressUpdate, init
   };
 
   const renderPdfViewer = () => {
+    const driveUrl = material.googleDriveUrl || material.filePath || material.driveFileUrl || material.driveFileId;
+    if (!driveUrl) {
+      return (
+        <Alert severity="error">No PDF URL available</Alert>
+      );
+    }
+    
+    let fileId = driveUrl;
+    
+    // If it's a full URL, extract the file ID
+    if (driveUrl.includes('drive.google.com')) {
+      const fileIdMatch = driveUrl.match(/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=)([a-zA-Z0-9_-]+)/);
+      fileId = fileIdMatch ? fileIdMatch[1] : null;
+    }
+    
+    if (!fileId) {
+      return (
+        <Alert severity="warning">Invalid Google Drive PDF URL</Alert>
+      );
+    }
+    
+    // Use the preview URL for PDFs
+    const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+    
     return (
       <Box sx={{ width: '100%', height: '600px', position: 'relative' }}>
         <iframe
-          src={`https://drive.google.com/file/d/${material.driveFileId}/preview`}
+          src={embedUrl}
           width="100%"
           height="100%"
           frameBorder="0"
+          title={material.title}
+          onLoad={() => updateProgress(100)}
+          allow="autoplay"
+        />
+      </Box>
+    );
+  };
+
+  const renderVideoPlayer = () => {
+    const driveUrl = material.googleDriveUrl || material.filePath || material.driveFileUrl;
+    if (!driveUrl) {
+      return (
+        <Alert severity="error">No video URL available</Alert>
+      );
+    }
+    
+    // Extract the file ID from Google Drive URL
+    const fileIdMatch = driveUrl.match(/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=)([a-zA-Z0-9_-]+)/);
+    const fileId = fileIdMatch ? fileIdMatch[1] : null;
+    
+    if (!fileId) {
+      return (
+        <Alert severity="warning">Invalid Google Drive video URL</Alert>
+      );
+    }
+    
+    // Use the preview URL for videos
+    const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+    
+    return (
+      <Box sx={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden' }}>
+        <iframe
+          src={embedUrl}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            border: 0
+          }}
+          allowFullScreen
           title={material.title}
           onLoad={() => updateProgress(100)}
         />
@@ -146,79 +209,41 @@ const CourseMaterialViewer = ({ materialData, materialId, onProgressUpdate, init
     );
   };
 
-  const renderVideoPlayer = () => {
-    return (
-      <Box sx={{ width: '100%', position: 'relative' }}>
-        <video
-          ref={videoRef}
-          width="100%"
-          controls={false}
-          onTimeUpdate={handleVideoTimeUpdate}
-          onEnded={() => updateProgress(100)}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-        >
-          <source src={material.driveFileUrl} type={`video/${material.type.toLowerCase()}`} />
-          Your browser does not support the video tag.
-        </video>
-        
-        {/* Custom video controls */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 2, 
-          p: 2, 
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          color: 'white'
-        }}>
-          <IconButton onClick={handlePlayPause} color="inherit">
-            {isPlaying ? <Pause /> : <PlayArrow />}
-          </IconButton>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 200 }}>
-            <IconButton onClick={handleMuteToggle} color="inherit">
-              {isMuted ? <VolumeOff /> : <VolumeUp />}
-            </IconButton>
-            <Slider
-              value={volume}
-              onChange={handleVolumeChange}
-              min={0}
-              max={1}
-              step={0.1}
-              sx={{ color: 'white' }}
-            />
-          </Box>
-          
-          <Box sx={{ flexGrow: 1 }} />
-          
-          <IconButton onClick={handleFullscreen} color="inherit">
-            {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
-          </IconButton>
-        </Box>
-      </Box>
-    );
-  };
-
   const renderDocumentViewer = () => {
+    const driveUrl = material.googleDriveUrl || material.filePath || material.driveFileUrl || material.driveFileId;
+    if (!driveUrl) {
+      return (
+        <Alert severity="error">No document URL available</Alert>
+      );
+    }
+    
+    let fileId = driveUrl;
+    
+    // If it's a full URL, extract the file ID
+    if (driveUrl.includes('drive.google.com')) {
+      const fileIdMatch = driveUrl.match(/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=)([a-zA-Z0-9_-]+)/);
+      fileId = fileIdMatch ? fileIdMatch[1] : null;
+    }
+    
+    if (!fileId) {
+      return (
+        <Alert severity="warning">Invalid Google Drive document URL</Alert>
+      );
+    }
+    
+    // Use the preview URL for documents
+    const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+    
     return (
-      <Box 
-        sx={{ 
-          width: '100%', 
-          height: '600px', 
-          overflow: 'auto' 
-        }}
-        onScroll={handleDocumentScroll}
-      >
+      <Box sx={{ width: '100%', height: '600px' }}>
         <iframe
-          src={`https://drive.google.com/file/d/${material.driveFileId}/preview`}
+          src={embedUrl}
           width="100%"
           height="100%"
           frameBorder="0"
           title={material.title}
+          onLoad={() => updateProgress(100)}
+          allow="autoplay"
         />
       </Box>
     );
@@ -239,17 +264,20 @@ const CourseMaterialViewer = ({ materialData, materialId, onProgressUpdate, init
       case 'DOCX':
         return renderDocumentViewer();
       default:
+        const driveUrl = material.googleDriveUrl || material.filePath || material.driveFileUrl;
         return (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="h6" gutterBottom>
               {material.title}
             </Typography>
-            <Button
-              variant="contained"
-              onClick={() => window.open(material.driveFileUrl, '_blank')}
-            >
-              Open in Google Drive
-            </Button>
+            {driveUrl && (
+              <Button
+                variant="contained"
+                onClick={() => window.open(driveUrl, '_blank')}
+              >
+                Open in Google Drive
+              </Button>
+            )}
           </Box>
         );
     }

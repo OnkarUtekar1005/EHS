@@ -277,8 +277,9 @@ export const assessmentService = {
 
 // Material services
 export const materialService = {
-  getMaterialById: (id) => api.get(`/v2/admin/materials/${id}`),
-  getAllMaterials: () => api.get('/v2/admin/materials')
+  getMaterialById: (id) => api.get(`/v2/materials/${id}`),
+  getAllMaterials: () => api.get('/v2/materials'),
+  searchMaterials: (query) => api.get('/v2/materials/search', { params: { query } })
 };
 
 export default api;
