@@ -40,12 +40,15 @@ public class ProgressService {
     /**
      * Enroll a user in a course
      */
+    @Transactional
     public UserCourseProgress enrollInCourse(UUID userId, UUID courseId) {
         // Check if already enrolled
         Optional<UserCourseProgress> existingProgress = courseProgressRepository
             .findByUserIdAndCourseId(userId, courseId);
             
         if (existingProgress.isPresent()) {
+            // Ensure all component progress entries exist
+            ensureComponentProgressExists(userId, courseId);
             return existingProgress.get();
         }
         
@@ -66,8 +69,14 @@ public class ProgressService {
         
         // Initialize component progress for each course component
         for (CourseComponent component : course.getComponents()) {
-            ComponentProgress componentProgress = new ComponentProgress(user, component, course);
-            componentProgressRepository.save(componentProgress);
+            // Check if component progress already exists before creating
+            Optional<ComponentProgress> existingComponentProgress = componentProgressRepository
+                .findByUserIdAndComponentId(userId, component.getId());
+            
+            if (!existingComponentProgress.isPresent()) {
+                ComponentProgress componentProgress = new ComponentProgress(user, component, course);
+                componentProgressRepository.save(componentProgress);
+            }
         }
         
         return progress;
@@ -93,10 +102,25 @@ public class ProgressService {
     /**
      * Start a component
      */
+    @Transactional
     public ComponentProgress startComponent(UUID userId, UUID componentId) {
         ComponentProgress progress = componentProgressRepository
             .findByUserIdAndComponentId(userId, componentId)
-            .orElseThrow(() -> new RuntimeException("Component progress not found"));
+            .orElseGet(() -> {
+                // If component progress doesn't exist, create it
+                CourseComponent component = componentRepository.findById(componentId)
+                    .orElseThrow(() -> new RuntimeException("Component not found"));
+                Users user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+                
+                // First ensure user is enrolled in the course
+                enrollInCourse(userId, component.getCourse().getId());
+                
+                // Try to find the progress again after enrollment
+                return componentProgressRepository
+                    .findByUserIdAndComponentId(userId, componentId)
+                    .orElseThrow(() -> new RuntimeException("Failed to create component progress"));
+            });
             
         // Mark component as started
         progress.markAsStarted();
@@ -323,5 +347,56 @@ public class ProgressService {
     public boolean isCourseCompleted(UUID userId, UUID courseId) {
         UserCourseProgress progress = getCourseProgress(userId, courseId);
         return progress != null && progress.getStatus() == ProgressStatus.COMPLETED;
+    }
+    
+    /**
+     * Ensure all component progress entries exist for a user's enrolled course
+     */
+    private void ensureComponentProgressExists(UUID userId, UUID courseId) {
+        Users user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        Course course = courseRepository.findById(courseId)
+            .orElseThrow(() -> new RuntimeException("Course not found"));
+        
+        for (CourseComponent component : course.getComponents()) {
+            Optional<ComponentProgress> existingProgress = componentProgressRepository
+                .findByUserIdAndComponentId(userId, component.getId());
+            
+            if (!existingProgress.isPresent()) {
+                ComponentProgress componentProgress = new ComponentProgress(user, component, course);
+                componentProgressRepository.save(componentProgress);
+            }
+        }
+    }
+    
+    /**
+     * Ensure component progress exists for a specific component
+     * This is needed to handle race conditions during enrollment
+     */
+    @Transactional
+    public void ensureComponentProgressExists(UUID userId, UUID componentId) {
+        Optional<ComponentProgress> existingProgress = componentProgressRepository
+            .findByUserIdAndComponentId(userId, componentId);
+            
+        if (!existingProgress.isPresent()) {
+            Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            CourseComponent component = componentRepository.findById(componentId)
+                .orElseThrow(() -> new RuntimeException("Component not found"));
+            Course course = component.getCourse();
+            
+            // Check if user is enrolled in the course
+            Optional<UserCourseProgress> courseProgress = courseProgressRepository
+                .findByUserIdAndCourseId(userId, course.getId());
+                
+            if (!courseProgress.isPresent()) {
+                // User is not enrolled, enroll them first
+                enrollInCourse(userId, course.getId());
+            } else {
+                // Create just this component's progress
+                ComponentProgress componentProgress = new ComponentProgress(user, component, course);
+                componentProgressRepository.save(componentProgress);
+            }
+        }
     }
 }

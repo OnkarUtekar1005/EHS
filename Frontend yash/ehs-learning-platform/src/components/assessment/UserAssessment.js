@@ -58,12 +58,9 @@ const UserAssessment = ({ componentId, onComplete }) => {
       setLoading(true);
       setError(null);
       
-      // Start assessment attempt
-      const attemptResponse = await assessmentService.startAttempt(componentId);
-      setAttemptId(attemptResponse.data.attemptId);
-      
-      // Get questions
+      // Get questions first (this doesn't create any database entries)
       const questionsResponse = await assessmentService.getQuestions(componentId);
+      console.log('Questions response:', questionsResponse.data);
       setQuestions(questionsResponse.data.questions);
       
       // Set time limit (convert minutes to seconds)
@@ -71,6 +68,14 @@ const UserAssessment = ({ componentId, onComplete }) => {
       if (timeLimit) {
         setTimeRemaining(timeLimit * 60);
       }
+      
+      // Now start the assessment attempt after a small delay to ensure enrollment is complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Start assessment attempt
+      const attemptResponse = await assessmentService.startAttempt(componentId);
+      console.log('Attempt response:', attemptResponse.data);
+      setAttemptId(attemptResponse.data.attemptId);
       
       setLoading(false);
     } catch (error) {
@@ -84,12 +89,23 @@ const UserAssessment = ({ componentId, onComplete }) => {
         errorMessage = error.response.data;
       }
       
-      setError(errorMessage);
+      // If it's a duplicate key error, retry after a delay
+      if (errorMessage.includes('duplicate key')) {
+        console.log('Duplicate key error detected, retrying...');
+        setTimeout(() => {
+          loadAssessment();
+        }, 1000);
+        setError('Loading assessment... Please wait.');
+      } else {
+        setError(errorMessage);
+      }
+      
       setLoading(false);
     }
   };
 
   const handleAnswerChange = (questionId, answer) => {
+    console.log('Answer changed - Question ID:', questionId, 'Answer:', answer);
     setAnswers({
       ...answers,
       [questionId]: answer
@@ -112,15 +128,15 @@ const UserAssessment = ({ componentId, onComplete }) => {
     try {
       setSubmitting(true);
       
-      // Create userAnswers object from answers state
-      const userAnswers = {
-        answers: answers
-      };
+      console.log('Submitting assessment with answers:', answers);
+      console.log('Attempt ID:', attemptId);
       
-      const result = await assessmentService.submitAttempt(attemptId, userAnswers);
+      const result = await assessmentService.submitAttempt(attemptId, answers);
+      console.log('Assessment result:', result.data);
       onComplete?.(result.data);
     } catch (error) {
       console.error('Error submitting assessment:', error);
+      console.error('Error response:', error.response);
       
       // Extract error message from response
       let errorMessage = 'Failed to submit assessment. Please try again.';
@@ -238,8 +254,8 @@ const UserAssessment = ({ componentId, onComplete }) => {
 
           {question.type === 'TRUE_FALSE' && (
             <RadioGroup
-              value={String(answers[question.id] || '')}
-              onChange={(e) => handleAnswerChange(question.id, e.target.value === 'true')}
+              value={answers[question.id] || ''}
+              onChange={(e) => handleAnswerChange(question.id, e.target.value)}
             >
               <FormControlLabel 
                 value="true" 

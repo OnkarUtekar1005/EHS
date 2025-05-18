@@ -40,6 +40,7 @@ const CourseView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [enrolling, setEnrolling] = useState(false);
+  const [justEnrolled, setJustEnrolled] = useState(false);
 
   useEffect(() => {
     loadCourseData();
@@ -122,7 +123,12 @@ const CourseView = () => {
     try {
       setEnrolling(true);
       await progressService.enrollInCourse(courseId);
+      // Add a small delay to ensure enrollment is fully processed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setJustEnrolled(true);
       await loadCourseData();
+      // Clear the justEnrolled flag after a delay
+      setTimeout(() => setJustEnrolled(false), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to enroll');
     } finally {
@@ -401,8 +407,10 @@ const CourseView = () => {
                                       startIcon={comp.status === 'COMPLETED' ? <Refresh /> : <PlayArrow />}
                                       onClick={() => handleStartComponent(component.id, component.type)}
                                       fullWidth
+                                      disabled={justEnrolled}
                                     >
-                                      {comp.status === 'COMPLETED' ? 'Review' : 
+                                      {justEnrolled ? 'Loading...' :
+                                       comp.status === 'COMPLETED' ? 'Review' : 
                                        comp.status === 'IN_PROGRESS' ? 'Continue' : 'Start'}
                                     </Button>
                                   ) : (

@@ -124,9 +124,14 @@ public class UserProgressController {
                 
             UserCourseProgress progress = progressService.enrollInCourse(user.getId(), courseId);
             
+            // Verify component progress exists
+            List<ComponentProgress> componentProgresses = progressService
+                .getCourseComponentProgress(user.getId(), courseId);
+            
             return ResponseEntity.ok(Map.of(
                 "message", "Successfully enrolled in course",
-                "progress", new ProgressResponse(progress)
+                "progress", new ProgressResponse(progress),
+                "componentCount", componentProgresses.size()
             ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

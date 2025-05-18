@@ -42,6 +42,7 @@ public class UserAssessmentService {
     /**
      * Start an assessment attempt
      */
+    @Transactional
     public AssessmentAttempt startAssessment(UUID userId, UUID componentId) {
         // Get user and component
         Users user = userRepository.findById(userId)
@@ -55,42 +56,89 @@ public class UserAssessmentService {
             throw new RuntimeException("Component is not an assessment");
         }
         
+        // Ensure component progress exists
+        try {
+            progressService.startComponent(userId, componentId);
+        } catch (Exception e) {
+            logger.warn("Error starting component progress: {}", e.getMessage());
+            // Continue - component progress may already exist
+        }
+        
         // Check if user can access this component
         if (!progressService.canAccessComponent(userId, componentId)) {
             throw new RuntimeException("Cannot access this component yet");
         }
         
-        // Check for incomplete attempt
-        Optional<AssessmentAttempt> incompleteAttempt = attemptRepository
-            .findIncompleteAttempt(userId, componentId);
-        if (incompleteAttempt.isPresent()) {
-            logger.info("Found incomplete attempt for user {} and component {}", userId, componentId);
-            return incompleteAttempt.get();
+        // Ensure component progress exists (handle enrollment race condition)
+        progressService.ensureComponentProgressExists(userId, componentId);
+        
+        // Use a locked query to prevent concurrent access
+        List<AssessmentAttempt> existingAttempts = attemptRepository
+            .findByUserIdAndComponentIdWithLock(userId, componentId);
+            
+        // Check for incomplete attempts first
+        for (AssessmentAttempt attempt : existingAttempts) {
+            if (attempt.getSubmittedAt() == null) {
+                logger.info("Returning existing incomplete attempt {} for user {} and component {}", 
+                    attempt.getId(), userId, componentId);
+                return attempt;
+            }
         }
         
-        // Check attempt count (only count completed attempts)
-        Integer completedAttemptCount = attemptRepository.countCompletedAttempts(userId, componentId);
-        if (completedAttemptCount == null) {
-            completedAttemptCount = 0;
-        }
-        logger.info("Completed attempts for user {} and component {}: {}", userId, componentId, completedAttemptCount);
-        
-        if (completedAttemptCount >= MAX_ATTEMPTS) {
-            logger.warn("Maximum attempts reached for user {} and component {}. Completed: {}, Max: {}", 
-                userId, componentId, completedAttemptCount, MAX_ATTEMPTS);
+        // Check if maximum attempts reached
+        if (existingAttempts.size() >= MAX_ATTEMPTS) {
+            logger.warn("Maximum attempts reached for user {} and component {}. Total: {}, Max: {}", 
+                userId, componentId, existingAttempts.size(), MAX_ATTEMPTS);
             throw new RuntimeException("Maximum attempts reached for this assessment");
         }
         
-        // Get next attempt number
-        Integer nextAttemptNumber = attemptRepository
-            .findMaxAttemptNumber(userId, componentId)
-            .orElse(0) + 1;
+        // Find the highest attempt number
+        int maxAttemptNumber = existingAttempts.stream()
+            .mapToInt(AssessmentAttempt::getAttemptNumber)
+            .max()
+            .orElse(0);
+            
+        int nextAttemptNumber = maxAttemptNumber + 1;
         
-        // Start component progress
-        progressService.startComponent(userId, componentId);
+        logger.info("Creating new attempt {} for user {} and component {}", nextAttemptNumber, userId, componentId);
+        
+        try {
+            // Use synchronized method to handle concurrent creation
+            return findOrCreateAttempt(user, component, nextAttemptNumber);
+            
+        } catch (Exception e) {
+            logger.error("Error creating assessment attempt: {}", e.getMessage());
+            
+            // If there's still somehow a duplicate key error, find and return the existing attempt
+            if (e.getMessage().contains("duplicate key")) {
+                // Try one more time with the synchronized method
+                try {
+                    return findOrCreateAttempt(user, component, nextAttemptNumber);
+                } catch (Exception retryError) {
+                    logger.error("Failed even with synchronized retry: {}", retryError.getMessage());
+                }
+            }
+            
+            throw new RuntimeException("Error starting assessment: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Alternative synchronized method to handle duplicate key issues
+     */
+    private synchronized AssessmentAttempt findOrCreateAttempt(Users user, CourseComponent component, 
+                                                              int attemptNumber) {
+        // Check if attempt already exists
+        Optional<AssessmentAttempt> existingAttempt = attemptRepository
+            .findByUserIdAndComponentIdAndAttemptNumber(user.getId(), component.getId(), attemptNumber);
+            
+        if (existingAttempt.isPresent()) {
+            logger.info("Found existing attempt through synchronized check");
+            return existingAttempt.get();
+        }
         
         // Create new attempt
-        AssessmentAttempt attempt = new AssessmentAttempt(user, component, nextAttemptNumber);
+        AssessmentAttempt attempt = new AssessmentAttempt(user, component, attemptNumber);
         return attemptRepository.save(attempt);
     }
     
@@ -258,11 +306,19 @@ public class UserAssessmentService {
         int correctAnswers = 0;
         int totalQuestions = questions.size();
         
+        if (totalQuestions == 0) {
+            throw new RuntimeException("No questions found in the assessment");
+        }
+        
         // Detailed results for feedback
         List<Map<String, Object>> detailedResults = new ArrayList<>();
         
         for (Map<String, Object> question : questions) {
             String questionId = (String) question.get("id");
+            if (questionId == null) {
+                logger.error("Question without ID found: {}", question);
+                continue;
+            }
             Object userAnswer = userAnswers.get(questionId);
             
             boolean isCorrect = false;
@@ -305,6 +361,9 @@ public class UserAssessmentService {
         BigDecimal score = BigDecimal.valueOf((correctAnswers * 100.0) / totalQuestions)
             .setScale(2, RoundingMode.HALF_UP);
         boolean passed = score.compareTo(BigDecimal.valueOf(passingScore)) >= 0;
+        
+        logger.info("Assessment scoring - Correct: {}/{}, Score: {}%, Passing: {}%, Passed: {}", 
+            correctAnswers, totalQuestions, score, passingScore, passed);
         
         // Update attempt
         attempt.submit(userAnswers, score, passed);

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.LockModeType;
 
 import java.util.List;
 import java.util.Optional;
@@ -80,4 +81,16 @@ public interface AssessmentAttemptRepository extends JpaRepository<AssessmentAtt
            "AND a.submittedAt IS NULL " +
            "ORDER BY a.startedAt DESC")
     List<AssessmentAttempt> findIncompleteAttemptsByUserId(@Param("userId") UUID userId);
+    
+    @Query("SELECT a FROM AssessmentAttempt a " +
+           "WHERE a.user.id = :userId " +
+           "AND a.component.id = :componentId " +
+           "ORDER BY a.attemptNumber")
+    @org.springframework.data.jpa.repository.Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<AssessmentAttempt> findByUserIdAndComponentIdWithLock(
+        @Param("userId") UUID userId, 
+        @Param("componentId") UUID componentId);
+    
+    Optional<AssessmentAttempt> findByUserIdAndComponentIdAndAttemptNumber(
+        UUID userId, UUID componentId, Integer attemptNumber);
 }

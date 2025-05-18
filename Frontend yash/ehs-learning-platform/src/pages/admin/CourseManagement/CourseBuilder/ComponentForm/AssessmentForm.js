@@ -442,8 +442,8 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
                   <FormLabel>Correct Answer</FormLabel>
                   <RadioGroup
                     row
-                    value={question.correctAnswer}
-                    onChange={(e) => handleQuestionChange(qIndex, 'correctAnswer', e.target.value === 'true')}
+                    value={String(question.correctAnswer)}
+                    onChange={(e) => handleQuestionChange(qIndex, 'correctAnswer', e.target.value)}
                   >
                     <FormControlLabel value="true" control={<Radio />} label="True" />
                     <FormControlLabel value="false" control={<Radio />} label="False" />
