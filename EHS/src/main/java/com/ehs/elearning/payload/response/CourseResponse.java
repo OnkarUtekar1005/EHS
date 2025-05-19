@@ -25,6 +25,7 @@ public class CourseResponse {
     private Integer enrolledUsers;
     private Double completionRate;
     private List<CourseComponent> components;
+    private String enrollmentStatus;
     
     // Constructor from Course entity
     public CourseResponse(Course course) {
@@ -192,6 +193,14 @@ public class CourseResponse {
 
     public void setComponents(List<CourseComponent> components) {
         this.components = components;
+    }
+    
+    public String getEnrollmentStatus() {
+        return enrollmentStatus;
+    }
+    
+    public void setEnrollmentStatus(String enrollmentStatus) {
+        this.enrollmentStatus = enrollmentStatus;
     }
 
 	public CourseResponse() {

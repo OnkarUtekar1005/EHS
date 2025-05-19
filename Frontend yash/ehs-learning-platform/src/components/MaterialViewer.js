@@ -11,6 +11,7 @@ import {
   Alert
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
+import VideoPlayer from './VideoPlayer';
 
 const MaterialViewer = ({ open, onClose, material }) => {
   if (!material) return null;
@@ -36,17 +37,13 @@ const MaterialViewer = ({ open, onClose, material }) => {
         );
 
       case 'VIDEO':
-        // For videos, use Google Drive embed viewer
+        // Use custom VideoPlayer component to handle video embedding
         return (
           <Box sx={{ width: '100%', height: '600px' }}>
-            <iframe
-              src={`https://drive.google.com/file/d/${driveFileId}/preview`}
-              width="100%"
-              height="100%"
-              frameBorder="0"
+            <VideoPlayer 
+              driveFileId={driveFileId}
               title={title}
-              allow="autoplay"
-              allowFullScreen
+              driveFileUrl={driveFileUrl}
             />
           </Box>
         );

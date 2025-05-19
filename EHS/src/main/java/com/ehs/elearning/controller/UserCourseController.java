@@ -3,9 +3,11 @@ package com.ehs.elearning.controller;
 import com.ehs.elearning.model.Course;
 import com.ehs.elearning.model.Course.CourseStatus;
 import com.ehs.elearning.model.Users;
+import com.ehs.elearning.model.UserCourseProgress;
 import com.ehs.elearning.payload.response.CourseResponse;
 import com.ehs.elearning.payload.response.MessageResponse;
 import com.ehs.elearning.repository.UserRepository;
+import com.ehs.elearning.repository.UserCourseProgressRepository;
 import com.ehs.elearning.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -21,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/v2/user")
 public class UserCourseController {
@@ -31,6 +32,9 @@ public class UserCourseController {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private UserCourseProgressRepository courseProgressRepository;
     
     // Get courses for the current user based on their domains
     @GetMapping("/courses")
@@ -117,7 +121,7 @@ public class UserCourseController {
     // Get a specific course detail
     @GetMapping("/courses/{courseId}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<?> getCourseDetail(@PathVariable UUID courseId) {
+    public ResponseEntity<?> getCourseDetail(@PathVariable UUID courseId, Authentication authentication) {
         try {
             Course course = courseService.getCourseWithComponents(courseId);
             
@@ -130,6 +134,20 @@ public class UserCourseController {
             CourseResponse response = new CourseResponse(course);
             response.setComponentCount(course.getComponents().size());
             response.setComponents(course.getComponents());
+            
+            // Include enrollment status if authenticated
+            if (authentication != null) {
+                String currentUsername = authentication.getName();
+                Users currentUser = userRepository.findByUsername(currentUsername)
+                    .orElse(null);
+                    
+                if (currentUser != null) {
+                    Optional<UserCourseProgress> enrollment = courseProgressRepository
+                        .findByUserIdAndCourseId(currentUser.getId(), courseId);
+                    response.setEnrollmentStatus(enrollment.isPresent() ? "enrolled" : "not_enrolled");
+                }
+            }
+            
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

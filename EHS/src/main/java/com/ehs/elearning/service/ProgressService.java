@@ -48,7 +48,7 @@ public class ProgressService {
             
         if (existingProgress.isPresent()) {
             // Ensure all component progress entries exist
-            ensureComponentProgressExists(userId, courseId);
+            ensureAllComponentProgressExists(userId, courseId);
             return existingProgress.get();
         }
         
@@ -300,7 +300,31 @@ public class ProgressService {
             .orElse(null);
             
         if (progress == null) {
-            return false;
+            // Try to check if user is enrolled in the course
+            CourseComponent component = componentRepository.findById(componentId)
+                .orElse(null);
+            if (component == null) {
+                return false;
+            }
+            
+            UserCourseProgress courseProgress = courseProgressRepository
+                .findByUserIdAndCourseId(userId, component.getCourse().getId())
+                .orElse(null);
+            
+            if (courseProgress == null) {
+                return false;
+            }
+            
+            // If user is enrolled but component progress doesn't exist, create it
+            ensureComponentProgressExists(userId, componentId);
+            
+            progress = componentProgressRepository
+                .findByUserIdAndComponentId(userId, componentId)
+                .orElse(null);
+                
+            if (progress == null) {
+                return false;
+            }
         }
         
         CourseComponent component = progress.getComponent();
@@ -352,7 +376,7 @@ public class ProgressService {
     /**
      * Ensure all component progress entries exist for a user's enrolled course
      */
-    private void ensureComponentProgressExists(UUID userId, UUID courseId) {
+    private void ensureAllComponentProgressExists(UUID userId, UUID courseId) {
         Users user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
         Course course = courseRepository.findById(courseId)

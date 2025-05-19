@@ -35,12 +35,25 @@ public class MaterialService {
     private GoogleDriveService googleDriveService;
     
     public Material uploadMaterial(String title, String description, MultipartFile file, String type) throws IOException {
+        logger.info("=== MATERIAL UPLOAD STARTED ===");
+        logger.info("Title: {}", title);
+        logger.info("Description: {}", description);
+        logger.info("Type: {}", type);
+        logger.info("File name: {}", file.getOriginalFilename());
+        logger.info("File size: {} bytes", file.getSize());
+        
         Users currentUser = getCurrentUser();
+        logger.info("Current user: {}", currentUser.getUsername());
         
         // Upload file to Google Drive
+        logger.info("Uploading file to Google Drive...");
         DriveFileData driveData = googleDriveService.uploadFile(file, type);
+        logger.info("Google Drive upload completed");
+        logger.info("Drive File ID: {}", driveData.getDriveFileId());
+        logger.info("Drive File URL: {}", driveData.getDriveFileUrl());
         
         // Create material entity
+        logger.info("Creating material entity...");
         Material material = new Material();
         material.setTitle(title);
         material.setDescription(description);
@@ -51,8 +64,10 @@ public class MaterialService {
         material.setFileSize(driveData.getFileSize());
         material.setCreatedBy(currentUser);
         
+        logger.info("Saving material to database...");
         Material savedMaterial = materialRepository.save(material);
-        logger.info("Material created successfully: {}", savedMaterial.getId());
+        logger.info("Material saved successfully with ID: {}", savedMaterial.getId());
+        logger.info("=== MATERIAL UPLOAD COMPLETED ===");
         return savedMaterial;
     }
     

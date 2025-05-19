@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v2/materials")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class MaterialController {
     
     private static final Logger logger = LoggerFactory.getLogger(MaterialController.class);
@@ -38,13 +37,31 @@ public class MaterialController {
             @RequestParam(value = "description", required = false) String description,
             @RequestParam("type") String type) {
         
+        logger.info("=== MATERIAL UPLOAD ENDPOINT CALLED ===");
+        logger.info("Title: {}", title);
+        logger.info("Description: {}", description);
+        logger.info("Type: {}", type);
+        logger.info("File name: {}", file.getOriginalFilename());
+        logger.info("File size: {} bytes", file.getSize());
+        logger.info("Content type: {}", file.getContentType());
+        
         try {
+            logger.info("Calling material service to upload material...");
             Material material = materialService.uploadMaterial(title, description, file, type);
-            return ResponseEntity.ok(new MaterialResponse(material));
+            
+            logger.info("Material uploaded successfully, returning response");
+            MaterialResponse response = new MaterialResponse(material);
+            logger.info("Response data - ID: {}, Title: {}", response.getId(), response.getTitle());
+            
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error uploading material: ", e);
+            logger.error("Exception type: {}", e.getClass().getName());
+            logger.error("Exception message: {}", e.getMessage());
+            String errorMessage = "Failed to upload material: " + e.getMessage();
+            logger.error("Returning error response: {}", errorMessage);
             return ResponseEntity.badRequest()
-                    .body(new MessageResponse("Failed to upload material: " + e.getMessage()));
+                    .body(new MessageResponse(errorMessage));
         }
     }
     

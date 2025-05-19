@@ -211,15 +211,20 @@ const MaterialView = () => {
 
       {/* Material Viewer */}
       <Paper sx={{ p: 3, mb: 3 }}>
-        {component?.data?.materialFileId ? (
+        {component?.data?.materialId ? (
           <CourseMaterialViewer
-            materialId={component.data.materialFileId}
+            materialId={component.data.materialId}
             onProgressUpdate={handleProgressUpdate}
             initialProgress={viewProgress}
           />
-        ) : component?.data?.fileId ? (
+        ) : component?.data?.driveFileId ? (
           <CourseMaterialViewer
-            materialId={component.data.fileId}
+            materialData={{
+              title: component.data.title,
+              type: component.data.type,
+              driveFileId: component.data.driveFileId,
+              driveFileUrl: component.data.driveFileUrl
+            }}
             onProgressUpdate={handleProgressUpdate}
             initialProgress={viewProgress}
           />

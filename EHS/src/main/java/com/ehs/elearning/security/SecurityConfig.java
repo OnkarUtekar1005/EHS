@@ -63,19 +63,19 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000",  // React frontend
-            "http://localhost:8080",  // Spring Boot backend
-            "https://your-production-domain.com"
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:*",  // Any localhost port
+            "https://localhost:*",
+            "http://127.0.0.1:*",
+            "https://127.0.0.1:*",
+            "https://your-production-domain.com",
+            "https://*.your-production-domain.com"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList(
-            "authorization", 
-            "content-type", 
-            "x-auth-token"
-        ));
-        configuration.setExposedHeaders(Arrays.asList("x-auth-token"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setExposedHeaders(Arrays.asList("x-auth-token", "Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -99,6 +99,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/test/**").permitAll() // Test endpoints
                     .requestMatchers("/v3/api-docs/**").permitAll()
                     .requestMatchers("/swagger-ui/**").permitAll()
+                    .requestMatchers("/error").permitAll() // Allow error endpoint
                     
                     // Domain management endpoints
                     .requestMatchers(HttpMethod.GET, "/api/domains/**").authenticated()  // All authenticated users can read
@@ -125,17 +126,26 @@ public class SecurityConfig {
                     // V2 Course management endpoints
                     .requestMatchers("/api/v2/admin/courses/**").hasAuthority("ROLE_ADMIN")  // Course admin endpoints
                     
+                    // V2 User course endpoints
+                    .requestMatchers("/api/v2/user/courses/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")  // User course endpoints
+                    .requestMatchers("/api/v2/user/progress/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")  // User progress endpoints
+                    .requestMatchers("/api/v2/user/assessment/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")  // User assessment endpoints
+                    
                     // Module management endpoints
                     .requestMatchers(HttpMethod.GET, "/api/modules/**").authenticated()  // All users can read
                     .requestMatchers(HttpMethod.POST, "/api/modules/**").hasAuthority("ROLE_ADMIN")  // Only ADMIN can create
                     .requestMatchers(HttpMethod.PUT, "/api/modules/**").hasAuthority("ROLE_ADMIN")  // Only ADMIN can update
                     .requestMatchers(HttpMethod.DELETE, "/api/modules/**").hasAuthority("ROLE_ADMIN")  // Only ADMIN can delete
                     
-                    // Materials endpoints
-                    .requestMatchers(HttpMethod.GET, "/api/materials/**").authenticated()  // All users can read
-                    .requestMatchers(HttpMethod.POST, "/api/materials/**").hasAuthority("ROLE_ADMIN")  // Only ADMIN can upload
-                    .requestMatchers(HttpMethod.PUT, "/api/materials/**").hasAuthority("ROLE_ADMIN")  // Only ADMIN can update
-                    .requestMatchers(HttpMethod.DELETE, "/api/materials/**").hasAuthority("ROLE_ADMIN")  // Only ADMIN can delete
+                    // Materials endpoints - using v2 API
+                    .requestMatchers(HttpMethod.GET, "/api/v2/materials").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")  // All users can view materials list
+                    .requestMatchers(HttpMethod.GET, "/api/v2/materials/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")  // All users can view specific materials
+                    .requestMatchers(HttpMethod.POST, "/api/v2/materials/upload").hasAuthority("ROLE_ADMIN")  // Only ADMIN can upload
+                    .requestMatchers(HttpMethod.PUT, "/api/v2/materials/**").hasAuthority("ROLE_ADMIN")  // Only ADMIN can update
+                    .requestMatchers(HttpMethod.DELETE, "/api/v2/materials/**").hasAuthority("ROLE_ADMIN")  // Only ADMIN can delete
+                    
+                    // Add debug endpoints
+                    .requestMatchers("/api/debug/**").permitAll()
                     
                     // Fallback: all other requests require authentication
                     .anyRequest().authenticated()

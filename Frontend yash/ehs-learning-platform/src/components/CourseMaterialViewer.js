@@ -129,24 +129,25 @@ const CourseMaterialViewer = ({ materialData, materialId, onProgressUpdate, init
   };
 
   const renderPdfViewer = () => {
-    const driveUrl = material.googleDriveUrl || material.filePath || material.driveFileUrl || material.driveFileId;
-    if (!driveUrl) {
-      return (
-        <Alert severity="error">No PDF URL available</Alert>
-      );
-    }
+    const driveId = material.driveFileId;
+    const driveUrl = material.googleDriveUrl || material.filePath || material.driveFileUrl;
     
-    let fileId = driveUrl;
+    // First try driveFileId
+    let fileId = driveId;
     
-    // If it's a full URL, extract the file ID
-    if (driveUrl.includes('drive.google.com')) {
-      const fileIdMatch = driveUrl.match(/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=)([a-zA-Z0-9_-]+)/);
-      fileId = fileIdMatch ? fileIdMatch[1] : null;
+    // If no driveFileId, try to extract from URL
+    if (!fileId && driveUrl) {
+      if (driveUrl.includes('drive.google.com')) {
+        const fileIdMatch = driveUrl.match(/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=)([a-zA-Z0-9_-]+)/);
+        fileId = fileIdMatch ? fileIdMatch[1] : null;
+      } else {
+        fileId = driveUrl; // Assume it's just a file ID
+      }
     }
     
     if (!fileId) {
       return (
-        <Alert severity="warning">Invalid Google Drive PDF URL</Alert>
+        <Alert severity="error">No PDF file available</Alert>
       );
     }
     
@@ -169,20 +170,25 @@ const CourseMaterialViewer = ({ materialData, materialId, onProgressUpdate, init
   };
 
   const renderVideoPlayer = () => {
+    const driveId = material.driveFileId;
     const driveUrl = material.googleDriveUrl || material.filePath || material.driveFileUrl;
-    if (!driveUrl) {
-      return (
-        <Alert severity="error">No video URL available</Alert>
-      );
-    }
     
-    // Extract the file ID from Google Drive URL
-    const fileIdMatch = driveUrl.match(/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=)([a-zA-Z0-9_-]+)/);
-    const fileId = fileIdMatch ? fileIdMatch[1] : null;
+    // First try driveFileId
+    let fileId = driveId;
+    
+    // If no driveFileId, try to extract from URL
+    if (!fileId && driveUrl) {
+      if (driveUrl.includes('drive.google.com')) {
+        const fileIdMatch = driveUrl.match(/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=)([a-zA-Z0-9_-]+)/);
+        fileId = fileIdMatch ? fileIdMatch[1] : null;
+      } else {
+        fileId = driveUrl; // Assume it's just a file ID
+      }
+    }
     
     if (!fileId) {
       return (
-        <Alert severity="warning">Invalid Google Drive video URL</Alert>
+        <Alert severity="error">No video file available</Alert>
       );
     }
     
@@ -210,24 +216,25 @@ const CourseMaterialViewer = ({ materialData, materialId, onProgressUpdate, init
   };
 
   const renderDocumentViewer = () => {
-    const driveUrl = material.googleDriveUrl || material.filePath || material.driveFileUrl || material.driveFileId;
-    if (!driveUrl) {
-      return (
-        <Alert severity="error">No document URL available</Alert>
-      );
-    }
+    const driveId = material.driveFileId;
+    const driveUrl = material.googleDriveUrl || material.filePath || material.driveFileUrl;
     
-    let fileId = driveUrl;
+    // First try driveFileId
+    let fileId = driveId;
     
-    // If it's a full URL, extract the file ID
-    if (driveUrl.includes('drive.google.com')) {
-      const fileIdMatch = driveUrl.match(/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=)([a-zA-Z0-9_-]+)/);
-      fileId = fileIdMatch ? fileIdMatch[1] : null;
+    // If no driveFileId, try to extract from URL
+    if (!fileId && driveUrl) {
+      if (driveUrl.includes('drive.google.com')) {
+        const fileIdMatch = driveUrl.match(/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=)([a-zA-Z0-9_-]+)/);
+        fileId = fileIdMatch ? fileIdMatch[1] : null;
+      } else {
+        fileId = driveUrl; // Assume it's just a file ID
+      }
     }
     
     if (!fileId) {
       return (
-        <Alert severity="warning">Invalid Google Drive document URL</Alert>
+        <Alert severity="error">No document file available</Alert>
       );
     }
     
@@ -264,16 +271,24 @@ const CourseMaterialViewer = ({ materialData, materialId, onProgressUpdate, init
       case 'DOCX':
         return renderDocumentViewer();
       default:
+        const driveId = material.driveFileId;
         const driveUrl = material.googleDriveUrl || material.filePath || material.driveFileUrl;
+        
+        // Try to create a Google Drive URL
+        let viewUrl = driveUrl;
+        if (driveId && !driveUrl) {
+          viewUrl = `https://drive.google.com/file/d/${driveId}/view`;
+        }
+        
         return (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="h6" gutterBottom>
               {material.title}
             </Typography>
-            {driveUrl && (
+            {viewUrl && (
               <Button
                 variant="contained"
-                onClick={() => window.open(driveUrl, '_blank')}
+                onClick={() => window.open(viewUrl, '_blank')}
               >
                 Open in Google Drive
               </Button>

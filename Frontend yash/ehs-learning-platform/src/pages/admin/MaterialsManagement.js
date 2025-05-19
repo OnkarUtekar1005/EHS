@@ -69,7 +69,7 @@ const MaterialsManagement = () => {
   const fetchMaterials = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/admin/materials');
+      const response = await api.get('/v2/materials');
       setMaterials(response.data || []);
     } catch (error) {
       console.error('Error fetching materials:', error);
@@ -142,10 +142,20 @@ const MaterialsManagement = () => {
   };
 
   const handleUpload = async () => {
+    console.log('=== MATERIAL UPLOAD STARTED ===');
+    console.log('Upload data:', uploadData);
+    
     if (!uploadData.file || !uploadData.title) {
+      console.error('Missing required fields');
       setUploadError('Please select a file and provide a title');
       return;
     }
+
+    console.log('File details:', {
+      name: uploadData.file.name,
+      size: uploadData.file.size,
+      type: uploadData.file.type
+    });
 
     setUploading(true);
     setUploadError('');
@@ -157,17 +167,34 @@ const MaterialsManagement = () => {
       formData.append('description', uploadData.description);
       formData.append('type', uploadData.type);
 
-      const response = await api.post('/admin/materials/upload', formData, {
+      // Log FormData contents
+      console.log('FormData entries:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+
+      console.log('Sending request to server...');
+      const response = await api.post('/v2/materials/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
+      console.log('Upload response:', response.data);
+      
       await fetchMaterials();
       handleCloseUploadDialog();
+      console.log('=== MATERIAL UPLOAD COMPLETED ===');
     } catch (error) {
-      console.error('Upload error:', error);
-      setUploadError(error.response?.data?.message || 'Failed to upload file. Please try again.');
+      console.error('=== MATERIAL UPLOAD ERROR ===');
+      console.error('Full error:', error);
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      console.error('Response headers:', error.response?.headers);
+      
+      const errorMessage = error.response?.data?.message || 'Failed to upload file. Please try again.';
+      console.error('Error message to display:', errorMessage);
+      setUploadError(errorMessage);
     } finally {
       setUploading(false);
     }
@@ -179,7 +206,7 @@ const MaterialsManagement = () => {
     }
 
     try {
-      await api.delete(`/admin/materials/${materialId}`);
+      await api.delete(`/v2/materials/${materialId}`);
       await fetchMaterials();
     } catch (error) {
       console.error('Error deleting material:', error);

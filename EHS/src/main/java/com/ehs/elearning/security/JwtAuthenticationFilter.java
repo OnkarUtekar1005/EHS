@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -45,36 +46,49 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             response.setHeader("Access-Control-Max-Age", "3600");
 
             // Headers for iframe embedding
-            response.setHeader("X-Frame-Options", "ALLOWALL");
-            response.setHeader("Content-Security-Policy", "frame-ancestors *");
+            response.setHeader("X-Frame-Options", "SAMEORIGIN");
+            response.setHeader("Content-Security-Policy", 
+                "frame-src https://drive.google.com https://accounts.google.com https://*.google.com; " +
+                "frame-ancestors 'self' https://drive.google.com");
 
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
+            String authHeader = request.getHeader("Authorization");
+//            logger.debug("Authorization header: {}", authHeader);
+            
             String jwt = jwtTokenProvider.resolveToken(request);
+//            logger.debug("Resolved JWT token: {}", jwt != null ? "Token found" : "No token");
 
-            // Debug token resolution process
             if (jwt != null) {
+                logger.debug("Validating JWT token...");
                 if (jwtTokenProvider.validateToken(jwt)) {
+                    logger.debug("JWT token is valid");
                     Authentication auth = jwtTokenProvider.getAuthentication(jwt);
-
+                    
                     // Set authentication in context
                     SecurityContextHolder.getContext().setAuthentication(auth);
-
+//                    logger.debug("Authentication set in security context for user: {}", auth.getName());
+                    
                     // Optional: You can also add token claims as request attributes for easier access in controllers
-                    request.setAttribute("userId", jwtTokenProvider.getUserIdFromToken(jwt));
-                    request.setAttribute("userRoles", jwtTokenProvider.getRolesFromToken(jwt));
+                    UUID userId = jwtTokenProvider.getUserIdFromToken(jwt);
+                    String userRoles = jwtTokenProvider.getRolesFromToken(jwt);
+                    request.setAttribute("userId", userId);
+                    request.setAttribute("userRoles", userRoles);
+//                    logger.debug("Set request attributes - User ID: {}, Roles: {}", userId, userRoles);
+                } else {
+//                    logger.warn("JWT token validation failed for URI: {}", requestURI);
                 }
             } else {
                 // Only log for non-OPTIONS requests to reduce noise
                 if (!request.getMethod().equals("OPTIONS")) {
-                    logger.debug("No JWT token found in request headers");
+//                    logger.warn("No JWT token found in request headers for URI: {}", requestURI);
                 }
             }
         } catch (Exception e) {
-            logger.error("Could not set user authentication in security context", e);
+//            logger.error("Could not set user authentication in security context for URI: {}", requestURI, e);
         }
 
         filterChain.doFilter(request, response);

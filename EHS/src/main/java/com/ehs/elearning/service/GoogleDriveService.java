@@ -30,57 +30,88 @@ public class GoogleDriveService {
     private Drive driveService;
     
     public DriveFileData uploadFile(MultipartFile file, String type) throws IOException {
-        logger.info("Uploading file to Google Drive: {} of type: {}", file.getOriginalFilename(), type);
+        logger.info("=== GOOGLE DRIVE UPLOAD STARTED ===");
+        logger.info("Original filename: {}", file.getOriginalFilename());
+        logger.info("File type: {}", type);
+        logger.info("Content type: {}", file.getContentType());
+        logger.info("File size: {} bytes", file.getSize());
+        logger.info("Parent folder ID: {}", parentFolderId);
         
         // Create temporary file to upload
         java.io.File tempFile = java.io.File.createTempFile("upload", null);
+        logger.info("Created temp file: {}", tempFile.getAbsolutePath());
+        
         file.transferTo(tempFile);
+        logger.info("Transferred content to temp file");
         
         try {
             // Create file metadata
             File fileMetadata = new File();
-            fileMetadata.setName(generateFileName(file.getOriginalFilename()));
+            String generatedName = generateFileName(file.getOriginalFilename());
+            fileMetadata.setName(generatedName);
+            logger.info("Generated filename: {}", generatedName);
             
             // Set parent folder if configured
             if (parentFolderId != null && !parentFolderId.isEmpty()) {
                 fileMetadata.setParents(Collections.singletonList(parentFolderId));
+                logger.info("Set parent folder: {}", parentFolderId);
+            } else {
+                logger.warn("No parent folder ID configured");
             }
             
             // Create media content
             FileContent mediaContent = new FileContent(file.getContentType(), tempFile);
+            logger.info("Created media content with type: {}", file.getContentType());
             
             // Upload file to Drive
+            logger.info("Starting upload to Google Drive...");
             File uploadedFile = driveService.files().create(fileMetadata, mediaContent)
                     .setFields("id, name, webViewLink, webContentLink, size")
                     .execute();
             
-            logger.info("File uploaded successfully. ID: {}", uploadedFile.getId());
+            logger.info("File uploaded successfully!");
+            logger.info("Drive File ID: {}", uploadedFile.getId());
+            logger.info("Drive File Name: {}", uploadedFile.getName());
+            logger.info("Drive File Size: {}", uploadedFile.getSize());
+            logger.info("Web View Link: {}", uploadedFile.getWebViewLink());
+            logger.info("Web Content Link: {}", uploadedFile.getWebContentLink());
             
             // Always set sharing permissions for embeddable preview
+            logger.info("Setting sharing permissions...");
             Permission permission = new Permission();
             permission.setType("anyone");
             permission.setRole("reader");
             permission.setAllowFileDiscovery(false); // This makes it accessible only with the link
             driveService.permissions().create(uploadedFile.getId(), permission).execute();
-            logger.info("Sharing permissions set for file: {}", uploadedFile.getId());
+            logger.info("Sharing permissions set successfully");
             
             // Also update file metadata to ensure it's viewable
+            logger.info("Updating file metadata for viewability...");
             File updatedFile = new File();
             updatedFile.setViewersCanCopyContent(true);
             driveService.files().update(uploadedFile.getId(), updatedFile).execute();
+            logger.info("File metadata updated");
             
             // Get the proper view URL based on file type
             String viewUrl = getViewUrl(uploadedFile, type);
+            logger.info("Generated view URL: {}", viewUrl);
             
-            return new DriveFileData(
+            DriveFileData result = new DriveFileData(
                 uploadedFile.getId(),
                 viewUrl,
                 uploadedFile.getName(),
                 uploadedFile.getSize()
             );
+            
+            logger.info("=== GOOGLE DRIVE UPLOAD COMPLETED ===");
+            return result;
+        } catch (Exception e) {
+            logger.error("Error during Google Drive upload", e);
+            throw e;
         } finally {
             // Clean up temp file
-            tempFile.delete();
+            boolean deleted = tempFile.delete();
+            logger.info("Temp file deleted: {}", deleted);
         }
     }
     
@@ -133,8 +164,8 @@ public class GoogleDriveService {
                 // For PDFs, use the preview URL
                 return "https://drive.google.com/file/d/" + fileId + "/preview";
             case "VIDEO":
-                // For videos, also use the preview URL for consistent embedding
-                return "https://drive.google.com/file/d/" + fileId + "/preview";
+                // For videos, use direct view URL with embed parameter to avoid CSP issues
+                return "https://drive.google.com/file/d/" + fileId + "/preview?embedded=true";
             case "PPT":
                 // For PowerPoint, use the preview URL for embedding
                 return "https://drive.google.com/file/d/" + fileId + "/preview";

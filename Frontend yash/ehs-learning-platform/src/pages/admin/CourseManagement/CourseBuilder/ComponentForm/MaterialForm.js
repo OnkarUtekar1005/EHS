@@ -73,7 +73,7 @@ const MaterialForm = ({ open, onClose, onSave, component, type }) => {
   const fetchMaterials = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/admin/materials');
+      const response = await api.get('/v2/materials');
       setMaterials(response.data);
       setError(null);
     } catch (err) {
