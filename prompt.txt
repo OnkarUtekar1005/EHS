@@ -7,4 +7,8 @@ Currently we are developing the project and have done a some amount of progress 
 what has been done now : admin module is functional for some extent, he can add users in bulk and solo, he can get the list of all users with all the passwords for their first login and he can assign domains for them
 also in admin modules he can add training modules, edit them, delete them, publish them, takedown them , and get the list of all training modules. Within the training modules there are pre assessment , training content, post assessment. and basic evalutaion
 User functionality is to be able to view and complete training modules and see their progress.
-understand the project and there are bugs in userCourseView the course progression is not working correctly i am not able to correctly view component name in component progression could you solve that
+understand the project 
+Now i can identify a bug at admin level where when adding a course component as pre assessment or post assessment and selecting then selecting the add question option selecting the question type as mutiple choice question and the adding option works but then selecting the correct answer does not wworks
+because of which when setting the multipe choice question does not work on user screen when user gives teh assessment
+Identify the root casue then look for the files that needs to be modify dont change any other file apart from the identified files or create new unneccessary files create the plan breakdown the issue then move ahead
+ 

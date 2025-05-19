@@ -331,7 +331,7 @@ public class UserAssessmentService {
                     List<Map<String, Object>> options = (List<Map<String, Object>>) optionsObj;
                     for (Map<String, Object> option : options) {
                         if (Boolean.TRUE.equals(option.get("isCorrect"))) {
-                            correctAnswer = option.get("value");
+                            correctAnswer = option.get("text");
                             if (correctAnswer != null && correctAnswer.equals(userAnswer)) {
                                 isCorrect = true;
                                 correctAnswers++;

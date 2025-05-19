@@ -44,7 +44,28 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
 
   useEffect(() => {
     if (component) {
-      setFormData(component);
+      // Process the component data to ensure options are in the right format
+      const processedComponent = {
+        ...component,
+        data: {
+          ...component.data,
+          questions: component.data.questions?.map(q => {
+            if (q.type === 'MCQ' && q.options) {
+              // Convert options from object format to string format for form display
+              return {
+                ...q,
+                options: q.options.map(opt =>
+                  typeof opt === 'object' ? opt.text : opt
+                ),
+                // Ensure correctAnswer is set properly
+                correctAnswer: q.correctAnswer || ''
+              };
+            }
+            return q;
+          }) || []
+        }
+      };
+      setFormData(processedComponent);
     } else {
       setFormData({
         type: type,
@@ -80,16 +101,26 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
 
   const handleOptionChange = (questionIndex, optionIndex, value) => {
     const updatedQuestions = [...formData.data.questions];
-    const options = [...(updatedQuestions[questionIndex].options || [])];
-    
+    const question = updatedQuestions[questionIndex];
+    const options = [...(question.options || [])];
+
+    // Get the old option value to check if it was the correct answer
+    const oldOptionValue = typeof options[optionIndex] === 'object' ? options[optionIndex].text : options[optionIndex];
+
     // Handle both string and object options
     if (typeof options[optionIndex] === 'object' && options[optionIndex] !== null) {
       options[optionIndex] = { ...options[optionIndex], text: value };
     } else {
       options[optionIndex] = value;
     }
-    
-    updatedQuestions[questionIndex].options = options;
+
+    question.options = options;
+
+    // If this option was the correct answer AND it wasn't empty, update the correct answer to the new value
+    if (question.correctAnswer && question.correctAnswer === oldOptionValue) {
+      question.correctAnswer = value;
+    }
+
     setFormData(prev => ({
       ...prev,
       data: {
@@ -203,11 +234,14 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
 
         if (q.type === 'MCQ') {
           // Transform options to objects with id and text
-          transformedQuestion.options = q.options.map((optionText, index) => ({
-            id: `opt${Date.now()}_${index}_${Math.random()}`,
-            text: optionText,
-            isCorrect: optionText === q.correctAnswer
-          }));
+          transformedQuestion.options = q.options.map((option, index) => {
+            const optionText = typeof option === 'object' ? option.text : option;
+            return {
+              id: `opt${Date.now()}_${index}_${Math.random()}`,
+              text: optionText,
+              isCorrect: optionText === q.correctAnswer
+            };
+          });
           transformedQuestion.correctAnswer = q.correctAnswer;
         } else if (q.type === 'TRUE_FALSE') {
           transformedQuestion.correctAnswer = q.correctAnswer;
@@ -393,13 +427,19 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
                     </Typography>
                     {question.options.map((option, oIndex) => {
                       const optionText = typeof option === 'object' ? option.text : option;
-                      const isChecked = question.correctAnswer === optionText;
-                      
+                      const isChecked = question.correctAnswer && question.correctAnswer === optionText;
+
                       return (
                         <Box key={oIndex} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                           <Radio
                             checked={isChecked}
-                            onChange={() => handleQuestionChange(qIndex, 'correctAnswer', optionText)}
+                            onChange={() => {
+                              // Only set as correct answer if the option has text
+                              const currentText = typeof option === 'object' ? option.text : option;
+                              if (currentText || optionText) {
+                                handleQuestionChange(qIndex, 'correctAnswer', currentText || optionText);
+                              }
+                            }}
                             value={optionText}
                           />
                           <TextField
