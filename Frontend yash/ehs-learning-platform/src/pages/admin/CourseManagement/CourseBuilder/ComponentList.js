@@ -78,7 +78,7 @@ const getComponentDetails = (component) => {
   }
 };
 
-const ComponentCard = ({ component, index, totalComponents, onEdit, onDelete, onMoveUp, onMoveDown }) => {
+const ComponentCard = ({ component, index, totalComponents, onEdit, onDelete, onMoveUp, onMoveDown, disableDelete }) => {
   const isFirst = index === 0;
   const isLast = index === totalComponents - 1;
 
@@ -139,6 +139,7 @@ const ComponentCard = ({ component, index, totalComponents, onEdit, onDelete, on
             onClick={() => onDelete(component.id)}
             title="Delete component"
             color="error"
+            disabled={disableDelete}
           >
             <DeleteIcon />
           </IconButton>
@@ -148,7 +149,7 @@ const ComponentCard = ({ component, index, totalComponents, onEdit, onDelete, on
   );
 };
 
-const ComponentList = ({ components = [], onEdit, onDelete, onMoveUp, onMoveDown }) => {
+const ComponentList = ({ components = [], onEdit, onDelete, onMoveUp, onMoveDown, disableDelete = false }) => {
   // Filter out any components without valid IDs
   const validComponents = components.filter(component => component && component.id);
   
@@ -164,6 +165,7 @@ const ComponentList = ({ components = [], onEdit, onDelete, onMoveUp, onMoveDown
           onDelete={onDelete}
           onMoveUp={onMoveUp}
           onMoveDown={onMoveDown}
+          disableDelete={disableDelete}
         />
       ))}
     </Box>

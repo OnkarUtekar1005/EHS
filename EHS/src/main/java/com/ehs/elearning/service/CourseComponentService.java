@@ -41,6 +41,11 @@ public class CourseComponentService {
             throw new RuntimeException("Cannot add components to published course");
         }
         
+        // Check if course has been previously published
+        if (course.getHasBeenPublished()) {
+            throw new RuntimeException("Cannot add new components to a course that has been previously published. Only existing components can be modified.");
+        }
+        
         // Set the order index if not provided
         if (component.getOrderIndex() == null) {
             int maxOrder = course.getComponents().stream()
@@ -61,8 +66,10 @@ public class CourseComponentService {
         
         // Only allow updating components in DRAFT courses
         if (course.getStatus() != Course.CourseStatus.DRAFT) {
-            throw new RuntimeException("Cannot update components in published course");
+            throw new RuntimeException("Cannot update components in published course. Please take down the course first.");
         }
+        
+        // Allow updates for previously published courses (only changes to existing components)
         
         CourseComponent existingComponent = componentRepository.findById(componentId)
             .orElseThrow(() -> new RuntimeException("Component not found"));
@@ -92,6 +99,11 @@ public class CourseComponentService {
         // Only allow deleting components from DRAFT courses
         if (course.getStatus() != Course.CourseStatus.DRAFT) {
             throw new RuntimeException("Cannot delete components from published course");
+        }
+        
+        // Check if course has been previously published
+        if (course.getHasBeenPublished()) {
+            throw new RuntimeException("Cannot delete components from a course that has been previously published. Only existing components can be modified.");
         }
         
         CourseComponent component = componentRepository.findById(componentId)

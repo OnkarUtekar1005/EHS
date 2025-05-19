@@ -2,8 +2,10 @@ package com.ehs.elearning.repository;
 
 import com.ehs.elearning.model.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,4 +15,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
     Optional<Users> findByEmail(String email);
     Boolean existsByUsername(String username);
     Boolean existsByEmail(String email);
+    
+    @Query("SELECT COUNT(u) FROM Users u WHERE u.domains IS EMPTY")
+    long countByDomainsEmpty();
 }

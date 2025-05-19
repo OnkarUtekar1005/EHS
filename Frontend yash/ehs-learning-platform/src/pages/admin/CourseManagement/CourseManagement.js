@@ -127,6 +127,8 @@ const CourseManagement = () => {
       fetchCourses();
     } catch (error) {
       console.error('Error publishing course:', error);
+      console.error('Error response:', error.response?.data);
+      alert(error.response?.data?.message || 'Error publishing course');
     }
   };
 

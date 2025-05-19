@@ -48,6 +48,12 @@ public class Course {
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
     
+    @Column(name = "first_published_at")
+    private LocalDateTime firstPublishedAt;
+    
+    @Column(name = "has_been_published")
+    private Boolean hasBeenPublished = false;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private Users createdBy;
@@ -82,6 +88,12 @@ public class Course {
     public void publish() {
         this.status = CourseStatus.PUBLISHED;
         this.publishedAt = LocalDateTime.now();
+        
+        // Track first publication
+        if (this.hasBeenPublished == null || !this.hasBeenPublished) {
+            this.firstPublishedAt = LocalDateTime.now();
+            this.hasBeenPublished = true;
+        }
     }
     
     public void takeDown() {
@@ -96,12 +108,14 @@ public class Course {
     
     // Constructors
     public Course() {
+        this.hasBeenPublished = false; // Ensure it's never null
     }
     
     public Course(String title, Domain domain, Users createdBy) {
         this.title = title;
         this.domain = domain;
         this.createdBy = createdBy;
+        this.hasBeenPublished = false; // Ensure it's never null
     }
     
     // Getters and Setters
@@ -191,6 +205,22 @@ public class Course {
 
     public void setPublishedAt(LocalDateTime publishedAt) {
         this.publishedAt = publishedAt;
+    }
+    
+    public LocalDateTime getFirstPublishedAt() {
+        return firstPublishedAt;
+    }
+    
+    public void setFirstPublishedAt(LocalDateTime firstPublishedAt) {
+        this.firstPublishedAt = firstPublishedAt;
+    }
+    
+    public Boolean getHasBeenPublished() {
+        return hasBeenPublished != null ? hasBeenPublished : false;
+    }
+    
+    public void setHasBeenPublished(Boolean hasBeenPublished) {
+        this.hasBeenPublished = hasBeenPublished;
     }
 
     public Users getCreatedBy() {

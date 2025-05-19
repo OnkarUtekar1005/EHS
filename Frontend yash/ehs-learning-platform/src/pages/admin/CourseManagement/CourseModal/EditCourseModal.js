@@ -293,6 +293,7 @@ const EditCourseModal = ({ open, onClose, courseId, onSuccess }) => {
             )}
             <CourseBuilder 
               courseId={courseId} 
+              course={course}
               onUpdate={handleComponentUpdate}
               disabled={isPublished}
             />

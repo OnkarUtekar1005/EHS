@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -43,4 +44,17 @@ public interface UserCourseProgressRepository extends JpaRepository<UserCoursePr
            "AND ucp.status = :status")
     Long countByCourseIdAndStatus(@Param("courseId") UUID courseId, 
                                   @Param("status") ProgressStatus status);
+    
+    // Dashboard query methods
+    List<UserCourseProgress> findTop5ByOrderByUpdatedAtDesc();
+    
+    @Query(value = "SELECT u.username, " +
+           "COUNT(CASE WHEN ucp.status = 'COMPLETED' THEN 1 END) as completed, " +
+           "COUNT(ucp.id) as total " +
+           "FROM users u " +
+           "JOIN user_course_progress ucp ON u.id = ucp.user_id " +
+           "GROUP BY u.username " +
+           "ORDER BY completed DESC " +
+           "LIMIT :limit", nativeQuery = true)
+    List<Object[]> findTopPerformers(@Param("limit") int limit);
 }

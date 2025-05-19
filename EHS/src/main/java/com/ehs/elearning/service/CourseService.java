@@ -143,8 +143,13 @@ public class CourseService {
     
     // Publish course
     public Course publishCourse(UUID courseId) {
+        logger.info("Attempting to publish course with ID: {}", courseId);
+        
         Course course = courseRepository.findByIdWithComponents(courseId)
             .orElseThrow(() -> new RuntimeException("Course not found"));
+        
+        logger.info("Found course: {}, status: {}, hasBeenPublished: {}", 
+            course.getTitle(), course.getStatus(), course.getHasBeenPublished());
         
         // Validate course has at least one component - TEMPORARILY DISABLED FOR TESTING
         // if (course.getComponents().isEmpty()) {
@@ -152,7 +157,16 @@ public class CourseService {
         // }
         
         course.publish();
-        return courseRepository.save(course);
+        logger.info("Course publish method called, new status: {}", course.getStatus());
+        
+        try {
+            Course savedCourse = courseRepository.save(course);
+            logger.info("Course saved successfully");
+            return savedCourse;
+        } catch (Exception e) {
+            logger.error("Error saving course during publish", e);
+            throw new RuntimeException("Failed to save course: " + e.getMessage(), e);
+        }
     }
     
     // Take down course

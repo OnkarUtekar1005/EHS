@@ -26,6 +26,8 @@ public class CourseResponse {
     private Double completionRate;
     private List<CourseComponent> components;
     private String enrollmentStatus;
+    private Boolean hasBeenPublished;
+    private LocalDateTime firstPublishedAt;
     
     // Constructor from Course entity
     public CourseResponse(Course course) {
@@ -41,6 +43,8 @@ public class CourseResponse {
         this.updatedAt = course.getUpdatedAt();
         this.publishedAt = course.getPublishedAt();
         this.componentCount = course.getComponents() != null ? course.getComponents().size() : 0;
+        this.hasBeenPublished = course.getHasBeenPublished() != null ? course.getHasBeenPublished() : false;
+        this.firstPublishedAt = course.getFirstPublishedAt();
     }
     
     // Nested Domain Response
@@ -201,6 +205,22 @@ public class CourseResponse {
     
     public void setEnrollmentStatus(String enrollmentStatus) {
         this.enrollmentStatus = enrollmentStatus;
+    }
+    
+    public Boolean getHasBeenPublished() {
+        return hasBeenPublished;
+    }
+    
+    public void setHasBeenPublished(Boolean hasBeenPublished) {
+        this.hasBeenPublished = hasBeenPublished;
+    }
+    
+    public LocalDateTime getFirstPublishedAt() {
+        return firstPublishedAt;
+    }
+    
+    public void setFirstPublishedAt(LocalDateTime firstPublishedAt) {
+        this.firstPublishedAt = firstPublishedAt;
     }
 
 	public CourseResponse() {

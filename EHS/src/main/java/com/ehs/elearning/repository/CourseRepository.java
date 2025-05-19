@@ -48,4 +48,7 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
     
     // Simple find all courses
     Page<Course> findAll(Pageable pageable);
+    
+    // Dashboard statistics methods
+    List<Course> findTop5ByOrderByCreatedAtDesc();
 }

@@ -9,7 +9,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Chip
+  Chip,
+  Alert
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -23,7 +24,7 @@ import ComponentList from './ComponentList';
 import AssessmentForm from './ComponentForm/AssessmentForm';
 import MaterialForm from './ComponentForm/MaterialForm';
 
-const CourseBuilder = ({ courseId, onUpdate }) => {
+const CourseBuilder = ({ courseId, course, onUpdate }) => {
   const [components, setComponents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
@@ -95,6 +96,12 @@ const CourseBuilder = ({ courseId, onUpdate }) => {
   };
 
   const handleDeleteComponent = async (componentId) => {
+    // Check if course has been published
+    if (course?.hasBeenPublished) {
+      alert('Cannot delete components from a course that has been previously published. You can only modify existing components.');
+      return;
+    }
+
     if (!window.confirm('Are you sure you want to delete this component?')) {
       return;
     }
@@ -105,6 +112,7 @@ const CourseBuilder = ({ courseId, onUpdate }) => {
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Error deleting component:', error);
+      alert(error.response?.data?.message || 'Error deleting component');
     }
   };
 
@@ -117,6 +125,14 @@ const CourseBuilder = ({ courseId, onUpdate }) => {
           componentData
         );
       } else {
+        // Check if course has been published before adding new component
+        if (course?.hasBeenPublished) {
+          alert('Cannot add new components to a course that has been previously published. You can only modify existing components.');
+          setOpenAddDialog(false);
+          setEditingComponent(null);
+          setSelectedType(null);
+          return;
+        }
         // Add new component
         await api.post(`/v2/admin/courses/${courseId}/components`, componentData);
       }
@@ -128,6 +144,7 @@ const CourseBuilder = ({ courseId, onUpdate }) => {
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Error saving component:', error);
+      alert(error.response?.data?.message || 'Error saving component');
     }
   };
 
@@ -149,6 +166,11 @@ const CourseBuilder = ({ courseId, onUpdate }) => {
 
   return (
     <Box sx={{ mt: 4 }}>
+      {course?.hasBeenPublished && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          This course has been previously published. You can only modify existing components, not add or delete components.
+        </Alert>
+      )}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6">Course Components</Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -156,6 +178,7 @@ const CourseBuilder = ({ courseId, onUpdate }) => {
             startIcon={<AddIcon />}
             variant="outlined"
             size="small"
+            disabled={course?.hasBeenPublished}
             onClick={() => handleAddComponent('PRE_ASSESSMENT')}
           >
             Pre-Assessment
@@ -164,6 +187,7 @@ const CourseBuilder = ({ courseId, onUpdate }) => {
             startIcon={<AddIcon />}
             variant="outlined"
             size="small"
+            disabled={course?.hasBeenPublished}
             onClick={() => handleAddComponent('MATERIAL')}
           >
             Material
@@ -172,6 +196,7 @@ const CourseBuilder = ({ courseId, onUpdate }) => {
             startIcon={<AddIcon />}
             variant="outlined"
             size="small"
+            disabled={course?.hasBeenPublished}
             onClick={() => handleAddComponent('POST_ASSESSMENT')}
           >
             Post-Assessment
@@ -192,6 +217,7 @@ const CourseBuilder = ({ courseId, onUpdate }) => {
           onDelete={handleDeleteComponent}
           onMoveUp={(id) => handleMoveComponent(id, 'up')}
           onMoveDown={(id) => handleMoveComponent(id, 'down')}
+          disableDelete={course?.hasBeenPublished}
         />
       )}
 
