@@ -16,10 +16,12 @@ import {
   Cancel,
   ArrowBack,
   School,
-  Assessment as AssessmentIcon
+  Assessment as AssessmentIcon,
+  RateReview as ReviewIcon
 } from '@mui/icons-material';
 import { courseService, progressService } from '../../services/api';
 import UserAssessment from '../../components/assessment/UserAssessment';
+import AssessmentReview from '../../components/assessment/AssessmentReview';
 
 const AssessmentView = () => {
   const { courseId, componentId } = useParams();
@@ -30,6 +32,7 @@ const AssessmentView = () => {
   const [error, setError] = useState(null);
   const [assessmentCompleted, setAssessmentCompleted] = useState(false);
   const [assessmentResult, setAssessmentResult] = useState(null);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
   useEffect(() => {
     loadAssessmentData();
@@ -58,6 +61,13 @@ const AssessmentView = () => {
   };
 
   const handleAssessmentComplete = (result) => {
+    console.log('Assessment completed with result:', result);
+    // Log detailed results to help debug
+    if (result && result.detailedResults) {
+      console.log('Detailed results available:', result.detailedResults.length);
+    } else {
+      console.log('No detailed results available');
+    }
     setAssessmentResult(result);
     setAssessmentCompleted(true);
   };
@@ -190,6 +200,19 @@ const AssessmentView = () => {
                 Retry Assessment
               </Button>
             )}
+            
+            {/* Show Review button for 100% scores */}
+            {assessmentResult && assessmentResult.correctAnswers === assessmentResult.totalQuestions && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                startIcon={<ReviewIcon />}
+                onClick={() => setReviewDialogOpen(true)}
+              >
+                Review Answers
+              </Button>
+            )}
+            
             <Button
               variant="contained"
               onClick={handleContinue}
@@ -200,6 +223,14 @@ const AssessmentView = () => {
           </Box>
         </Paper>
       )}
+      
+      {/* Assessment Review Dialog */}
+      <AssessmentReview
+        open={reviewDialogOpen}
+        onClose={() => setReviewDialogOpen(false)}
+        assessmentResult={assessmentResult}
+        component={component}
+      />
     </Container>
   );
 };

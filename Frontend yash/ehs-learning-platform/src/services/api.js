@@ -260,10 +260,22 @@ export const assessmentService = {
     api.post(`/v2/user/assessments/attempts/${attemptId}/submit`, answers),
   
   // Get user attempts
-  getUserAttempts: (componentId) => api.get(`/v2/user/assessments/${componentId}/attempts`),
+  getUserAttempts: (componentId) => {
+    console.log('Fetching user attempts for component:', componentId);
+    return api.get(`/v2/user/assessments/${componentId}/attempts`);
+  },
   
   // Get latest attempt
-  getLatestAttempt: (componentId) => api.get(`/v2/user/assessments/${componentId}/latest-attempt`),
+  getLatestAttempt: (componentId) => {
+    console.log('Fetching latest attempt for component:', componentId);
+    return api.get(`/v2/user/assessments/${componentId}/latest-attempt`);
+  },
+  
+  // Get a specific attempt
+  getAttempt: (attemptId) => {
+    console.log('Fetching specific attempt:', attemptId);
+    return api.get(`/v2/user/assessments/attempts/${attemptId}`);
+  },
   
   // Check if can retry
   canRetry: (componentId) => api.get(`/v2/user/assessments/${componentId}/can-retry`),
