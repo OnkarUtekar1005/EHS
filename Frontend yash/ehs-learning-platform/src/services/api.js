@@ -284,7 +284,24 @@ export const assessmentService = {
   getIncompleteAttempts: () => api.get('/v2/user/assessments/incomplete'),
   
   // Auto-submit incomplete attempt
-  autoSubmitAttempt: (attemptId) => api.post(`/v2/user/assessments/attempts/${attemptId}/auto-submit`)
+  autoSubmitAttempt: (attemptId) => api.post(`/v2/user/assessments/attempts/${attemptId}/auto-submit`),
+  
+  // Admin assessment services
+  admin: {
+    // Get all assessment attempts with filtering
+    getAttempts: (filters) => api.get('/v2/admin/assessments/attempts', { params: filters }),
+    
+    // Get assessment summary for dashboard
+    getSummary: () => api.get('/v2/admin/assessments/summary'),
+    
+    // Reset user attempts for a component
+    resetAttempts: (componentId, userId) => 
+      api.post(`/v2/admin/assessments/${componentId}/users/${userId}/reset`),
+    
+    // Manually mark assessment as passed
+    markAsPassed: (componentId, userId, score) =>
+      api.post(`/v2/admin/assessments/${componentId}/users/${userId}/pass?score=${score}`)
+  }
 };
 
 // Material services

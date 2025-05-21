@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.LockModeType;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -93,4 +94,38 @@ public interface AssessmentAttemptRepository extends JpaRepository<AssessmentAtt
     
     Optional<AssessmentAttempt> findByUserIdAndComponentIdAndAttemptNumber(
         UUID userId, UUID componentId, Integer attemptNumber);
+        
+    // Admin functionality methods
+    @Query("SELECT a FROM AssessmentAttempt a ORDER BY a.startedAt DESC")
+    List<AssessmentAttempt> findAllOrderByStartedAtDesc();
+    
+    @Query("SELECT a FROM AssessmentAttempt a WHERE a.user.id = :userId ORDER BY a.startedAt DESC")
+    List<AssessmentAttempt> findByUserIdOrderByStartedAtDesc(@Param("userId") UUID userId);
+    
+    @Query("SELECT a FROM AssessmentAttempt a WHERE a.component.id = :componentId ORDER BY a.startedAt DESC")
+    List<AssessmentAttempt> findByComponentIdOrderByStartedAtDesc(@Param("componentId") UUID componentId);
+    
+    // Count methods for dashboard
+    Long countByPassedTrue();
+    Long countByPassedFalse();
+    
+    // Top failing components
+    @Query(value = 
+        "SELECT c.id as componentId, " +
+        "c.data->>'title' as componentTitle, " +
+        "co.id as courseId, " +
+        "co.title as courseTitle, " +
+        "COUNT(a.id) as attemptCount, " +
+        "COUNT(CASE WHEN a.passed = false THEN 1 END) as failCount, " +
+        "ROUND(COUNT(CASE WHEN a.passed = false THEN 1 END) * 100.0 / COUNT(a.id), 2) as failRate " +
+        "FROM assessment_attempt a " +
+        "JOIN course_component c ON a.component_id = c.id " +
+        "JOIN course co ON c.course_id = co.id " +
+        "WHERE a.submitted_at IS NOT NULL " +
+        "GROUP BY c.id, c.data->>'title', co.id, co.title " +
+        "HAVING COUNT(a.id) >= 5 " +
+        "ORDER BY failRate DESC " +
+        "LIMIT 10", 
+        nativeQuery = true)
+    List<Map<String, Object>> findTopFailingComponents();
 }
