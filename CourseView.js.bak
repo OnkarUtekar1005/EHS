@@ -1,0 +1,1060 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Box,
+  LinearProgress,
+  Stepper,
+  Step,
+  StepLabel,
+  StepContent,
+  Alert,
+  CircularProgress,
+  Chip,
+  IconButton,
+  Tooltip,
+  Paper,
+  Divider,
+  Avatar
+} from '@mui/material';
+import {
+  PlayArrow,
+  CheckCircle,
+  Assignment,
+  School,
+  Lock,
+  Refresh,
+  ArrowBack,
+  RateReview as ReviewIcon,
+  Timer,
+  Info as InfoIcon,
+  MenuBook
+} from '@mui/icons-material';
+import { courseService, progressService, assessmentService } from '../../services/api';
+import CourseHorizontalMilestone from '../../components/progress/CourseHorizontalMilestone';
+import AssessmentReview from '../../components/assessment/AssessmentReview';
+
+const CourseView = () => {
+  const { courseId } = useParams();
+  const navigate = useNavigate();
+  const [course, setCourse] = useState(null);
+  const [courseProgress, setCourseProgress] = useState(null);
+  const [componentProgress, setComponentProgress] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [enrolling, setEnrolling] = useState(false);
+  const [justEnrolled, setJustEnrolled] = useState(false);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [currentReviewComponent, setCurrentReviewComponent] = useState(null);
+  const [assessmentResult, setAssessmentResult] = useState(null);
+  const [loadingReview, setLoadingReview] = useState(false);
+  const [activeComponent, setActiveComponent] = useState(null);
+
+  useEffect(() => {
+    loadCourseData();
+  }, [courseId]);
+
+  const loadCourseData = async () => {
+    try {
+      setLoading(true);
+      // Get course details
+      const courseResponse = await courseService.getUserCourseById(courseId);
+      setCourse(courseResponse.data);
+
+      // Get progress data
+      try {
+        const progressResponse = await progressService.getCourseProgress(courseId);
+        setCourseProgress(progressResponse.data.courseProgress);
+
+        // Map component progress with course components
+        const progressMap = {};
+        progressResponse.data.componentProgresses.forEach(cp => {
+          progressMap[cp.componentId] = cp;
+        });
+
+        // Create component progress array with all course components
+        const mappedProgress = courseResponse.data.components.map(component => {
+          const progress = progressMap[component.id] || {
+            status: 'NOT_STARTED',
+            progressPercentage: 0,
+            score: null,
+            attempts: 0,
+            timeSpentSeconds: 0
+          };
+
+          // Ensure componentTitle is included from either progress or component
+          const componentTitle = progress.componentTitle || component.data?.title || component.type;
+
+          return {
+            id: component.id,
+            componentId: component.id,
+            componentType: component.type,
+            componentTitle: componentTitle,
+            order: component.order,
+            ...progress,
+            componentTitle: componentTitle // Ensure the title is not overwritten by spread operator
+          };
+        }).sort((a, b) => a.order - b.order);
+
+        // Find active component (in-progress or first not started)
+        const inProgress = mappedProgress.find(c => c.status === 'IN_PROGRESS');
+        if (inProgress) {
+          setActiveComponent(inProgress.componentId);
+        } else {
+          const notStarted = mappedProgress.find(c => c.status === 'NOT_STARTED');
+          if (notStarted) {
+            setActiveComponent(notStarted.componentId);
+          }
+        }
+
+        setComponentProgress(mappedProgress);
+      } catch (progressErr) {
+        // Not enrolled yet, show components without progress
+        if (progressErr.response?.status === 404) {
+          const defaultProgress = courseResponse.data.components.map(component => ({
+            id: component.id,
+            componentId: component.id,
+            componentType: component.type,
+            componentTitle: component.data?.title || component.type,
+            order: component.order,
+            status: 'NOT_STARTED',
+            progressPercentage: 0,
+            score: null,
+            attempts: 0,
+            timeSpentSeconds: 0
+          })).sort((a, b) => a.order - b.order);
+
+          setComponentProgress(defaultProgress);
+        } else {
+          throw progressErr;
+        }
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load course');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEnroll = async () => {
+    try {
+      setEnrolling(true);
+      await progressService.enrollInCourse(courseId);
+      // Add a small delay to ensure enrollment is fully processed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setJustEnrolled(true);
+      await loadCourseData();
+      // Clear the justEnrolled flag after a delay
+      setTimeout(() => setJustEnrolled(false), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to enroll');
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  const handleStartComponent = async (componentId, componentType) => {
+    // Navigate based on component type
+    switch (componentType) {
+      case 'PRE_ASSESSMENT':
+      case 'POST_ASSESSMENT':
+        navigate(`/course/${courseId}/assessment/${componentId}`);
+        break;
+      case 'MATERIAL':
+        navigate(`/course/${courseId}/material/${componentId}`);
+        break;
+      default:
+        console.error('Unknown component type:', componentType);
+    }
+  };
+
+  // Function to handle the Continue Course button click
+  const handleContinueCourse = () => {
+    // Always prioritize in-progress components
+    const inProgress = componentProgress.find(c => c.status === 'IN_PROGRESS');
+    if (inProgress) {
+      const component = course.components.find(c => c.id === inProgress.componentId);
+      if (component) {
+        // Navigate to the in-progress component
+        handleStartComponent(component.id, component.type);
+        return;
+      }
+    }
+
+    // If no components are in progress, find the first component that isn't completed
+    // We only want to find the first unlocked component that isn't completed
+
+    // First, try to find the first unlocked not-started component
+    let foundNextAvailable = false;
+    let nextComponentToStart = null;
+
+    // Loop through components in order
+    for (let i = 0; i < componentProgress.length; i++) {
+      const comp = componentProgress[i];
+
+      if (comp.status === 'COMPLETED') {
+        // This component is completed, so the next one would be unlocked
+        continue;
+      }
+
+      if (comp.status !== 'COMPLETED') {
+        // Found a non-completed component
+
+        // Check if this is the very first component (always unlocked)
+        if (i === 0) {
+          nextComponentToStart = comp;
+          break;
+        }
+
+        // Check if the previous component is completed (which means this one is unlocked)
+        const prevComponentCompleted = i > 0 && componentProgress[i-1].status === 'COMPLETED';
+        if (prevComponentCompleted) {
+          nextComponentToStart = comp;
+          break;
+        }
+
+        // If we're here, the component is locked
+        break;
+      }
+    }
+
+    if (nextComponentToStart) {
+      const component = course.components.find(c => c.id === nextComponentToStart.componentId);
+      if (component) {
+        handleStartComponent(component.id, component.type);
+      }
+    }
+  };
+
+  // Handle milestone component click
+  const handleMilestoneClick = (componentData) => {
+    // Find the component in the course components
+    const component = course.components.find(c => c.id === componentData.componentId);
+    if (component) {
+      handleStartComponent(component.id, component.type);
+    }
+  };
+
+  // Function to handle the review button click
+  const handleReviewComponent = async (componentId, componentType, componentProgress) => {
+    try {
+      console.log('Review button clicked for component:', componentId, 'type:', componentType);
+
+      // Prevent multiple clicks
+      if (loadingReview) {
+        console.log('Already loading, ignoring click');
+        return;
+      }
+
+      setLoadingReview(true);
+
+      // Find the component in the course
+      const componentData = course.components.find(c => c.id === componentId);
+      if (!componentData) {
+        console.error('Component not found in course data');
+        throw new Error('Component not found');
+      }
+
+      console.log('Found component data:', componentData);
+
+      // First show the dialog with the component data, we'll load the attempt data asynchronously
+      setCurrentReviewComponent(componentData);
+      setReviewDialogOpen(true);
+
+      // Only handle assessment reviews for now
+      if (componentType === 'PRE_ASSESSMENT' || componentType === 'POST_ASSESSMENT') {
+        // Create a mock assessment result with basic info in case we can't load detailed data
+        const mockResult = {
+          score: componentProgress.score || 100,
+          passed: true,
+          correctAnswers: 'N/A',
+          totalQuestions: 'N/A',
+          detailedResults: []
+        };
+
+        // Set the mock result first, then try to load the real data
+        setAssessmentResult(mockResult);
+
+        console.log('Fetching latest attempt for assessment component');
+        try {
+          // Fetch the latest assessment attempt for this component
+          const response = await assessmentService.getLatestAttempt(componentId);
+          console.log('Latest attempt response:', response);
+
+          if (response && response.data) {
+            console.log('Setting assessment result from latest attempt:', response.data);
+            setAssessmentResult(response.data);
+          } else {
+            console.warn('No data found in latest attempt response, trying all attempts');
+            throw new Error('No data in latest attempt');
+          }
+        } catch (apiError) {
+          console.error('API error getting latest attempt:', apiError);
+          // Try getting all attempts as fallback
+          try {
+            console.log('Trying to get all attempts as fallback');
+            const attemptsResponse = await assessmentService.getUserAttempts(componentId);
+            console.log('All attempts response:', attemptsResponse);
+
+            if (attemptsResponse && attemptsResponse.data && attemptsResponse.data.length > 0) {
+              // Get the most recent attempt
+              const latestAttempt = attemptsResponse.data.sort((a, b) =>
+                new Date(b.submittedAt || b.createdAt) - new Date(a.submittedAt || a.createdAt)
+              )[0];
+
+              console.log('Using latest attempt from list:', latestAttempt);
+
+              // If we got an attempt ID but no detailed results, try to fetch the specific attempt
+              if (latestAttempt.id && (!latestAttempt.detailedResults || latestAttempt.detailedResults.length === 0)) {
+                try {
+                  console.log('Attempt found but no detailed results, fetching specific attempt:', latestAttempt.id);
+                  const attemptResponse = await assessmentService.getAttempt(latestAttempt.id);
+
+                  if (attemptResponse && attemptResponse.data) {
+                    console.log('Got detailed attempt data:', attemptResponse.data);
+                    setAssessmentResult(attemptResponse.data);
+                  } else {
+                    console.warn('No detailed data in specific attempt response, using basic attempt data');
+                    setAssessmentResult(latestAttempt);
+                  }
+                } catch (attemptError) {
+                  console.error('Error fetching specific attempt:', attemptError);
+                  setAssessmentResult(latestAttempt);
+                }
+              } else {
+                setAssessmentResult(latestAttempt);
+              }
+            } else {
+              console.warn('No assessment attempts found in the fallback request');
+              // Keep using the mock result
+            }
+          } catch (fallbackError) {
+            console.error('Fallback attempt also failed:', fallbackError);
+            // Keep using the mock result
+          }
+        }
+      } else if (componentType === 'MATERIAL') {
+        // For materials, just navigate to the material view
+        console.log('Navigating to material view');
+        setReviewDialogOpen(false); // Close dialog before navigating
+        navigate(`/course/${courseId}/material/${componentId}`);
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || 'Failed to load review data';
+      console.error('Error in handleReviewComponent:', errorMessage, err);
+      setError(errorMessage);
+
+      // Keep the dialog open with error state instead of showing an alert
+      if (!reviewDialogOpen) {
+        setReviewDialogOpen(true);
+      }
+
+      // Create error result to display in the dialog
+      setAssessmentResult({
+        error: true,
+        errorMessage: errorMessage
+      });
+    } finally {
+      setLoadingReview(false);
+    }
+  };
+
+  const getComponentIcon = (type) => {
+    switch (type) {
+      case 'PRE_ASSESSMENT':
+      case 'POST_ASSESSMENT':
+        return <Assignment />;
+      case 'MATERIAL':
+        return <MenuBook />;
+      default:
+        return <PlayArrow />;
+    }
+  };
+
+  const getStatusChip = (status) => {
+    switch (status) {
+      case 'COMPLETED':
+        return <Chip icon={<CheckCircle />} label="Completed" color="success" size="small" />;
+      case 'IN_PROGRESS':
+        return <Chip label="In Progress" color="primary" size="small" />;
+      case 'FAILED':
+        return <Chip label="Failed" color="error" size="small" />;
+      default:
+        return <Chip label="Not Started" size="small" />;
+    }
+  };
+
+  // Format time for display
+  const formatTime = (seconds) => {
+    if (!seconds) return '0m';
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  };
+
+  // Calculate how many components are available to start (not locked)
+  const getAvailableComponentsCount = () => {
+    if (!isEnrolled || componentProgress.length === 0) return 0;
+    
+    let availableCount = 0;
+    let prevComponentCompleted = true; // First component is always available
+    
+    for (const comp of componentProgress) {
+      if (prevComponentCompleted || comp.status !== 'NOT_STARTED') {
+        availableCount++;
+      }
+      prevComponentCompleted = comp.status === 'COMPLETED';
+    }
+    
+    return availableCount;
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Alert severity="error">{error}</Alert>
+        <Button variant="contained" onClick={() => navigate('/my-courses')} sx={{ mt: 2 }}>
+          Back to Courses
+        </Button>
+      </Container>
+    );
+  }
+
+  const isEnrolled = courseProgress !== null;
+
+  return (
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
+      {/* Back button and page title */}
+      <Box display="flex" alignItems="center" mb={3}>
+        <Button 
+          startIcon={<ArrowBack />} 
+          onClick={() => navigate('/my-courses')}
+          sx={{ mr: 2, fontWeight: 500 }}
+          variant="text"
+          color="primary"
+        >
+          Back to My Courses
+        </Button>
+      </Box>
+
+      {/* Course Header Card */}
+      <Card 
+        elevation={2} 
+        sx={{ 
+          mb: 4, 
+          overflow: 'hidden', 
+          borderRadius: '12px',
+          border: '1px solid',
+          borderColor: 'divider'
+        }}
+      >
+        <Box sx={{ 
+          p: { xs: 3, md: 4 },
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <Grid container spacing={4}>
+            {/* Course Information */}
+            <Grid item xs={12} md={7}>
+              <Typography variant="h4" component="h1" fontWeight="600" gutterBottom>
+                {course?.title}
+              </Typography>
+              
+              <Box display="flex" gap={1} flexWrap="wrap" mb={2.5}>
+                {course?.domain?.name && (
+                  <Chip 
+                    label={course.domain.name} 
+                    color="primary" 
+                    size="small"
+                  />
+                )}
+                {course?.timeLimit && (
+                  <Chip
+                    icon={<Timer fontSize="small" />}
+                    label={`${course.timeLimit} min`}
+                    variant="outlined"
+                    size="small"
+                  />
+                )}
+                {course?.passingScore && (
+                  <Chip
+                    icon={<InfoIcon fontSize="small" />}
+                    label={`Passing: ${course.passingScore}%`}
+                    variant="outlined"
+                    size="small"
+                  />
+                )}
+              </Box>
+              
+              <Typography variant="body1" color="text.secondary">
+                {course?.description}
+              </Typography>
+            </Grid>
+
+            {/* Progress Summary Widget */}
+            <Grid item xs={12} md={5} sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box 
+                sx={{ 
+                  bgcolor: 'background.paper', 
+                  p: 3,
+                  borderRadius: '8px',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                {isEnrolled ? (
+                  <Grid container spacing={3} alignItems="center">
+                    <Grid item xs={12} sm={6} md={5} sx={{ textAlign: 'center' }}>
+                      <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                        <CircularProgress 
+                          variant="determinate" 
+                          value={courseProgress?.overallProgress || 0} 
+                          size={90} 
+                          thickness={4}
+                          sx={{ color: 'primary.main' }}
+                        />
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            bottom: 0,
+                            right: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Typography variant="h5" component="div" fontWeight="bold">
+                            {Math.round(courseProgress?.overallProgress || 0)}%
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Grid>
+                    
+                    <Grid item xs={12} sm={6} md={7}>
+                      <Typography variant="h6" fontWeight="600" gutterBottom>
+                        Your Progress
+                      </Typography>
+                      
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="body2" sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Components completed:</span>
+                          <Box component="span" fontWeight="medium">{courseProgress?.completedComponents || 0} of {course?.components?.length || 0}</Box>
+                        </Typography>
+                        
+                        <Typography variant="body2" sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                          <span>Available to start:</span>
+                          <Box component="span" fontWeight="medium">{getAvailableComponentsCount()}</Box>
+                        </Typography>
+                        
+                        {courseProgress?.status === 'COMPLETED' && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                            <CheckCircle color="success" sx={{ mr: 0.5, fontSize: 18 }} />
+                            <Typography variant="body2" color="success.main" fontWeight="medium">
+                              Course Completed
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                      
+                      {courseProgress?.status !== 'COMPLETED' && (
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          fullWidth
+                          onClick={handleContinueCourse}
+                          startIcon={<PlayArrow />}
+                        >
+                          Continue Learning
+                        </Button>
+                      )}
+                    </Grid>
+                  </Grid>
+                ) : (
+                  <Box sx={{ width: '100%', textAlign: 'center' }}>
+                    <Typography variant="h6" fontWeight="600" gutterBottom>
+                      Ready to start learning?
+                    </Typography>
+                    
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      Enroll to track your progress and complete this course
+                    </Typography>
+                    
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="large"
+                      fullWidth
+                      onClick={handleEnroll}
+                      disabled={enrolling}
+                    >
+                      {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+        
+        {/* Course Stats Summary */}
+        {isEnrolled && (
+          <Box sx={{ 
+            display: 'flex', 
+            bgcolor: 'grey.50', 
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            px: { xs: 3, md: 4 },
+            py: 2
+          }}>
+            <Grid container spacing={2}>
+              <Grid item xs={4} md={3}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Total Time Spent
+                  </Typography>
+                  <Typography variant="h6" fontWeight="medium">
+                    {formatTime(courseProgress?.totalTimeSpentSeconds || 0)}
+                  </Typography>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={4} md={3}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Components
+                  </Typography>
+                  <Typography variant="h6" fontWeight="medium">
+                    {course?.components?.length || 0}
+                  </Typography>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={4} md={3}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Assessments
+                  </Typography>
+                  <Typography variant="h6" fontWeight="medium">
+                    {course?.components?.filter(c => 
+                      c.type === 'PRE_ASSESSMENT' || c.type === 'POST_ASSESSMENT'
+                    ).length || 0}
+                  </Typography>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} md={3}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Progress Status
+                  </Typography>
+                  <Typography variant="h6" fontWeight="medium" color={
+                    courseProgress?.status === 'COMPLETED' ? 'success.main' :
+                    courseProgress?.overallProgress > 0 ? 'primary.main' : 'text.primary'
+                  }>
+                    {courseProgress?.status === 'COMPLETED' ? 'Completed' :
+                     courseProgress?.overallProgress > 0 ? 'In Progress' : 'Not Started'}
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+        )}
+      </Card>
+
+      {/* Course Content Section */}
+      <Grid container spacing={4}>
+        {/* Content List */}
+        <Grid item xs={12} md={8}>
+          <Card 
+            elevation={2} 
+            sx={{ 
+              p: { xs: 2, md: 3 }, 
+              borderRadius: '12px',
+              border: '1px solid',
+              borderColor: 'divider'
+            }}
+          >
+            <Typography variant="h5" component="h2" fontWeight="600" gutterBottom>
+              Course Content
+            </Typography>
+            
+            <Divider sx={{ mb: 3 }} />
+            
+            {course?.components?.length === 0 ? (
+              <Typography>No content available for this course yet.</Typography>
+            ) : (
+              <Stepper orientation="vertical" activeStep={-1} sx={{ ml: -1 }}>
+                {course.components.map((component, index) => {
+                  // Find matching progress if enrolled
+                  let comp = {
+                    componentId: component.id,
+                    componentType: component.type,
+                    componentTitle: component.data?.title || component.type,
+                    status: 'NOT_STARTED',
+                    progressPercentage: 0,
+                    score: null,
+                    attempts: 0,
+                    timeSpentSeconds: 0
+                  };
+
+                  if (isEnrolled && componentProgress.length > 0) {
+                    const found = componentProgress.find(cp => cp.componentId === component.id);
+                    if (found) {
+                      comp = { ...comp, ...found };
+                    }
+                  }
+
+                  // Check if this component is locked
+                  let isLocked = false;
+                  if (isEnrolled && index > 0 && comp.status === 'NOT_STARTED') {
+                    // Check if previous component is completed
+                    const prevComponent = componentProgress[index - 1];
+                    isLocked = !prevComponent || prevComponent.status !== 'COMPLETED';
+                  }
+
+                  // Always allow first component or if already started/completed
+                  const canStart = index === 0 || !isLocked || comp.status !== 'NOT_STARTED';
+
+                  // Check if this is the active component
+                  const isActive = component.id === activeComponent;
+
+                  return (
+                    <Step key={component.id} expanded={true} active={isActive}>
+                      <StepLabel
+                        StepIconComponent={() => (
+                          <Avatar
+                            sx={{
+                              bgcolor: comp.status === 'COMPLETED'
+                                ? 'success.main'
+                                : comp.status === 'IN_PROGRESS'
+                                  ? 'primary.main'
+                                  : isLocked
+                                    ? 'grey.300'
+                                    : 'primary.light',
+                              width: 32,
+                              height: 32
+                            }}
+                          >
+                            {comp.status === 'COMPLETED' ? (
+                              <CheckCircle fontSize="small" />
+                            ) : isLocked ? (
+                              <Lock fontSize="small" />
+                            ) : (
+                              getComponentIcon(component.type)
+                            )}
+                          </Avatar>
+                        )}
+                      >
+                        <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                          <Typography
+                            variant="subtitle1"
+                            sx={{ 
+                              fontWeight: isActive ? '600' : '500',
+                              color: isLocked ? 'text.disabled' : 'text.primary'
+                            }}
+                          >
+                            {comp.componentTitle}
+                          </Typography>
+                          {isEnrolled && getStatusChip(comp.status)}
+                        </Box>
+                      </StepLabel>
+                      <StepContent>
+                        <Box 
+                          sx={{ 
+                            ml: 1, 
+                            pl: 2, 
+                            py: 2,
+                            borderLeft: '1px solid',
+                            borderColor: 'divider'
+                          }}
+                        >
+                          <Grid container spacing={2} alignItems="center">
+                            <Grid item xs={12} sm={8}>
+                              <Typography 
+                                variant="body2" 
+                                color="text.secondary"
+                                sx={{
+                                  mb: 1,
+                                  textTransform: 'capitalize',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 0.5
+                                }}
+                              >
+                                {getComponentIcon(component.type)}
+                                {component.type.replace('_', ' ').toLowerCase()}
+                              </Typography>
+
+                              {isEnrolled && (
+                                <Box sx={{ mt: 1.5 }}>
+                                  <Grid container spacing={2}>
+                                    {comp.score !== null && (
+                                      <Grid item>
+                                        <Typography variant="body2" display="flex" alignItems="center">
+                                          <Box component="span" sx={{ fontWeight: 'medium', mr: 0.5 }}>Score:</Box>
+                                          {comp.score}%
+                                        </Typography>
+                                      </Grid>
+                                    )}
+                                    
+                                    {comp.attempts > 0 && (
+                                      <Grid item>
+                                        <Typography variant="body2" display="flex" alignItems="center">
+                                          <Box component="span" sx={{ fontWeight: 'medium', mr: 0.5 }}>Attempts:</Box>
+                                          {comp.attempts}
+                                        </Typography>
+                                      </Grid>
+                                    )}
+                                    
+                                    {comp.timeSpentSeconds > 0 && (
+                                      <Grid item>
+                                        <Typography variant="body2" display="flex" alignItems="center">
+                                          <Box component="span" sx={{ fontWeight: 'medium', mr: 0.5 }}>Time:</Box>
+                                          {formatTime(comp.timeSpentSeconds)}
+                                        </Typography>
+                                      </Grid>
+                                    )}
+                                  </Grid>
+                                </Box>
+                              )}
+
+                              {/* Show progress bar for in-progress components */}
+                              {comp.status === 'IN_PROGRESS' && comp.progressPercentage > 0 && (
+                                <Box mt={2}>
+                                  <Box display="flex" justifyContent="space-between" mb={0.5}>
+                                    <Typography variant="caption" color="text.secondary">
+                                      Progress
+                                    </Typography>
+                                    <Typography variant="caption" fontWeight="bold">
+                                      {Math.round(comp.progressPercentage)}%
+                                    </Typography>
+                                  </Box>
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={comp.progressPercentage}
+                                    sx={{ height: 4, borderRadius: 2 }}
+                                  />
+                                </Box>
+                              )}
+                            </Grid>
+
+                            <Grid item xs={12} sm={4} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              {isEnrolled ? (
+                                canStart ? (
+                                  <>
+                                    {comp.status === 'COMPLETED' ? (
+                                      <Button
+                                        variant="outlined"
+                                        color="success"
+                                        startIcon={<ReviewIcon />}
+                                        onClick={() => handleReviewComponent(component.id, component.type, comp)}
+                                        disabled={loadingReview}
+                                        size="small"
+                                        sx={{ minWidth: '100px' }}
+                                      >
+                                        {loadingReview ? 'Loading...' : 'Review'}
+                                      </Button>
+                                    ) : comp.status === 'FAILED' && (component.type === 'PRE_ASSESSMENT' || component.type === 'POST_ASSESSMENT') ? (
+                                      comp.attempts >= 3 ? (
+                                        <Tooltip title="Maximum attempts reached">
+                                          <span>
+                                            <Button
+                                              variant="outlined"
+                                              color="error"
+                                              size="small"
+                                              disabled={true}
+                                              sx={{ minWidth: '100px' }}
+                                            >
+                                              No attempts left
+                                            </Button>
+                                          </span>
+                                        </Tooltip>
+                                      ) : (
+                                        <Button
+                                          variant="contained"
+                                          color="primary"
+                                          startIcon={<Refresh />}
+                                          onClick={() => handleStartComponent(component.id, component.type)}
+                                          disabled={justEnrolled}
+                                          size="small"
+                                          sx={{ minWidth: '100px' }}
+                                        >
+                                          Re-attempt ({3 - comp.attempts} left)
+                                        </Button>
+                                      )
+                                    ) : (
+                                      <Button
+                                        variant="contained"
+                                        startIcon={comp.status === 'IN_PROGRESS' ? <PlayArrow /> : <PlayArrow />}
+                                        onClick={() => handleStartComponent(component.id, component.type)}
+                                        disabled={justEnrolled}
+                                        size="small"
+                                        color={comp.status === 'IN_PROGRESS' ? 'primary' : 'primary'}
+                                        sx={{ minWidth: '100px' }}
+                                      >
+                                        {justEnrolled ? 'Loading...' :
+                                         comp.status === 'IN_PROGRESS' ? 'Continue' : 'Start'}
+                                      </Button>
+                                    )}
+                                  </>
+                                ) : (
+                                  <Tooltip title="Complete previous components first">
+                                    <span>
+                                      <Button
+                                        variant="outlined"
+                                        disabled
+                                        size="small"
+                                        sx={{ minWidth: '100px' }}
+                                      >
+                                        Locked
+                                      </Button>
+                                    </span>
+                                  </Tooltip>
+                                )
+                              ) : (
+                                <Tooltip title="Enroll in the course to access content">
+                                  <span>
+                                    <Button
+                                      variant="outlined"
+                                      disabled
+                                      size="small"
+                                      sx={{ minWidth: '100px' }}
+                                    >
+                                      Enroll to access
+                                    </Button>
+                                  </span>
+                                </Tooltip>
+                              )}
+                            </Grid>
+                          </Grid>
+                        </Box>
+                      </StepContent>
+                    </Step>
+                  );
+                })}
+              </Stepper>
+            )}
+          </Card>
+        </Grid>
+
+        {/* Course Information */}
+        <Grid item xs={12} md={4}>
+          <Card
+            elevation={2}
+            sx={{
+              p: { xs: 2, md: 3 },
+              borderRadius: '12px',
+              border: '1px solid',
+              borderColor: 'divider',
+              height: '100%'
+            }}
+          >
+            <Typography variant="h5" component="h2" fontWeight="600" gutterBottom>
+              Course Information
+            </Typography>
+
+            <Divider sx={{ mb: 3 }} />
+
+            <Box>
+              <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+                {isEnrolled
+                  ? "View your progress through the course with the milestone track below."
+                  : "Enroll to access course components and track your progress."}
+
+                <Box sx={{ mt: 4, bgcolor: 'primary.50', p: 2, borderRadius: 2 }}>
+                  <Typography variant="subtitle2" fontWeight="medium" gutterBottom>
+                    This course includes:
+                  </Typography>
+
+                  <Box sx={{ ml: 1, mt: 1 }}>
+                    {course?.components?.filter(c => c.type === 'MATERIAL').length > 0 && (
+                      <Box display="flex" alignItems="center" gap={1} mb={1}>
+                        <MenuBook fontSize="small" color="primary" />
+                        <Typography variant="body2">
+                          {course.components.filter(c => c.type === 'MATERIAL').length} training materials
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {course?.components?.filter(c => c.type === 'PRE_ASSESSMENT' || c.type === 'POST_ASSESSMENT').length > 0 && (
+                      <Box display="flex" alignItems="center" gap={1} mb={1}>
+                        <Assignment fontSize="small" color="primary" />
+                        <Typography variant="body2">
+                          {course.components.filter(c => c.type === 'PRE_ASSESSMENT' || c.type === 'POST_ASSESSMENT').length} assessments
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {course?.timeLimit && (
+                      <Box display="flex" alignItems="center" gap={1} mb={1}>
+                        <Timer fontSize="small" color="primary" />
+                        <Typography variant="body2">
+                          {course.timeLimit} minutes completion time
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              </Box>
+            )}
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Course Milestone Component at Bottom */}
+      {isEnrolled && (
+        <Grid item xs={12} sx={{ mt: 3 }}>
+          <Box
+            sx={{
+              maxWidth: '100%',
+              overflowX: 'auto',
+              p: 1
+            }}
+          >
+            <CourseHorizontalMilestone
+              courseId={courseId}
+              course={course}
+              onComponentClick={handleMilestoneClick}
+            />
+          </Box>
+        </Grid>
+      )}
+
+      {/* Assessment Review Dialog */}
+      <AssessmentReview
+        open={reviewDialogOpen}
+        onClose={() => {
+          console.log('Closing review dialog');
+          setReviewDialogOpen(false);
+          setCurrentReviewComponent(null);
+          setAssessmentResult(null);
+        }}
+        assessmentResult={assessmentResult}
+        component={currentReviewComponent}
+      />
+    </Container>
+  );
+};
+
+export default CourseView;

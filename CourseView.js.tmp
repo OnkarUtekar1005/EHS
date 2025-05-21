@@ -1,0 +1,82 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Box,
+  LinearProgress,
+  Stepper,
+  Step,
+  StepLabel,
+  StepContent,
+  Alert,
+  CircularProgress,
+  Chip,
+  IconButton,
+  Tooltip,
+  Paper,
+  Divider,
+  Avatar
+} from '@mui/material';
+import {
+  PlayArrow,
+  CheckCircle,
+  Assignment,
+  School,
+  Lock,
+  Refresh,
+  ArrowBack,
+  RateReview as ReviewIcon,
+  Timer,
+  Info as InfoIcon,
+  MenuBook
+} from '@mui/icons-material';
+import { courseService, progressService, assessmentService } from '../../services/api';
+import CourseHorizontalMilestone from '../../components/progress/CourseHorizontalMilestone';
+import AssessmentReview from '../../components/assessment/AssessmentReview';
+
+// CourseView component unchanged until Grid container...
+
+// Now let's update the Grid container and remove Course Information section
+<Grid container spacing={4}>
+  {/* Content List - Full Width */}
+  <Grid item xs={12}>
+    <Card 
+      elevation={2} 
+      sx={{ 
+        p: { xs: 2, md: 3 }, 
+        borderRadius: '12px',
+        border: '1px solid',
+        borderColor: 'divider'
+      }}
+    >
+      <Typography variant="h5" component="h2" fontWeight="600" gutterBottom>
+        Course Content
+      </Typography>
+      
+      <Divider sx={{ mb: 3 }} />
+      
+      {/* Rest of the content list remains the same */}
+    </Card>
+  </Grid>
+</Grid>
+
+{/* Course Milestone Component at Bottom */}
+{isEnrolled && (
+  <Box sx={{ mt: 4, mb: 2, maxWidth: '100%', overflowX: 'auto' }}>
+    <Typography variant="h6" fontWeight="600" gutterBottom>
+      Course Progress Milestones
+    </Typography>
+    <CourseHorizontalMilestone
+      courseId={courseId}
+      course={course}
+      onComponentClick={handleMilestoneClick}
+    />
+  </Box>
+)}
+
+// Rest of the component remains the same
