@@ -118,9 +118,9 @@ public interface AssessmentAttemptRepository extends JpaRepository<AssessmentAtt
         "COUNT(a.id) as attemptCount, " +
         "COUNT(CASE WHEN a.passed = false THEN 1 END) as failCount, " +
         "ROUND(COUNT(CASE WHEN a.passed = false THEN 1 END) * 100.0 / COUNT(a.id), 2) as failRate " +
-        "FROM assessment_attempt a " +
-        "JOIN course_component c ON a.component_id = c.id " +
-        "JOIN course co ON c.course_id = co.id " +
+        "FROM assessment_attempts a " +
+        "JOIN course_components c ON a.component_id = c.id " +
+        "JOIN courses co ON c.course_id = co.id " +
         "WHERE a.submitted_at IS NOT NULL " +
         "GROUP BY c.id, c.data->>'title', co.id, co.title " +
         "HAVING COUNT(a.id) >= 5 " +

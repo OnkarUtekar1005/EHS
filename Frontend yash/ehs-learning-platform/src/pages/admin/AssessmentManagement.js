@@ -355,7 +355,9 @@ const AssessmentManagement = () => {
           <Grid item xs={12} md={4}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>Failed</Typography>
+                <Typography variant="h6" gutterBottom>
+                  Failed (Max Attempts)
+                </Typography>
                 <Typography variant="h3" color="error.main">
                   {summary.failedAttempts}
                 </Typography>
@@ -389,7 +391,11 @@ const AssessmentManagement = () => {
               >
                 <MenuItem value="">All</MenuItem>
                 <MenuItem value="PASSED">Passed</MenuItem>
-                <MenuItem value="FAILED">Failed</MenuItem>
+                <MenuItem value="FAILED">
+                  <Tooltip title="Users who have exhausted all 3 attempts without passing" arrow>
+                    <span>Failed (Max Attempts)</span>
+                  </Tooltip>
+                </MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -514,7 +520,21 @@ const AssessmentManagement = () => {
                     <TableCell>{attempt.componentTitle || 'N/A'}</TableCell>
                     <TableCell>{attempt.courseTitle || 'N/A'}</TableCell>
                     <TableCell>{attempt.domainName || 'N/A'}</TableCell>
-                    <TableCell>{attempt.attemptNumber} of 3</TableCell>
+                    <TableCell>
+                      {attempt.passed ? (
+                        <Typography variant="body2" color="success.main">
+                          Passed ({attempt.attemptNumber}/3)
+                        </Typography>
+                      ) : attempt.remainingAttempts === 0 ? (
+                        <Typography variant="body2" color="error.main">
+                          Exhausted (3/3)
+                        </Typography>
+                      ) : (
+                        <Typography variant="body2">
+                          {attempt.attemptNumber}/3 ({attempt.remainingAttempts} left)
+                        </Typography>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {attempt.score !== null ? `${attempt.score}%` : 
                        attempt.progressScore !== null ? `${attempt.progressScore}%` :
@@ -544,24 +564,34 @@ const AssessmentManagement = () => {
                     </TableCell>
                     <TableCell>
                       <Box display="flex" gap={1}>
-                        <Tooltip title="Reset Attempts">
-                          <IconButton 
-                            size="small" 
-                            color="warning"
-                            onClick={() => openResetModal(attempt)}
-                          >
-                            <ResetIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Mark as Passed">
-                          <IconButton 
-                            size="small" 
-                            color="success"
-                            onClick={() => openPassModal(attempt)}
-                          >
-                            <PassIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        {attempt.canAdminIntervene ? (
+                          <>
+                            <Tooltip title="Reset Attempts">
+                              <IconButton 
+                                size="small" 
+                                color="warning"
+                                onClick={() => openResetModal(attempt)}
+                              >
+                                <ResetIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Mark as Passed">
+                              <IconButton 
+                                size="small" 
+                                color="success"
+                                onClick={() => openPassModal(attempt)}
+                              >
+                                <PassIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </>
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">
+                            {attempt.passed ? 'Passed' : 
+                             attempt.remainingAttempts > 0 ? `${attempt.remainingAttempts} attempts left` : 
+                             'No actions available'}
+                          </Typography>
+                        )}
                       </Box>
                     </TableCell>
                   </TableRow>
