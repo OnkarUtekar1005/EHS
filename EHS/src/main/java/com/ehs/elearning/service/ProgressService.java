@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import com.ehs.elearning.service.CertificateService;
 
 @Service
 @Transactional
@@ -31,6 +32,9 @@ public class ProgressService {
     
     @Autowired
     private CourseComponentRepository componentRepository;
+    
+    @Autowired
+    private CertificateService certificateService;
     
     // Constants for component weights
     private static final BigDecimal PRE_ASSESSMENT_WEIGHT = new BigDecimal("20");
@@ -265,6 +269,14 @@ public class ProgressService {
         if (overallProgress.compareTo(new BigDecimal("100")) >= 0) {
             courseProgress.setStatus(ProgressStatus.COMPLETED);
             courseProgress.setCompletedDate(LocalDateTime.now());
+            
+            // Generate certificate on course completion
+            try {
+                certificateService.generateCertificate(userId, courseId);
+            } catch (Exception e) {
+                // Log the error but don't fail the progress update
+                System.err.println("Failed to generate certificate: " + e.getMessage());
+            }
         } else if (overallProgress.compareTo(BigDecimal.ZERO) > 0) {
             courseProgress.setStatus(ProgressStatus.IN_PROGRESS);
             if (courseProgress.getStartedDate() == null) {

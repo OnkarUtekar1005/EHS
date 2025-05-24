@@ -4,8 +4,10 @@ import com.ehs.elearning.model.Certificate;
 import com.ehs.elearning.model.CertificateStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,7 +34,7 @@ public interface CertificateRepository extends JpaRepository<Certificate, UUID> 
     List<Certificate> findActiveCertificatesByUserId(@Param("userId") UUID userId);
     
     @Query("SELECT COUNT(c) FROM Certificate c " +
-           "WHERE YEAR(c.issuedDate) = :year")
+           "WHERE EXTRACT(YEAR FROM c.issuedDate) = :year")
     Long countByYear(@Param("year") int year);
     
     @Query("SELECT c FROM Certificate c " +
@@ -42,4 +44,14 @@ public interface CertificateRepository extends JpaRepository<Certificate, UUID> 
     List<Certificate> findExpiredCertificates(@Param("currentDate") LocalDateTime currentDate);
     
     boolean existsByCertificateNumber(String certificateNumber);
+    
+    @Query("SELECT COUNT(c) FROM Certificate c")
+    Long countAllCertificates();
+    
+    List<Certificate> findByCourseId(UUID courseId);
+    
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Certificate c WHERE c.course.id = :courseId")
+    void deleteByCourseId(@Param("courseId") UUID courseId);
 }

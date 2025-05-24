@@ -42,6 +42,7 @@ import {
 import { courseService, progressService, assessmentService } from '../../services/api';
 import CourseHorizontalMilestone from '../../components/progress/CourseHorizontalMilestone';
 import AssessmentReview from '../../components/assessment/AssessmentReview';
+import CertificateViewer from '../../components/certificate/CertificateViewer';
 
 const CourseView = () => {
   const { courseId } = useParams();
@@ -59,10 +60,23 @@ const CourseView = () => {
   const [assessmentResult, setAssessmentResult] = useState(null);
   const [loadingReview, setLoadingReview] = useState(false);
   const [activeComponent, setActiveComponent] = useState(null);
+  const [certificateViewerOpen, setCertificateViewerOpen] = useState(false);
+  const [showCertificateOnCompletion, setShowCertificateOnCompletion] = useState(false);
 
   useEffect(() => {
+    // Reset certificate states when course changes
+    setCertificateViewerOpen(false);
+    setShowCertificateOnCompletion(false);
     loadCourseData();
   }, [courseId]);
+
+  useEffect(() => {
+    // Check if course just completed and show certificate
+    if (courseProgress?.status === 'COMPLETED' && showCertificateOnCompletion) {
+      setCertificateViewerOpen(true);
+      setShowCertificateOnCompletion(false);
+    }
+  }, [courseProgress, showCertificateOnCompletion]);
 
   const loadCourseData = async () => {
     try {
@@ -74,7 +88,14 @@ const CourseView = () => {
       // Get progress data
       try {
         const progressResponse = await progressService.getCourseProgress(courseId);
+        const previousStatus = courseProgress?.status;
         setCourseProgress(progressResponse.data.courseProgress);
+        
+        // Check if course just completed (transition from IN_PROGRESS to COMPLETED)
+        // Only show certificate if there was a previous status and it wasn't completed
+        if (previousStatus && previousStatus !== 'COMPLETED' && progressResponse.data.courseProgress.status === 'COMPLETED') {
+          setShowCertificateOnCompletion(true);
+        }
 
         // Map component progress with course components
         const progressMap = {};
@@ -789,7 +810,28 @@ const CourseView = () => {
                   </Box>
                 </Box>
 
-                {courseProgress?.status !== 'COMPLETED' && (
+                {courseProgress?.status === 'COMPLETED' ? (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => setCertificateViewerOpen(true)}
+                    startIcon={<School />}
+                    sx={{
+                      bgcolor: 'white',
+                      color: 'primary.main',
+                      fontWeight: 600,
+                      py: 1.2,
+                      px: 3,
+                      '&:hover': {
+                        bgcolor: 'rgba(255, 255, 255, 0.9)',
+                      },
+                      boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    View Certificate
+                  </Button>
+                ) : (
                   <Button
                     variant="contained"
                     color="primary"
@@ -1518,6 +1560,13 @@ const CourseView = () => {
         }}
         assessmentResult={assessmentResult}
         component={currentReviewComponent}
+      />
+
+      <CertificateViewer
+        open={certificateViewerOpen}
+        onClose={() => setCertificateViewerOpen(false)}
+        courseId={courseId}
+        courseName={course?.title}
       />
     </Container>
   );

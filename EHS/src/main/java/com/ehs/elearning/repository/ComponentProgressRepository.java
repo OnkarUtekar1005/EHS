@@ -58,4 +58,7 @@ public interface ComponentProgressRepository extends JpaRepository<ComponentProg
     @Transactional
     @Query("DELETE FROM ComponentProgress cp WHERE cp.component.id IN :componentIds")
     void deleteByComponentIds(@Param("componentIds") List<UUID> componentIds);
+    
+    @Query("SELECT cp FROM ComponentProgress cp WHERE cp.course.id = :courseId")
+    List<ComponentProgress> findByCourseId(@Param("courseId") UUID courseId);
 }

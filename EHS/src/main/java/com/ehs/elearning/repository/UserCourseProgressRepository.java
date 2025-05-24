@@ -57,4 +57,6 @@ public interface UserCourseProgressRepository extends JpaRepository<UserCoursePr
            "ORDER BY completed DESC " +
            "LIMIT :limit", nativeQuery = true)
     List<Object[]> findTopPerformers(@Param("limit") int limit);
+    
+    List<UserCourseProgress> findByCourseId(UUID courseId);
 }

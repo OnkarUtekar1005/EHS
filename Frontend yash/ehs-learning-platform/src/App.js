@@ -39,6 +39,7 @@ import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import NotFound from './pages/NotFound';
+import CertificateVerification from './pages/CertificateVerification';
 
 // Create theme
 const theme = createTheme({
@@ -130,6 +131,7 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/certificate/verify/:certificateNumber" element={<CertificateVerification />} />
         
         {/* User routes */}
         <Route 

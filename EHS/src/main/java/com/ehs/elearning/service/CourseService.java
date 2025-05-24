@@ -12,6 +12,8 @@ import com.ehs.elearning.repository.CourseRepository;
 import com.ehs.elearning.repository.DomainRepository;
 import com.ehs.elearning.repository.AssessmentAttemptRepository;
 import com.ehs.elearning.repository.ComponentProgressRepository;
+import com.ehs.elearning.repository.CertificateRepository;
+import com.ehs.elearning.repository.UserCourseProgressRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,6 +50,12 @@ public class CourseService {
     @Autowired
     private ComponentProgressRepository componentProgressRepository;
     
+    @Autowired
+    private CertificateRepository certificateRepository;
+    
+    @Autowired
+    private UserCourseProgressRepository userCourseProgressRepository;
+    
     @PersistenceContext
     private EntityManager entityManager;
     
@@ -76,69 +84,6 @@ public class CourseService {
         existingCourse.setPassingScore(updatedCourse.getPassingScore());
         
         return courseRepository.save(existingCourse);
-    }
-    
-    // Delete course
-    @Transactional(propagation = Propagation.REQUIRED)
-    public void deleteCourse(UUID courseId) {
-        logger.info("Starting deletion of course: {}", courseId);
-        
-        // Verify course exists
-        if (!courseRepository.existsById(courseId)) {
-            throw new RuntimeException("Course not found");
-        }
-        
-        try {
-            // Delete all related data using native SQL to avoid JPA cascade issues
-            
-            // 1. Delete assessment attempts
-            int deletedAttempts = entityManager.createNativeQuery(
-                "DELETE FROM assessment_attempts WHERE component_id IN " +
-                "(SELECT id FROM course_components WHERE course_id = :courseId)")
-                .setParameter("courseId", courseId)
-                .executeUpdate();
-            logger.info("Deleted {} assessment attempts", deletedAttempts);
-            
-            // 2. Delete component progress
-            int deletedProgress = entityManager.createNativeQuery(
-                "DELETE FROM component_progress WHERE component_id IN " +
-                "(SELECT id FROM course_components WHERE course_id = :courseId)")
-                .setParameter("courseId", courseId)
-                .executeUpdate();
-            logger.info("Deleted {} component progress records", deletedProgress);
-            
-            // 3. Delete user course progress if it exists
-            try {
-                int deletedUserProgress = entityManager.createNativeQuery(
-                    "DELETE FROM user_course_progress WHERE course_id = :courseId")
-                    .setParameter("courseId", courseId)
-                    .executeUpdate();
-                logger.info("Deleted {} user course progress records", deletedUserProgress);
-            } catch (Exception e) {
-                logger.debug("No user_course_progress to delete");
-            }
-            
-            // 4. Delete course components
-            int deletedComponents = entityManager.createNativeQuery(
-                "DELETE FROM course_components WHERE course_id = :courseId")
-                .setParameter("courseId", courseId)
-                .executeUpdate();
-            logger.info("Deleted {} course components", deletedComponents);
-            
-            // 5. Finally delete the course
-            int deletedCourses = entityManager.createNativeQuery(
-                "DELETE FROM courses WHERE id = :courseId")
-                .setParameter("courseId", courseId)
-                .executeUpdate();
-            logger.info("Deleted {} courses", deletedCourses);
-            
-            // Clear persistence context to avoid any cached entities
-            entityManager.clear();
-            
-        } catch (Exception e) {
-            logger.error("Error during course deletion: ", e);
-            throw new RuntimeException("Failed to delete course: " + e.getMessage(), e);
-        }
     }
     
     // Publish course
@@ -254,5 +199,59 @@ public class CourseService {
     // Get first course for debugging
     public Course getFirstCourse() {
         return courseRepository.findAll().stream().findFirst().orElse(null);
+    }
+    
+    // Delete a course and all related data
+    @Transactional
+    public void deleteCourse(UUID courseId) {
+        logger.info("Starting deletion of course: " + courseId);
+        
+        // Use the method that loads components eagerly
+        Course course = courseRepository.findByIdWithComponents(courseId)
+            .orElseThrow(() -> new RuntimeException("Course not found"));
+        
+        // Check if course is taken down
+        if (course.getStatus() != CourseStatus.DRAFT) {
+            throw new RuntimeException("Course must be taken down before deletion. Current status: " + course.getStatus());
+        }
+        
+        try {
+            // 1. Delete all certificates for this course
+            logger.info("Deleting certificates for course: " + courseId);
+            certificateRepository.deleteByCourseId(courseId);
+            
+            // 2. Delete all assessment attempts for this course's components
+            logger.info("Deleting assessment attempts for course: " + courseId);
+            List<CourseComponent> components = course.getComponents();
+            if (!components.isEmpty()) {
+                List<UUID> componentIds = components.stream()
+                    .map(CourseComponent::getId)
+                    .collect(Collectors.toList());
+                assessmentAttemptRepository.deleteByComponentIds(componentIds);
+            }
+            
+            // 3. Delete all component progress records
+            logger.info("Deleting component progress for course: " + courseId);
+            componentProgressRepository.findByCourseId(courseId)
+                .forEach(progress -> componentProgressRepository.delete(progress));
+            
+            // 4. Delete all user course progress records
+            logger.info("Deleting user course progress for course: " + courseId);
+            userCourseProgressRepository.findByCourseId(courseId)
+                .forEach(progress -> userCourseProgressRepository.delete(progress));
+            
+            // 5. Delete all course components
+            logger.info("Deleting course components for course: " + courseId);
+            componentRepository.deleteAll(components);
+            
+            // 6. Finally delete the course itself
+            logger.info("Deleting course: " + courseId);
+            courseRepository.delete(course);
+            
+            logger.info("Successfully deleted course: " + courseId);
+        } catch (Exception e) {
+            logger.error("Error deleting course: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to delete course: " + e.getMessage());
+        }
     }
 }
