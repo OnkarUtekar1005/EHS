@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            width: 297mm;
+            height: 210mm;
+            position: relative;
+            background: white;
+            overflow: hidden;
+        }
+        
+        .certificate-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            border: 8px solid #000;
+            box-sizing: border-box;
+            background: white;
+        }
+        
+        /* Geometric Background Elements - Triangular shapes like in reference */
+        .bg-triangle-tl {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 180px solid #4B398A;
+            border-bottom: 180px solid transparent;
+            z-index: 1;
+        }
+        
+        .bg-triangle-tr {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 0;
+            height: 0;
+            border-right: 180px solid #ADD8E6;
+            border-bottom: 180px solid transparent;
+            z-index: 1;
+        }
+        
+        .bg-triangle-bl {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 180px solid #ADD8E6;
+            border-top: 180px solid transparent;
+            z-index: 1;
+        }
+        
+        .bg-triangle-br {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 0;
+            height: 0;
+            border-right: 180px solid #4B398A;
+            border-top: 180px solid transparent;
+            z-index: 1;
+        }
+        
+        .content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+            width: 100%;
+            max-width: 600px;
+            margin-top: -20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .certificate-title {
+            font-size: 3.5rem;
+            font-weight: bold;
+            letter-spacing: 6px;
+            color: #000;
+            margin-bottom: 0.3rem;
+            text-transform: uppercase;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .certificate-subtitle {
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            color: #000;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .award-text {
+            font-size: 0.9rem;
+            color: #000;
+            margin-bottom: 1.2rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .recipient-name {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 1.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            line-height: 1.2;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .description {
+            font-size: 0.85rem;
+            color: #000;
+            line-height: 1.7;
+            margin: 0 auto 2.5rem auto;
+            text-align: center;
+            width: 100%;
+            padding: 0 40px;
+            box-sizing: border-box;
+        }
+        
+        .description-text {
+            display: inline-block;
+            max-width: 420px;
+            text-align: center;
+            margin: 0 auto;
+        }
+        
+        .course-name-highlight {
+            font-weight: bold;
+            color: #000;
+            background: none;
+            display: inline;
+        }
+        
+        /* Signature section - single signature centered with better spacing */
+        .signatures {
+            margin-top: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .signature {
+            text-align: center;
+            margin: 0 auto;
+        }
+        
+        .signature-line {
+            width: 160px;
+            height: 2px;
+            background: #000;
+            margin: 0 auto 12px auto;
+        }
+        
+        .signature-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #000;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        
+        .signature-title {
+            font-size: 0.85rem;
+            color: #666;
+            text-transform: capitalize;
+            font-style: italic;
+        }
+        
+        /* Footer information - made more visible and in front */
+        .certificate-id {
+            position: absolute;
+            bottom: 20px;
+            right: 40px;
+            font-size: 0.8rem;
+            color: #000;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            z-index: 100;
+        }
+        
+        .completion-date {
+            position: absolute;
+            bottom: 20px;
+            left: 40px;
+            font-size: 0.8rem;
+            color: #000;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            z-index: 100;
+        }
+        
+        /* Verification note */
+        .verification-note {
+            position: absolute;
+            top: 30px;
+            right: 50px;
+            font-size: 0.6rem;
+            color: #666;
+            text-align: center;
+            width: 80px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 3px;
+            border-radius: 3px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+        <!-- Background triangles -->
+        <div class="bg-triangle-tl"></div>
+        <div class="bg-triangle-tr"></div>
+        <div class="bg-triangle-bl"></div>
+        <div class="bg-triangle-br"></div>
+        
+        <!-- Verification note -->
+        <div class="verification-note">
+            Verify at<br/>
+            yoursite.com/verify
+        </div>
+        
+        <!-- Main content -->
+        <div class="content">
+            <div class="certificate-title">CERTIFICATE</div>
+            <div class="certificate-subtitle">OF ACHIEVEMENT</div>
+            
+            <div class="award-text">THIS CERTIFICATE IS AWARDED TO</div>
+            
+            <div class="recipient-name">{{RECIPIENT_NAME}}</div>
+            
+            <div class="description">
+                <span class="description-text">
+                    For successfully completing the comprehensive training course
+                    <span class="course-name-highlight">"{{COURSE_NAME}}"</span>
+                    and demonstrating exceptional skill and dedication in mastering
+                    Environment Health Safety protocols and practices. This achievement represents
+                    commitment to workplace safety excellence and professional development.
+                </span>
+            </div>
+            
+            <!-- Single signature centered -->
+            <div class="signatures">
+                <div class="signature">
+                    <div class="signature-line"></div>
+                    <div class="signature-name">MANISH SHILOTE</div>
+                    <div class="signature-title">Program Director</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer information positioned absolutely -->
+        <div class="completion-date">Issued: {{ISSUE_DATE}}</div>
+        <div class="certificate-id">Certificate No: {{CERTIFICATE_NUMBER}}</div>
+    </div>
+</body>
+</html>

@@ -150,6 +150,18 @@
 			<type>pom</type>
 		</dependency>
 
+		<!-- OpenHTMLtoPDF for HTML/CSS to PDF conversion -->
+		<dependency>
+			<groupId>com.openhtmltopdf</groupId>
+			<artifactId>openhtmltopdf-pdfbox</artifactId>
+			<version>1.0.10</version>
+		</dependency>
+		<dependency>
+			<groupId>com.openhtmltopdf</groupId>
+			<artifactId>openhtmltopdf-svg-support</artifactId>
+			<version>1.0.10</version>
+		</dependency>
+
 	</dependencies>
 	<build></build>
 </project>

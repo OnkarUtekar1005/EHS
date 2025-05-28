@@ -1,44 +1,23 @@
+// REPLACE YOUR EXISTING CertificateService.java WITH THIS ENHANCED VERSION
 package com.ehs.elearning.service;
 
 import com.ehs.elearning.model.*;
 import com.ehs.elearning.repository.CertificateRepository;
 import com.ehs.elearning.repository.UserCourseProgressRepository;
-import com.itextpdf.kernel.colors.ColorConstants;
-import com.itextpdf.kernel.colors.DeviceRgb;
-import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.font.PdfFontFactory;
-import com.itextpdf.kernel.geom.PageSize;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.borders.Border;
-import com.itextpdf.layout.borders.SolidBorder;
-import com.itextpdf.layout.borders.DoubleBorder;
-import com.itextpdf.layout.element.Cell;
-import com.itextpdf.layout.properties.BorderRadius;
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.element.Table;
-import com.itextpdf.layout.properties.HorizontalAlignment;
-import com.itextpdf.layout.properties.TextAlignment;
-import com.itextpdf.layout.properties.UnitValue;
-import com.itextpdf.layout.properties.VerticalAlignment;
-import com.itextpdf.io.font.constants.StandardFonts;
-import com.itextpdf.io.image.ImageData;
-import com.itextpdf.io.image.ImageDataFactory;
-import com.itextpdf.layout.element.Image;
-import com.itextpdf.barcodes.BarcodeQRCode;
-import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.PostConstruct;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,7 +33,6 @@ public class CertificateService {
     
     private static final Logger logger = Logger.getLogger(CertificateService.class.getName());
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd MMMM yyyy");
-    private static final DateTimeFormatter CERT_NUMBER_FORMAT = DateTimeFormatter.ofPattern("yyyy");
     
     @Autowired
     private CertificateRepository certificateRepository;
@@ -68,27 +46,80 @@ public class CertificateService {
     @Value("${certificate.expiry.years:1}")
     private int certificateExpiryYears;
     
-    @Value("${app.frontend.url:http://localhost:3000}")
-    private String frontendUrl;
+    // Configurable signature details - now single signature
+    @Value("${certificate.program.director.name:MANISH SHILOTE}")
+    private String programDirectorName;
+    
+    @Value("${certificate.program.director.title:Program Director}")
+    private String programDirectorTitle;
+    
+    @Value("${certificate.verification.url:yoursite.com/verify}")
+    private String verificationUrl;
+    
+    private String certificateTemplate;
     
     @PostConstruct
     public void init() {
+        logger.info("🚀 INITIALIZING ENHANCED CERTIFICATE SERVICE");
         try {
             Path certificatePath = Paths.get(certificateStoragePath);
             if (!Files.exists(certificatePath)) {
                 Files.createDirectories(certificatePath);
                 logger.info("Certificate directory created: " + certificateStoragePath);
             }
+            
+            loadCertificateTemplate();
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "Failed to create certificate directory", e);
+            logger.log(Level.SEVERE, "Failed to initialize certificate service", e);
+        }
+    }
+    
+    private void loadCertificateTemplate() throws IOException {
+        logger.info("🎨 LOADING ENHANCED CERTIFICATE TEMPLATE");
+        try {
+            ClassPathResource templateResource = new ClassPathResource("templates/certificate.html");
+            if (!templateResource.exists()) {
+                logger.severe("❌ TEMPLATE NOT FOUND: templates/certificate.html");
+                throw new IOException("Certificate template not found");
+            }
+            
+            try (InputStream inputStream = templateResource.getInputStream()) {
+                certificateTemplate = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            }
+            
+            if (certificateTemplate == null || certificateTemplate.trim().isEmpty()) {
+                throw new IOException("Certificate template is empty");
+            }
+            
+            logger.info("✅ ENHANCED TEMPLATE LOADED SUCCESSFULLY. Size: " + certificateTemplate.length() + " characters");
+            
+            // Verify critical elements from the new design
+            if (certificateTemplate.contains("bg-triangle-tl")) {
+                logger.info("✅ TRIANGULAR GEOMETRIC SHAPES FOUND IN TEMPLATE");
+            } else {
+                logger.warning("❌ TRIANGULAR GEOMETRIC SHAPES NOT FOUND");
+            }
+            
+            if (certificateTemplate.contains("MANISH SHILOTE") || certificateTemplate.contains("{{PROGRAM_DIRECTOR_NAME}}")) {
+                logger.info("✅ PROGRAM DIRECTOR SIGNATURE SECTION FOUND IN TEMPLATE");
+            } else {
+                logger.warning("❌ PROGRAM DIRECTOR SIGNATURE SECTION NOT PROPERLY CONFIGURED");
+            }
+            
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to load certificate template", e);
+            throw new IOException("Template loading failed: " + e.getMessage(), e);
         }
     }
     
     @Transactional
     public Certificate generateCertificate(UUID userId, UUID courseId) {
+        logger.info("🎯 GENERATING CERTIFICATE WITH ENHANCED DESIGN");
+        
         // Check if certificate already exists
         Optional<Certificate> existingCert = certificateRepository.findByUserIdAndCourseId(userId, courseId);
         if (existingCert.isPresent()) {
+            logger.info("Certificate already exists, returning existing one");
             return existingCert.get();
         }
         
@@ -104,62 +135,176 @@ public class CertificateService {
         // Generate certificate number
         String certificateNumber = generateCertificateNumber();
         
-        // Generate verification code
-        String verificationCode = UUID.randomUUID().toString();
-        
         // Create certificate entity
         Certificate certificate = new Certificate();
         certificate.setUser(progress.getUser());
         certificate.setCourse(progress.getCourse());
         certificate.setCertificateNumber(certificateNumber);
-        certificate.setVerificationCode(verificationCode);
+        certificate.setVerificationCode(UUID.randomUUID().toString());
         certificate.setIssuedDate(LocalDateTime.now());
         certificate.setExpiryDate(LocalDateTime.now().plusYears(certificateExpiryYears));
         certificate.setStatus(CertificateStatus.ACTIVE);
         
-        // Save certificate to database first to get ID
+        // Save certificate to database first
         certificate = certificateRepository.save(certificate);
         
-        // Generate PDF
+        // Generate PDF with enhanced design
         try {
-            String pdfPath = generateCertificatePDF(certificate);
+            logger.info("🔧 GENERATING PDF WITH ENHANCED DESIGN");
+            String pdfPath = generateEnhancedCertificatePDF(certificate);
             certificate.setFilePath(pdfPath);
             certificate = certificateRepository.save(certificate);
+            logger.info("✅ ENHANCED CERTIFICATE GENERATED SUCCESSFULLY");
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Failed to generate certificate PDF", e);
-            throw new RuntimeException("Failed to generate certificate PDF");
+            logger.log(Level.SEVERE, "❌ FAILED TO GENERATE ENHANCED CERTIFICATE", e);
+            throw new RuntimeException("Failed to generate certificate PDF: " + e.getMessage());
         }
         
         return certificate;
     }
     
+    private String generateEnhancedCertificatePDF(Certificate certificate) throws IOException {
+        logger.info("🎨 CREATING ENHANCED CERTIFICATE PDF");
+        
+        String fileName = certificate.getId() + ".pdf";
+        String filePath = certificateStoragePath + "/" + fileName;
+        
+        try {
+            // Prepare HTML content with enhanced styling
+            String htmlContent = prepareEnhancedCertificateHtml(certificate);
+            logger.info("📝 Enhanced HTML content prepared. Length: " + htmlContent.length());
+            
+            // Validate critical elements
+            validateTemplateElements(htmlContent);
+            
+            // Generate PDF using OpenHTMLtoPDF with enhanced settings
+            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                logger.info("🔧 STARTING ENHANCED PDF RENDERING");
+                
+                PdfRendererBuilder builder = new PdfRendererBuilder();
+                builder.withHtmlContent(htmlContent, null);
+                builder.useFastMode();
+                builder.useFont(() -> {
+                    try {
+                        // You can add custom fonts here if needed
+                        return CertificateService.class.getResourceAsStream("/fonts/arial.ttf");
+                    } catch (Exception e) {
+                        return null;
+                    }
+                }, "Arial");
+                builder.toStream(outputStream);
+                
+                builder.run();
+                logger.info("✅ ENHANCED PDF RENDERING COMPLETED");
+                
+                byte[] pdfData = outputStream.toByteArray();
+                if (pdfData.length == 0) {
+                    throw new IOException("Generated PDF is empty");
+                }
+                
+                // Save to file
+                try (FileOutputStream fos = new FileOutputStream(filePath)) {
+                    fos.write(pdfData);
+                }
+                
+                logger.info("✅ ENHANCED CERTIFICATE SAVED: " + filePath + " (size: " + pdfData.length + " bytes)");
+            }
+            
+            return filePath;
+            
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "❌ FAILED TO GENERATE ENHANCED CERTIFICATE", e);
+            throw new IOException("Enhanced certificate generation failed: " + e.getMessage(), e);
+        }
+    }
+    
+    private void validateTemplateElements(String htmlContent) {
+        logger.info("🔍 VALIDATING TEMPLATE ELEMENTS");
+        
+        String[] requiredElements = {
+            "bg-triangle-tl", "bg-triangle-tr", "bg-triangle-bl", "bg-triangle-br",
+            "certificate-title", "signatures", "signature-name"
+        };
+        
+        for (String element : requiredElements) {
+            if (htmlContent.contains(element)) {
+                logger.info("✅ Found required element: " + element);
+            } else {
+                logger.warning("❌ Missing required element: " + element);
+            }
+        }
+    }
+    
+    private String prepareEnhancedCertificateHtml(Certificate certificate) {
+        logger.info("📝 PREPARING ENHANCED CERTIFICATE HTML");
+        
+        // Handle null values safely
+        String firstName = certificate.getUser().getFirstName() != null ? certificate.getUser().getFirstName() : "";
+        String lastName = certificate.getUser().getLastName() != null ? certificate.getUser().getLastName() : "";
+        String fullName = (firstName + " " + lastName).trim();
+        if (fullName.isEmpty()) {
+            fullName = "Certificate Holder";
+        }
+        
+        String courseName = certificate.getCourse().getTitle() != null ? certificate.getCourse().getTitle() : "Course";
+        String issueDate = certificate.getIssuedDate().format(DATE_FORMAT);
+        String certificateNumber = certificate.getCertificateNumber() != null ? certificate.getCertificateNumber() : "";
+        
+        // Enhanced description based on course type
+        String description = generateCourseDescription(certificate.getCourse(), courseName);
+        
+        // Replace placeholders with enhanced content - ensuring proper escaping and formatting
+        String htmlContent = certificateTemplate
+                .replace("{{RECIPIENT_NAME}}", escapeHtml(fullName.toUpperCase()))
+                .replace("{{COURSE_NAME}}", escapeHtml(courseName))
+                .replace("{{ISSUE_DATE}}", escapeHtml(issueDate))
+                .replace("{{CERTIFICATE_NUMBER}}", escapeHtml(certificateNumber))
+                .replace("{{PROGRAM_DIRECTOR_NAME}}", escapeHtml(programDirectorName))
+                .replace("{{PROGRAM_DIRECTOR_TITLE}}", escapeHtml(programDirectorTitle))
+                .replace("{{VERIFICATION_URL}}", escapeHtml(verificationUrl))
+                .replace("{{COURSE_DESCRIPTION}}", escapeHtml(description));
+        
+        logger.info("✅ ENHANCED HTML PLACEHOLDERS REPLACED");
+        logger.info("📊 Final HTML length: " + htmlContent.length() + " characters");
+        return htmlContent;
+    }
+    
+    // Helper method to escape HTML special characters
+    private String escapeHtml(String text) {
+        if (text == null) return "";
+        return text.replace("&", "&amp;")
+                  .replace("<", "&lt;")
+                  .replace(">", "&gt;")
+                  .replace("\"", "&quot;")
+                  .replace("'", "&#39;");
+    }
+    
+    private String generateCourseDescription(Course course, String courseName) {
+        // Generate more specific descriptions based on course content
+        String baseDescription = "For successfully completing the comprehensive training course \"%s\" " +
+                "and demonstrating exceptional skill and dedication in mastering " +
+                "Environment Health Safety protocols and practices. This achievement represents " +
+                "commitment to workplace safety excellence and professional development.";
+        
+        return String.format(baseDescription, courseName);
+    }
+    
     private String generateCertificateNumber() {
         int year = LocalDateTime.now().getYear();
-        
-        // Try to get count by year first
         Long yearCount = certificateRepository.countByYear(year);
-        
-        // If the year-based query doesn't work, use total count as fallback
         if (yearCount == null || yearCount == 0) {
-            // Get total count of all certificates
             Long totalCount = certificateRepository.countAllCertificates();
             yearCount = (totalCount != null ? totalCount : 0L);
         }
         
-        // Start from the next number
         long sequenceNumber = yearCount + 1;
-        
-        // Generate the certificate number
         String certificateNumber = String.format("CERT-%d-%06d", year, sequenceNumber);
         
-        // Ensure uniqueness - if this number exists, keep incrementing
+        // Ensure uniqueness
         while (certificateRepository.existsByCertificateNumber(certificateNumber)) {
             sequenceNumber++;
             certificateNumber = String.format("CERT-%d-%06d", year, sequenceNumber);
-            
-            // Safety check to avoid infinite loop
             if (sequenceNumber > yearCount + 1000) {
-                // Use timestamp as last resort for uniqueness
                 certificateNumber = String.format("CERT-%d-%d", year, System.currentTimeMillis());
                 break;
             }
@@ -167,280 +312,6 @@ public class CertificateService {
         
         logger.info("Generated certificate number: " + certificateNumber);
         return certificateNumber;
-    }
-    
-    private String generateCertificatePDF(Certificate certificate) throws IOException {
-        String fileName = certificate.getId() + ".pdf";
-        String filePath = certificateStoragePath + "/" + fileName;
-        
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            PdfWriter writer = new PdfWriter(baos);
-            PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf, PageSize.A4.rotate());
-            
-            // Set tight margins to maximize space
-            document.setMargins(20, 30, 20, 30);
-            
-            // Background color for the entire certificate
-            Table backgroundTable = new Table(UnitValue.createPercentArray(1)).useAllAvailableWidth();
-            Cell backgroundCell = new Cell();
-            backgroundCell.setBackgroundColor(new DeviceRgb(252, 252, 252)); // Very light gray
-            backgroundCell.setBorder(Border.NO_BORDER);
-            backgroundCell.setPadding(0);
-            
-            // Create main content area with modern border design
-            Table mainFrame = new Table(UnitValue.createPercentArray(1)).useAllAvailableWidth();
-            Cell frameCell = new Cell();
-            frameCell.setBorder(new SolidBorder(new DeviceRgb(218, 165, 32), 2)); // Gold border
-            frameCell.setBackgroundColor(ColorConstants.WHITE);
-            frameCell.setPadding(25);
-            
-            // Add decorative elements
-            PdfFont regularFont = PdfFontFactory.createFont(StandardFonts.HELVETICA);
-            PdfFont boldFont = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
-            PdfFont italicFont = PdfFontFactory.createFont(StandardFonts.HELVETICA_OBLIQUE);
-            
-            // Top ornamental line
-            Table topLine = new Table(UnitValue.createPercentArray(new float[]{1, 2, 1})).useAllAvailableWidth();
-            Cell leftLine = new Cell().setBorder(Border.NO_BORDER);
-            Cell centerDecor = new Cell().setBorder(Border.NO_BORDER);
-            Cell rightLine = new Cell().setBorder(Border.NO_BORDER);
-            
-            // Add decorative lines
-            Paragraph leftDash = new Paragraph("━━━━━━━━━━━━━━━")
-                .setFontColor(new DeviceRgb(218, 165, 32))
-                .setTextAlignment(TextAlignment.RIGHT);
-            leftLine.add(leftDash);
-            
-            Paragraph centerStar = new Paragraph("✦")
-                .setFontColor(new DeviceRgb(218, 165, 32))
-                .setFontSize(20)
-                .setTextAlignment(TextAlignment.CENTER);
-            centerDecor.add(centerStar);
-            
-            Paragraph rightDash = new Paragraph("━━━━━━━━━━━━━━━")
-                .setFontColor(new DeviceRgb(218, 165, 32))
-                .setTextAlignment(TextAlignment.LEFT);
-            rightLine.add(rightDash);
-            
-            topLine.addCell(leftLine);
-            topLine.addCell(centerDecor);
-            topLine.addCell(rightLine);
-            frameCell.add(topLine);
-            
-            // Certificate header
-            Paragraph certHeader = new Paragraph("CERTIFICATE")
-                .setFont(boldFont)
-                .setFontSize(16)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontColor(new DeviceRgb(101, 101, 101))
-                .setMarginTop(10)
-                .setCharacterSpacing(3);
-            frameCell.add(certHeader);
-            
-            Paragraph ofAchievement = new Paragraph("of Achievement")
-                .setFont(italicFont)
-                .setFontSize(28)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontColor(new DeviceRgb(218, 165, 32))
-                .setMarginTop(-5)
-                .setMarginBottom(15);
-            frameCell.add(ofAchievement);
-            
-            // This is to certify that
-            Paragraph certifyText = new Paragraph("This is to certify that")
-                .setFont(italicFont)
-                .setFontSize(14)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontColor(new DeviceRgb(128, 128, 128))
-                .setMarginBottom(5);
-            frameCell.add(certifyText);
-            
-            // User name with decorative underline
-            String fullName = certificate.getUser().getFirstName() + " " + certificate.getUser().getLastName();
-            Paragraph userName = new Paragraph(fullName)
-                .setFont(boldFont)
-                .setFontSize(36)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontColor(new DeviceRgb(51, 51, 51))
-                .setMarginBottom(5);
-            frameCell.add(userName);
-            
-            // Decorative underline for name
-            Paragraph nameUnderline = new Paragraph("_________________")
-                .setFontSize(20)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontColor(new DeviceRgb(218, 165, 32))
-                .setMarginTop(-15)
-                .setMarginBottom(10);
-            frameCell.add(nameUnderline);
-            
-            // Has successfully completed
-            Paragraph hasCompleted = new Paragraph("has successfully completed the course")
-                .setFont(regularFont)
-                .setFontSize(14)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontColor(new DeviceRgb(101, 101, 101))
-                .setMarginBottom(5);
-            frameCell.add(hasCompleted);
-            
-            // Course name in quotes
-            Paragraph courseName = new Paragraph("\"" + certificate.getCourse().getTitle() + "\"")
-                .setFont(boldFont)
-                .setFontSize(22)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontColor(new DeviceRgb(51, 51, 51))
-                .setMarginBottom(10);
-            frameCell.add(courseName);
-            
-            // Date with decorative elements
-            String completionDate = certificate.getIssuedDate().format(DateTimeFormatter.ofPattern("dd MMMM yyyy"));
-            Paragraph dateText = new Paragraph("on " + completionDate)
-                .setFont(italicFont)
-                .setFontSize(14)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontColor(new DeviceRgb(101, 101, 101))
-                .setMarginBottom(20);
-            frameCell.add(dateText);
-            
-            // Signature section with modern layout
-            Table signatureTable = new Table(UnitValue.createPercentArray(new float[]{1, 1.5, 1})).useAllAvailableWidth();
-            signatureTable.setMarginTop(5);
-            
-            // Left signature
-            Cell leftSig = new Cell().setBorder(Border.NO_BORDER);
-            Table leftSigLine = new Table(UnitValue.createPercentArray(1)).setWidth(140);
-            Cell leftLine1 = new Cell()
-                .setBorderTop(new SolidBorder(new DeviceRgb(200, 200, 200), 1))
-                .setBorderBottom(Border.NO_BORDER)
-                .setBorderLeft(Border.NO_BORDER)
-                .setBorderRight(Border.NO_BORDER)
-                .setHeight(25);
-            leftSigLine.addCell(leftLine1);
-            leftSig.add(leftSigLine);
-            
-            Paragraph director = new Paragraph("Program Director")
-                .setFont(italicFont)
-                .setFontSize(11)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontColor(new DeviceRgb(128, 128, 128));
-            leftSig.add(director);
-            signatureTable.addCell(leftSig);
-            
-            // Center - Certificate details
-            Cell centerDetails = new Cell().setBorder(Border.NO_BORDER);
-            
-            // Add seal-like design with QR code
-            Table sealTable = new Table(UnitValue.createPercentArray(1)).setWidth(80);
-            Cell sealCell = new Cell();
-            sealCell.setBorder(new DoubleBorder(new DeviceRgb(218, 165, 32), 2));
-            sealCell.setBorderRadius(new BorderRadius(40));
-            sealCell.setPadding(10);
-            
-            // QR Code in seal
-            String verificationUrl = frontendUrl + "/certificate/verify/" + certificate.getCertificateNumber();
-            BarcodeQRCode qrCode = new BarcodeQRCode(verificationUrl);
-            PdfFormXObject qrCodeObject = qrCode.createFormXObject(ColorConstants.BLACK, pdf);
-            Image qrCodeImage = new Image(qrCodeObject).setWidth(50).setHeight(50);
-            qrCodeImage.setHorizontalAlignment(HorizontalAlignment.CENTER);
-            sealCell.add(qrCodeImage);
-            
-            sealTable.addCell(sealCell);
-            sealTable.setHorizontalAlignment(HorizontalAlignment.CENTER);
-            centerDetails.add(sealTable);
-            
-            // Certificate number below seal
-            Paragraph certNum = new Paragraph(certificate.getCertificateNumber())
-                .setFont(regularFont)
-                .setFontSize(9)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontColor(new DeviceRgb(128, 128, 128))
-                .setMarginTop(5);
-            centerDetails.add(certNum);
-            
-            signatureTable.addCell(centerDetails);
-            
-            // Right signature
-            Cell rightSig = new Cell().setBorder(Border.NO_BORDER);
-            Table rightSigLine = new Table(UnitValue.createPercentArray(1)).setWidth(140);
-            Cell rightLine1 = new Cell()
-                .setBorderTop(new SolidBorder(new DeviceRgb(200, 200, 200), 1))
-                .setBorderBottom(Border.NO_BORDER)
-                .setBorderLeft(Border.NO_BORDER)
-                .setBorderRight(Border.NO_BORDER)
-                .setHeight(25);
-            rightSigLine.addCell(rightLine1);
-            rightSig.add(rightSigLine);
-            
-            Paragraph instructor = new Paragraph("Course Instructor")
-                .setFont(italicFont)
-                .setFontSize(11)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontColor(new DeviceRgb(128, 128, 128));
-            rightSig.add(instructor);
-            signatureTable.addCell(rightSig);
-            
-            frameCell.add(signatureTable);
-            
-            // Bottom decorative line
-            Table bottomLine = new Table(UnitValue.createPercentArray(new float[]{1, 2, 1})).useAllAvailableWidth();
-            bottomLine.setMarginTop(15);
-            Cell leftLine2 = new Cell().setBorder(Border.NO_BORDER);
-            Cell centerDecor2 = new Cell().setBorder(Border.NO_BORDER);
-            Cell rightLine2 = new Cell().setBorder(Border.NO_BORDER);
-            
-            leftLine2.add(new Paragraph("━━━━━━━━━━━━━━━")
-                .setFontColor(new DeviceRgb(218, 165, 32))
-                .setTextAlignment(TextAlignment.RIGHT));
-            
-            centerDecor2.add(new Paragraph("✦")
-                .setFontColor(new DeviceRgb(218, 165, 32))
-                .setFontSize(20)
-                .setTextAlignment(TextAlignment.CENTER));
-            
-            rightLine2.add(new Paragraph("━━━━━━━━━━━━━━━")
-                .setFontColor(new DeviceRgb(218, 165, 32))
-                .setTextAlignment(TextAlignment.LEFT));
-            
-            bottomLine.addCell(leftLine2);
-            bottomLine.addCell(centerDecor2);
-            bottomLine.addCell(rightLine2);
-            frameCell.add(bottomLine);
-            
-            // Organization name at bottom
-            Paragraph orgName = new Paragraph("Environment Health Safety E-Learning Platform")
-                .setFont(regularFont)
-                .setFontSize(10)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontColor(new DeviceRgb(128, 128, 128))
-                .setMarginTop(10);
-            frameCell.add(orgName);
-            
-            mainFrame.addCell(frameCell);
-            backgroundCell.add(mainFrame);
-            backgroundTable.addCell(backgroundCell);
-            
-            document.add(backgroundTable);
-            document.close();
-            
-            // Save to file
-            try (FileOutputStream fos = new FileOutputStream(filePath)) {
-                fos.write(baos.toByteArray());
-            }
-        }
-        
-        return filePath;
-    }
-    
-    private Cell createCell(Object content) {
-        Cell cell = new Cell();
-        cell.setBorder(Border.NO_BORDER);
-        if (content instanceof Paragraph) {
-            cell.add((Paragraph) content);
-        } else if (content instanceof Table) {
-            cell.add((Table) content);
-        }
-        return cell;
     }
     
     public Optional<Certificate> findByCertificateNumber(String certificateNumber) {
@@ -460,6 +331,15 @@ public class CertificateService {
         }
         
         Path path = Paths.get(certificate.getFilePath());
+        if (!Files.exists(path)) {
+            // Regenerate PDF if file is missing
+            logger.info("Certificate PDF file missing, regenerating...");
+            String newPath = generateEnhancedCertificatePDF(certificate);
+            certificate.setFilePath(newPath);
+            certificateRepository.save(certificate);
+            path = Paths.get(newPath);
+        }
+        
         return Files.readAllBytes(path);
     }
     
@@ -470,5 +350,29 @@ public class CertificateService {
                 cert.setStatus(CertificateStatus.EXPIRED);
                 certificateRepository.save(cert);
             });
+    }
+    
+    // New method to regenerate certificate with latest template
+    @Transactional
+    public Certificate regenerateCertificate(UUID certificateId) throws IOException {
+        Certificate certificate = certificateRepository.findById(certificateId)
+            .orElseThrow(() -> new RuntimeException("Certificate not found"));
+        
+        logger.info("🔄 REGENERATING CERTIFICATE WITH LATEST TEMPLATE");
+        
+        // Delete old file if exists
+        if (certificate.getFilePath() != null) {
+            try {
+                Files.deleteIfExists(Paths.get(certificate.getFilePath()));
+            } catch (IOException e) {
+                logger.warning("Could not delete old certificate file: " + e.getMessage());
+            }
+        }
+        
+        // Generate new PDF
+        String pdfPath = generateEnhancedCertificatePDF(certificate);
+        certificate.setFilePath(pdfPath);
+        
+        return certificateRepository.save(certificate);
     }
 }
