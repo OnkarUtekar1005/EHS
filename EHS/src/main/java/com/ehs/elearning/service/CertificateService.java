@@ -49,6 +49,20 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+// OpenHTML imports
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import org.springframework.core.io.ClassPathResource;
+import java.nio.charset.StandardCharsets;
+
+// QR Code imports
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.util.Base64;
+
 @Service
 public class CertificateService {
     
@@ -92,8 +106,8 @@ public class CertificateService {
             return existingCert.get();
         }
         
-        // Get user course progress
-        UserCourseProgress progress = userCourseProgressRepository.findByUserIdAndCourseId(userId, courseId)
+        // Get user course progress with all required data loaded
+        UserCourseProgress progress = userCourseProgressRepository.findByUserIdAndCourseIdWithDetails(userId, courseId)
             .orElseThrow(() -> new RuntimeException("User course progress not found"));
         
         // Verify course is completed
@@ -120,14 +134,26 @@ public class CertificateService {
         // Save certificate to database first to get ID
         certificate = certificateRepository.save(certificate);
         
-        // Generate PDF
+        // Generate PDF using modern HTML template with fallback
         try {
-            String pdfPath = generateCertificatePDF(certificate);
+            logger.info("Attempting to generate modern certificate PDF for certificate ID: " + certificate.getId());
+            String pdfPath = generateModernCertificatePDF(certificate);
             certificate.setFilePath(pdfPath);
             certificate = certificateRepository.save(certificate);
+            logger.info("Successfully generated modern certificate PDF");
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Failed to generate certificate PDF", e);
-            throw new RuntimeException("Failed to generate certificate PDF");
+            logger.log(Level.SEVERE, "Modern certificate generation failed: " + e.getMessage(), e);
+            // Fallback to iText method if HTML template fails
+            try {
+                logger.info("Falling back to iText certificate generation");
+                String pdfPath = generateCertificatePDF(certificate);
+                certificate.setFilePath(pdfPath);
+                certificate = certificateRepository.save(certificate);
+                logger.info("Successfully generated iText certificate PDF as fallback");
+            } catch (Exception fallbackE) {
+                logger.log(Level.SEVERE, "Both certificate generation methods failed", fallbackE);
+                throw new RuntimeException("Failed to generate certificate PDF with both methods");
+            }
         }
         
         return certificate;
@@ -304,7 +330,7 @@ public class CertificateService {
             frameCell.add(dateText);
             
             // Signature section with modern layout
-            Table signatureTable = new Table(UnitValue.createPercentArray(new float[]{1, 1.5, 1})).useAllAvailableWidth();
+            Table signatureTable = new Table(UnitValue.createPercentArray(new float[]{1, 1.5f, 1})).useAllAvailableWidth();
             signatureTable.setMarginTop(5);
             
             // Left signature
@@ -470,5 +496,143 @@ public class CertificateService {
                 cert.setStatus(CertificateStatus.EXPIRED);
                 certificateRepository.save(cert);
             });
+    }
+    
+    private String generateModernCertificatePDF(Certificate certificate) throws IOException {
+        String fileName = certificate.getId() + "_modern.pdf";
+        String filePath = certificateStoragePath + "/" + fileName;
+        
+        // Load HTML template (try basic XHTML version first for better compatibility)
+        ClassPathResource templateResource;
+        String htmlTemplate;
+        try {
+            templateResource = new ClassPathResource("templates/certificate-basic.html");
+            htmlTemplate = new String(templateResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            logger.info("Using basic XHTML certificate template");
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Basic template not found, trying simple template", e);
+            try {
+                templateResource = new ClassPathResource("templates/certificate-template-simple.html");
+                htmlTemplate = new String(templateResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                logger.info("Using simple certificate template");
+            } catch (Exception e2) {
+                logger.log(Level.WARNING, "Simple template not found, using complex template", e2);
+                templateResource = new ClassPathResource("templates/certificate-template.html");
+                htmlTemplate = new String(templateResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            }
+        }
+        
+        // Replace placeholders in HTML template
+        String fullName = (certificate.getUser().getFirstName() != null ? certificate.getUser().getFirstName() : "") + 
+                         " " + (certificate.getUser().getLastName() != null ? certificate.getUser().getLastName() : "");
+        fullName = fullName.trim();
+        if (fullName.isEmpty()) {
+            fullName = "Student";
+        }
+        
+        String courseName = certificate.getCourse().getTitle() != null ? certificate.getCourse().getTitle() : "Course";
+        String completionDate = certificate.getIssuedDate().format(DateTimeFormatter.ofPattern("MMMM dd, yyyy"));
+        String certificateNumber = certificate.getCertificateNumber();
+        
+        // Get course creator name (admin who created the course)
+        String courseCreator = "Admin";
+        if (certificate.getCourse().getCreatedBy() != null) {
+            String firstName = certificate.getCourse().getCreatedBy().getFirstName();
+            String lastName = certificate.getCourse().getCreatedBy().getLastName();
+            courseCreator = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+            if (courseCreator.isEmpty()) {
+                courseCreator = "Admin";
+            }
+        }
+        
+        // Enhanced debug logging
+        logger.info("=== Certificate Generation Debug ===");
+        logger.info("Certificate ID: " + certificate.getId());
+        logger.info("User object: " + (certificate.getUser() != null ? "Present" : "NULL"));
+        logger.info("Course object: " + (certificate.getCourse() != null ? "Present" : "NULL"));
+        
+        if (certificate.getUser() != null) {
+            logger.info("User firstName: '" + certificate.getUser().getFirstName() + "'");
+            logger.info("User lastName: '" + certificate.getUser().getLastName() + "'");
+        }
+        
+        if (certificate.getCourse() != null) {
+            logger.info("Course title: '" + certificate.getCourse().getTitle() + "'");
+            logger.info("Course.createdBy: " + (certificate.getCourse().getCreatedBy() != null ? "Present" : "NULL"));
+            if (certificate.getCourse().getCreatedBy() != null) {
+                logger.info("Creator firstName: '" + certificate.getCourse().getCreatedBy().getFirstName() + "'");
+                logger.info("Creator lastName: '" + certificate.getCourse().getCreatedBy().getLastName() + "'");
+            }
+        }
+        
+        logger.info("Final values - User: '" + fullName + "', Course: '" + courseName + "', Creator: '" + courseCreator + "'");
+        logger.info("=======================================");
+        
+        // Generate QR code as base64 image
+        String verificationUrl = frontendUrl + "/certificate/verify/" + certificate.getCertificateNumber();
+        String qrCodeBase64 = generateQRCodeBase64(verificationUrl);
+        
+        // Replace placeholders
+        htmlTemplate = htmlTemplate.replace("{{userName}}", fullName)
+                                  .replace("{{courseName}}", courseName)
+                                  .replace("{{completionDate}}", completionDate)
+                                  .replace("{{certificateNumber}}", certificateNumber)
+                                  .replace("{{courseCreator}}", courseCreator)
+                                  .replace("{{qrCodePlaceholder}}", qrCodeBase64);
+        
+        // Debug: Log a snippet of the replaced template
+        logger.info("Template after replacement (first 500 chars): " + htmlTemplate.substring(0, Math.min(500, htmlTemplate.length())));
+        
+        // Generate PDF using openhtmltopdf
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            logger.info("Creating PDF renderer with HTML content");
+            PdfRendererBuilder builder = new PdfRendererBuilder();
+            
+            // Configure for better HTML handling
+            builder.withHtmlContent(htmlTemplate, null);
+            builder.toStream(baos);
+            builder.useFastMode();
+            
+            // Add better error handling and rendering options
+            try {
+                builder.testMode(false);
+            } catch (Exception configException) {
+                logger.log(Level.WARNING, "Could not set test mode", configException);
+            }
+            
+            logger.info("Running PDF generation");
+            builder.run();
+            
+            logger.info("PDF generated in memory, writing to file");
+            // Write to file
+            try (FileOutputStream fos = new FileOutputStream(filePath)) {
+                fos.write(baos.toByteArray());
+            }
+            
+            logger.info("Modern certificate PDF generated: " + filePath);
+            return filePath;
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to generate modern certificate PDF: " + e.getMessage(), e);
+            throw new IOException("Failed to generate modern certificate PDF: " + e.getMessage(), e);
+        }
+    }
+    
+    private String generateQRCodeBase64(String text) {
+        try {
+            QRCodeWriter qrCodeWriter = new QRCodeWriter();
+            BitMatrix bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, 200, 200);
+            BufferedImage qrImage = MatrixToImageWriter.toBufferedImage(bitMatrix);
+            
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(qrImage, "PNG", baos);
+            byte[] imageBytes = baos.toByteArray();
+            
+            return "data:image/png;base64," + Base64.getEncoder().encodeToString(imageBytes);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to generate QR code", e);
+            return "data:image/svg+xml;base64," + Base64.getEncoder().encodeToString(
+                "<svg width='80' height='80' xmlns='http://www.w3.org/2000/svg'><rect width='80' height='80' fill='#f0f0f0'/><text x='40' y='40' text-anchor='middle' fill='#666' font-size='8'>QR CODE</text></svg>".getBytes()
+            );
+        }
     }
 }

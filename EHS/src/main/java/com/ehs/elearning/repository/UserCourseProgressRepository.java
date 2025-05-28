@@ -21,6 +21,13 @@ public interface UserCourseProgressRepository extends JpaRepository<UserCoursePr
     
     Optional<UserCourseProgress> findByUserIdAndCourseId(UUID userId, UUID courseId);
     
+    @Query("SELECT ucp FROM UserCourseProgress ucp " +
+           "JOIN FETCH ucp.user " +
+           "JOIN FETCH ucp.course c " +
+           "LEFT JOIN FETCH c.createdBy " +
+           "WHERE ucp.user.id = :userId AND ucp.course.id = :courseId")
+    Optional<UserCourseProgress> findByUserIdAndCourseIdWithDetails(@Param("userId") UUID userId, @Param("courseId") UUID courseId);
+    
     List<UserCourseProgress> findByUserId(UUID userId);
     
     Page<UserCourseProgress> findByUserId(UUID userId, Pageable pageable);

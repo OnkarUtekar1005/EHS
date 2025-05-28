@@ -196,13 +196,17 @@ const CertificateViewer = ({ open, onClose, courseId, courseName }) => {
             </Paper>
             
             {/* PDF Viewer */}
-            <Box height="calc(100% - 250px)" width="100%">
+            <Box height="calc(100% - 250px)" width="100%" sx={{ minHeight: '400px' }}>
               {pdfUrl ? (
                 <iframe
                   src={pdfUrl}
                   width="100%"
                   height="100%"
-                  style={{ border: '1px solid #ddd', borderRadius: '4px' }}
+                  style={{ 
+                    border: '1px solid #ddd', 
+                    borderRadius: '4px',
+                    minHeight: '400px'
+                  }}
                   title="Certificate Preview"
                 />
               ) : (
