@@ -5,10 +5,13 @@ import com.ehs.elearning.model.*;
 import com.ehs.elearning.repository.CertificateRepository;
 import com.ehs.elearning.repository.UserCourseProgressRepository;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import com.openhtmltopdf.util.XRLog;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Base64;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,10 +40,16 @@ public class CertificateService {
     
     @Autowired
     private CertificateRepository certificateRepository;
-    
+
     @Autowired
     private UserCourseProgressRepository userCourseProgressRepository;
-    
+
+    @Autowired
+    private com.ehs.elearning.repository.CourseRepository courseRepository;
+
+    @Autowired
+    private ResourceLoader resourceLoader;
+
     @Value("${certificate.storage.path:uploads/certificates}")
     private String certificateStoragePath;
     
@@ -55,8 +65,12 @@ public class CertificateService {
     
     @Value("${certificate.verification.url:yoursite.com/verify}")
     private String verificationUrl;
-    
+
+    @Value("${certificate.logo.path:static/images/logo.jpeg}")
+    private String logoPath;
+
     private String certificateTemplate;
+    private String logoBase64;
     
     @PostConstruct
     public void init() {
@@ -67,10 +81,33 @@ public class CertificateService {
                 Files.createDirectories(certificatePath);
                 logger.info("Certificate directory created: " + certificateStoragePath);
             }
-            
+
             loadCertificateTemplate();
+            loadLogoAsBase64();
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Failed to initialize certificate service", e);
+        }
+    }
+
+    private void loadLogoAsBase64() throws IOException {
+        logger.info("🖼️ LOADING LOGO AS BASE64");
+        try {
+            Resource logoResource = resourceLoader.getResource("classpath:" + logoPath);
+            if (!logoResource.exists()) {
+                logger.severe("❌ LOGO NOT FOUND: " + logoPath);
+                throw new IOException("Logo not found");
+            }
+
+            try (InputStream inputStream = logoResource.getInputStream()) {
+                byte[] logoBytes = inputStream.readAllBytes();
+                logoBase64 = Base64.getEncoder().encodeToString(logoBytes);
+                logger.info("✅ LOGO LOADED SUCCESSFULLY. Size: " + logoBytes.length + " bytes");
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to load logo", e);
+            // Provide empty base64 string to avoid null pointer exceptions
+            logoBase64 = "";
+            throw new IOException("Logo loading failed: " + e.getMessage(), e);
         }
     }
     
@@ -115,21 +152,26 @@ public class CertificateService {
     @Transactional
     public Certificate generateCertificate(UUID userId, UUID courseId) {
         logger.info("🎯 GENERATING CERTIFICATE WITH ENHANCED DESIGN");
-        
+
         // Check if certificate already exists
         Optional<Certificate> existingCert = certificateRepository.findByUserIdAndCourseId(userId, courseId);
         if (existingCert.isPresent()) {
             logger.info("Certificate already exists, returning existing one");
             return existingCert.get();
         }
-        
+
         // Get user course progress
         UserCourseProgress progress = userCourseProgressRepository.findByUserIdAndCourseId(userId, courseId)
             .orElseThrow(() -> new RuntimeException("User course progress not found"));
-        
+
         // Verify course is completed
         if (progress.getStatus() != ProgressStatus.COMPLETED) {
             throw new RuntimeException("Course not completed");
+        }
+
+        // Verify course is currently published
+        if (progress.getCourse().getStatus() != Course.CourseStatus.PUBLISHED) {
+            throw new RuntimeException("Certificate cannot be generated - course is not currently published");
         }
         
         // Generate certificate number
@@ -163,27 +205,32 @@ public class CertificateService {
         return certificate;
     }
     
+    // We're using base64 embedded images, so we don't need URI resolvers or stream factories
+
     private String generateEnhancedCertificatePDF(Certificate certificate) throws IOException {
         logger.info("🎨 CREATING ENHANCED CERTIFICATE PDF");
-        
+
         String fileName = certificate.getId() + ".pdf";
         String filePath = certificateStoragePath + "/" + fileName;
-        
+
         try {
             // Prepare HTML content with enhanced styling
             String htmlContent = prepareEnhancedCertificateHtml(certificate);
             logger.info("📝 Enhanced HTML content prepared. Length: " + htmlContent.length());
-            
+
             // Validate critical elements
             validateTemplateElements(htmlContent);
-            
+
             // Generate PDF using OpenHTMLtoPDF with enhanced settings
             try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
                 logger.info("🔧 STARTING ENHANCED PDF RENDERING");
-                
+
                 PdfRendererBuilder builder = new PdfRendererBuilder();
                 builder.withHtmlContent(htmlContent, null);
                 builder.useFastMode();
+
+                // No need for resource handlers since we're using base64 embedded images
+
                 builder.useFont(() -> {
                     try {
                         // You can add custom fonts here if needed
@@ -220,10 +267,10 @@ public class CertificateService {
     
     private void validateTemplateElements(String htmlContent) {
         logger.info("🔍 VALIDATING TEMPLATE ELEMENTS");
-        
+
         String[] requiredElements = {
             "bg-triangle-tl", "bg-triangle-tr", "bg-triangle-bl", "bg-triangle-br",
-            "certificate-title", "signatures", "signature-name"
+            "certificate-title", "signatures", "signature-name", "company-logo"
         };
         
         for (String element : requiredElements) {
@@ -262,7 +309,8 @@ public class CertificateService {
                 .replace("{{PROGRAM_DIRECTOR_NAME}}", escapeHtml(programDirectorName))
                 .replace("{{PROGRAM_DIRECTOR_TITLE}}", escapeHtml(programDirectorTitle))
                 .replace("{{VERIFICATION_URL}}", escapeHtml(verificationUrl))
-                .replace("{{COURSE_DESCRIPTION}}", escapeHtml(description));
+                .replace("{{COURSE_DESCRIPTION}}", escapeHtml(description))
+                .replace("{{LOGO_BASE64}}", logoBase64);
         
         logger.info("✅ ENHANCED HTML PLACEHOLDERS REPLACED");
         logger.info("📊 Final HTML length: " + htmlContent.length() + " characters");
@@ -321,15 +369,24 @@ public class CertificateService {
     public Optional<Certificate> findByUserAndCourse(UUID userId, UUID courseId) {
         return certificateRepository.findByUserIdAndCourseId(userId, courseId);
     }
-    
+
+    public List<Certificate> getUserCertificates(UUID userId) {
+        return certificateRepository.findByUserId(userId);
+    }
+
+    public Course getCourseById(UUID courseId) {
+        return courseRepository.findById(courseId)
+            .orElseThrow(() -> new RuntimeException("Course not found"));
+    }
+
     public byte[] getCertificatePDF(UUID certificateId) throws IOException {
         Certificate certificate = certificateRepository.findById(certificateId)
             .orElseThrow(() -> new RuntimeException("Certificate not found"));
-        
+
         if (certificate.getFilePath() == null) {
             throw new RuntimeException("Certificate PDF not found");
         }
-        
+
         Path path = Paths.get(certificate.getFilePath());
         if (!Files.exists(path)) {
             // Regenerate PDF if file is missing
@@ -339,7 +396,7 @@ public class CertificateService {
             certificateRepository.save(certificate);
             path = Paths.get(newPath);
         }
-        
+
         return Files.readAllBytes(path);
     }
     

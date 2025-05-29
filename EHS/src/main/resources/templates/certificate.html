@@ -79,79 +79,83 @@
         
         .content {
             position: absolute;
-            top: 50%;
+            top: 52%;  /* Shifted from 50% to 52% to move content slightly downward */
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
             z-index: 10;
-            width: 100%;
-            max-width: 600px;
-            margin-top: -20px;
+            width: 80%;
+            max-width: 650px;
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 40px 20px 20px 20px; /* Increased top padding to shift content down slightly */
+            box-sizing: border-box;
         }
         
         .certificate-title {
-            font-size: 3.5rem;
+            font-size: 4rem;  /* Increased from 3.5rem for better visibility */
             font-weight: bold;
-            letter-spacing: 6px;
+            letter-spacing: 8px;  /* Increased from 6px for better spacing */
             color: #000;
-            margin-bottom: 0.3rem;
+            margin-bottom: 0.4rem;  /* Slightly increased for better spacing */
             text-transform: uppercase;
             text-align: center;
             width: 100%;
         }
-        
+
         .certificate-subtitle {
-            font-size: 1.1rem;
-            letter-spacing: 3px;
+            font-size: 1.3rem;  /* Increased from 1.1rem for better readability */
+            letter-spacing: 4px;  /* Increased from 3px for better spacing */
             color: #000;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;  /* Increased from 1.5rem for better vertical spacing */
             text-transform: uppercase;
             text-align: center;
             width: 100%;
         }
-        
+
         .award-text {
-            font-size: 0.9rem;
+            font-size: 1rem;  /* Increased from 0.9rem for better readability */
             color: #000;
-            margin-bottom: 1.2rem;
-            letter-spacing: 1px;
+            margin-bottom: 1.5rem;  /* Increased from 1.2rem for better spacing */
+            letter-spacing: 1.5px;  /* Increased from 1px for better spacing */
             text-transform: uppercase;
             text-align: center;
             width: 100%;
         }
-        
+
         .recipient-name {
-            font-size: 2.2rem;
+            font-size: 2.5rem;  /* Increased from 2.2rem to emphasize the recipient's name */
             font-weight: bold;
             color: #000;
-            margin-bottom: 1.8rem;
-            letter-spacing: 2px;
+            margin-bottom: 2rem;  /* Increased from 1.8rem for better spacing */
+            letter-spacing: 3px;  /* Increased from 2px for better spacing */
             text-transform: uppercase;
-            line-height: 1.2;
+            line-height: 1.3;  /* Increased from 1.2 for better readability */
             text-align: center;
             width: 100%;
         }
         
         .description {
-            font-size: 0.85rem;
+            font-size: 1.2rem;
             color: #000;
-            line-height: 1.7;
-            margin: 0 auto 2.5rem auto;
+            line-height: 1.8;
+            margin: 0 auto 2rem auto;  /* Reduced bottom margin from 2.5rem to 2rem for better balance */
             text-align: center;
             width: 100%;
-            padding: 0 40px;
+            padding: 0;
             box-sizing: border-box;
+            font-weight: 500;
         }
-        
+
         .description-text {
             display: inline-block;
-            max-width: 420px;
+            max-width: 550px;  /* Increased from 500px for better text flow */
             text-align: center;
             margin: 0 auto;
+            padding: 0 10px;
         }
         
         .course-name-highlight {
@@ -159,20 +163,25 @@
             color: #000;
             background: none;
             display: inline;
+            font-size: 1.3rem;  /* Slightly larger than surrounding text */
+            letter-spacing: 0.5px;  /* Added letter spacing for emphasis */
+            text-decoration: underline;  /* Added underline for emphasis */
         }
         
         /* Signature section - single signature centered with better spacing */
         .signatures {
-            margin-top: 50px;
+            margin-top: 20px;  /* Further reduced to improve vertical balance */
             display: flex;
             justify-content: center;
             align-items: center;
             width: 100%;
+            padding-bottom: 10px;  /* Added bottom padding for better spacing */
         }
-        
+
         .signature {
             text-align: center;
             margin: 0 auto;
+            padding-top: 10px;  /* Added padding for visual separation */
         }
         
         .signature-line {
@@ -184,16 +193,16 @@
         
         .signature-name {
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1.3rem;  /* Increased from 1.1rem for better visibility */
             color: #000;
-            margin-bottom: 6px;
+            margin-bottom: 8px;  /* Increased from 6px for better spacing */
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 2px;  /* Increased from 1.5px for better spacing */
         }
-        
+
         .signature-title {
-            font-size: 0.85rem;
-            color: #666;
+            font-size: 1rem;  /* Increased from 0.85rem for better readability */
+            color: #555;  /* Darkened slightly from #666 for better visibility */
             text-transform: capitalize;
             font-style: italic;
         }
@@ -203,43 +212,49 @@
             position: absolute;
             bottom: 20px;
             right: 40px;
-            font-size: 0.8rem;
+            font-size: 0.9rem;  /* Increased from 0.8rem for better readability */
             color: #000;
             font-weight: 600;
             background: rgba(255, 255, 255, 0.95);
-            padding: 4px 8px;
+            padding: 6px 10px;  /* Increased from 4px 8px for better visual presence */
             border-radius: 4px;
             border: 1px solid #ddd;
             z-index: 100;
         }
-        
+
         .completion-date {
             position: absolute;
             bottom: 20px;
             left: 40px;
-            font-size: 0.8rem;
+            font-size: 0.9rem;  /* Increased from 0.8rem for better readability */
             color: #000;
             font-weight: 600;
             background: rgba(255, 255, 255, 0.95);
-            padding: 4px 8px;
+            padding: 6px 10px;  /* Increased from 4px 8px for better visual presence */
             border-radius: 4px;
             border: 1px solid #ddd;
             z-index: 100;
         }
         
-        /* Verification note */
-        .verification-note {
+        /* Company Logo */
+        .company-logo {
             position: absolute;
-            top: 30px;
-            right: 50px;
-            font-size: 0.6rem;
-            color: #666;
-            text-align: center;
-            width: 80px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 3px;
-            border-radius: 3px;
+            top: 25px;  /* Adjusted from 30px to position slightly higher */
+            right: 35px;  /* Adjusted from 50px to position slightly more to the right */
             z-index: 100;
+            width: 200px;  /* Increased from 150px for larger logo display */
+            height: auto;
+            display: flex;
+            justify-content: flex-end;  /* Ensures logo is aligned to the right */
+        }
+
+        .company-logo img {
+            width: 100%;
+            height: auto;
+            max-height: 100px;  /* Increased from 80px for larger logo display */
+            object-fit: contain;
+            border-radius: 4px;  /* Added slight border radius for visual appeal */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);  /* Added subtle shadow for visual depth */
         }
     </style>
 </head>
@@ -251,10 +266,9 @@
         <div class="bg-triangle-bl"></div>
         <div class="bg-triangle-br"></div>
         
-        <!-- Verification note -->
-        <div class="verification-note">
-            Verify at<br/>
-            yoursite.com/verify
+        <!-- Logo in top right corner -->
+        <div class="company-logo">
+            <img src="data:image/jpeg;base64,{{LOGO_BASE64}}" alt="Company Logo" />
         </div>
         
         <!-- Main content -->

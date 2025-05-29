@@ -8,6 +8,7 @@ what has been done now : admin module is functional for some extent, he can add 
 also in admin modules he can add training modules, edit them, delete them, publish them, takedown them , and get the list of all training modules. Within the training modules there are pre assessment , training content, post assessment. and basic evalutaion
 User functionality is to be able to view and complete training modules and see their progress.
 understand the project 
-Now  todays task /goal is to change the design on the cerficate thats generate for the user once the complete/pass the course  right now this show ver bassic pdf cerficate i want it to have a desisgn  better
-also on certificate there is a program director field hard code it with Manish Shilote also the the course instructor should be removed and also handel null if null the use blank
-can we use openhtmltopdf functionality to generate the certificate use this file from our project folder WhatsApp Image 2025-05-27 at 5.31.43 PM.jpegde
+Now  todays  task /goal is to create functionality  where when user is logged in it lands to the user dashboard when on the user dashboard it should show all the course he has complete and a button ton download the completed course certificate from the dashboard it sel also we need to make the chnages such as it show welcome user instead it should show welcome user's name 
+first create theplan to do this work first create make the backend changes necessary create endpoints/use existing and create  necessary service and functionality
+then second create the frontend chnages and use the same endpoints as backend so that backend and fronted is in sync 
+note this should not affect any other working of the current system 
