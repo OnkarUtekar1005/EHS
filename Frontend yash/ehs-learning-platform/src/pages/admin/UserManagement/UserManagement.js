@@ -391,69 +391,105 @@ const handleExportCSV = async () => {
   };
   
   
-  // CSS styles to match the second image
+  // Modern CSS styles
   const styles = {
     container: {
-      paddingLeft: '250px',
-      paddingRight: '20px',
-      paddingTop: '20px',
-      backgroundColor: '#f5f5f5',
-      minHeight: 'calc(100vh - 60px)',
+      padding: '24px',
+      backgroundColor: '#f8fafc',
+      minHeight: 'calc(100vh - 140px)',
     },
     header: {
-      color: '#333',
-      marginBottom: '20px',
-      fontWeight: '500'
+      color: '#1e293b',
+      marginBottom: '32px',
+      fontWeight: '700',
+      fontSize: '28px'
+    },
+    subHeader: {
+      color: '#64748b',
+      marginBottom: '24px',
+      fontSize: '16px',
+      fontWeight: '400'
     },
     btnPrimary: {
-      backgroundColor: '#1976d2',
+      backgroundColor: '#3b82f6',
       color: 'white',
       border: 'none',
-      padding: '8px 16px',
-      borderRadius: '4px',
-      fontWeight: '500',
-      cursor: 'pointer'
+      padding: '12px 20px',
+      borderRadius: '8px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      fontSize: '14px',
+      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      transition: 'all 0.2s ease',
+      '&:hover': {
+        backgroundColor: '#2563eb',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+      }
     },
     btnOutline: {
       backgroundColor: 'white',
-      color: '#1976d2',
-      border: '1px solid #1976d2',
-      padding: '8px 16px',
-      borderRadius: '4px',
+      color: '#374151',
+      border: '1px solid #d1d5db',
+      padding: '12px 20px',
+      borderRadius: '8px',
       fontWeight: '500',
-      cursor: 'pointer'
+      cursor: 'pointer',
+      fontSize: '14px',
+      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      transition: 'all 0.2s ease',
+      '&:hover': {
+        backgroundColor: '#f9fafb',
+        borderColor: '#9ca3af'
+      }
     },
     searchInput: {
-      padding: '8px 12px',
-      border: '1px solid #ddd',
-      borderRadius: '4px',
-      width: '100%'
+      padding: '12px 16px',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+      width: '100%',
+      fontSize: '14px',
+      transition: 'border-color 0.2s ease',
+      '&:focus': {
+        outline: 'none',
+        borderColor: '#3b82f6',
+        boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)'
+      }
     },
     select: {
-      padding: '8px 12px',
-      border: '1px solid #ddd',
-      borderRadius: '4px',
+      padding: '12px 16px',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
       backgroundColor: 'white',
-      width: '100%'
+      width: '100%',
+      fontSize: '14px',
+      transition: 'border-color 0.2s ease',
+      '&:focus': {
+        outline: 'none',
+        borderColor: '#3b82f6',
+        boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)'
+      }
     },
     table: {
       width: '100%',
       backgroundColor: 'white',
-      borderRadius: '4px',
+      borderRadius: '12px',
       overflow: 'hidden',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
     },
     tableHeader: {
-      backgroundColor: 'white',
-      color: '#333',
-      fontWeight: '500',
-      padding: '12px 16px',
+      backgroundColor: '#f8fafc',
+      color: '#374151',
+      fontWeight: '600',
+      padding: '16px 20px',
       textAlign: 'left',
-      borderBottom: '1px solid #eee'
+      borderBottom: '1px solid #e5e7eb',
+      fontSize: '14px'
     },
     tableCell: {
-      padding: '12px 16px',
-      borderBottom: '1px solid #eee'
+      padding: '16px 20px',
+      borderBottom: '1px solid #f3f4f6',
+      fontSize: '14px',
+      color: '#374151'
     },
     noData: {
       padding: '40px 0',
@@ -547,10 +583,22 @@ const handleExportCSV = async () => {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.header}>Users</h2>
+      {/* Header Section */}
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={styles.header}>User Management</h1>
+        <p style={styles.subHeader}>
+          Manage users, assign domains, and track employee access across your organization
+        </p>
+      </div>
       
       {/* Action Buttons */}
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+      <div style={{ 
+        marginBottom: '24px', 
+        display: 'flex', 
+        gap: '12px', 
+        flexWrap: 'wrap',
+        alignItems: 'center'
+      }}>
         <button style={styles.btnPrimary} onClick={() => setShowAddModal(true)}>
           <span style={{ marginRight: '5px' }}>+</span> ADD USER
         </button>
@@ -562,58 +610,136 @@ const handleExportCSV = async () => {
         </button>
       </div>
       
-      {/* Filters */}
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-        <div style={{ width: '33%' }}>
-          <div style={{ position: 'relative' }}>
-            <input
-              type="text"
-              style={styles.searchInput}
-              placeholder="Search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)' }}>🔍</span>
+      {/* Filters Section */}
+      <div style={{ 
+        marginBottom: '24px',
+        padding: '20px',
+        backgroundColor: 'white',
+        borderRadius: '12px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        border: '1px solid #e5e7eb'
+      }}>
+        <h3 style={{ 
+          margin: '0 0 16px 0',
+          color: '#374151',
+          fontSize: '16px',
+          fontWeight: '600'
+        }}>
+          Filter Users
+        </h3>
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1', minWidth: '280px' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '6px',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: '#374151'
+            }}>
+              Search Users
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                style={styles.searchInput}
+                placeholder="Search by name or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <span style={{ 
+                position: 'absolute', 
+                right: '12px', 
+                top: '50%', 
+                transform: 'translateY(-50%)',
+                color: '#9ca3af',
+                fontSize: '18px'
+              }}>
+                🔍
+              </span>
+            </div>
+          </div>
+          <div style={{ flex: '0 0 200px' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '6px',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: '#374151'
+            }}>
+              Role
+            </label>
+            <select 
+              style={styles.select}
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+            >
+              <option>All Roles</option>
+              <option value="ADMIN">Admin</option>
+              <option value="USER">Employee</option>
+            </select>
+          </div>
+          <div style={{ flex: '0 0 200px' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '6px',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: '#374151'
+            }}>
+              Domain
+            </label>
+            <select 
+              style={styles.select}
+              value={selectedDomain}
+              onChange={(e) => setSelectedDomain(e.target.value)}
+            >
+              <option value="All Domains">All Domains</option>
+              {domains.map(domain => (
+                <option key={domain.id} value={domain.id}>
+                  {domain.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-        <div style={{ width: '33%' }}>
-          <select 
-            style={styles.select}
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value)}
-          >
-            <option>All Roles</option>
-            <option value="ADMIN">Admin</option>
-            <option value="USER">Employee</option>
-          </select>
-        </div>
-        <div style={{ width: '33%' }}>
-  <select 
-    style={styles.select}
-    value={selectedDomain}
-    onChange={(e) => setSelectedDomain(e.target.value)}
-  >
-    <option value="All Domains">All Domains</option>
-    {domains.map(domain => (
-      <option key={domain.id} value={domain.id}>
-        {domain.name}
-      </option>
-    ))}
-  </select>
-</div>
-</div>
+      </div>
       
       {/* Users Table */}
       <div style={styles.table}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={styles.tableHeader}>
-                <input 
-                  type="checkbox" 
-                  onChange={handleSelectAll}
-                  checked={selectedUsers.length > 0 && selectedUsers.length === filteredUsers.length}
-                />
+              <th style={{...styles.tableHeader, width: '60px'}}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  cursor: 'pointer'
+                }} onClick={(e) => {
+                  e.preventDefault();
+                  const syntheticEvent = { target: { checked: !(selectedUsers.length > 0 && selectedUsers.length === filteredUsers.length) } };
+                  handleSelectAll(syntheticEvent);
+                }}>
+                  <input 
+                    type="checkbox" 
+                    onChange={handleSelectAll}
+                    checked={selectedUsers.length > 0 && selectedUsers.length === filteredUsers.length}
+                    style={{
+                      width: '16px',
+                      height: '16px',
+                      accentColor: '#3b82f6',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <span style={{
+                    fontSize: '12px',
+                    color: '#6b7280',
+                    fontWeight: '500',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {selectedUsers.length > 0 ? `${selectedUsers.length} selected` : 'Select All'}
+                  </span>
+                </div>
               </th>
               <th style={styles.tableHeader}>Username</th>
               <th style={styles.tableHeader}>Email</th>
@@ -637,12 +763,24 @@ const handleExportCSV = async () => {
               </tr>
             ) : (
               filteredUsers.map((user) => (
-                <tr key={user.id} style={{ backgroundColor: 'white' }}>
+                <tr key={user.id} style={{ 
+                  backgroundColor: selectedUsers.includes(user.id) ? '#f0f9ff' : 'white',
+                  transition: 'background-color 0.2s ease',
+                  '&:hover': {
+                    backgroundColor: '#f9fafb'
+                  }
+                }}>
                   <td style={styles.tableCell}>
                     <input 
                       type="checkbox" 
                       checked={selectedUsers.includes(user.id)}
                       onChange={() => handleUserSelect(user.id)}
+                      style={{
+                        width: '16px',
+                        height: '16px',
+                        accentColor: '#3b82f6',
+                        cursor: 'pointer'
+                      }}
                     />
                   </td>
                   <td style={styles.tableCell}>{user.username}</td>
@@ -684,15 +822,46 @@ const handleExportCSV = async () => {
       </div>
       
       {/* Selection Actions */}
-      <div style={styles.selectionRow}>
-        <span style={{ marginRight: '20px' }}>Selected: {selectedUsers.length} users</span>
-        <button 
-  style={{ ...styles.btnOutline, marginRight: '10px', opacity: selectedUsers.length === 0 ? 0.6 : 1 }}
-  disabled={selectedUsers.length === 0}
-  onClick={() => setShowAssignDomainModal(true)}
->
-  ASSIGN DOMAIN
-</button>
+      {selectedUsers.length > 0 && (
+        <div style={{
+          ...styles.selectionRow,
+          backgroundColor: '#f0f9ff',
+          padding: '16px 20px',
+          borderRadius: '8px',
+          border: '1px solid #bfdbfe',
+          marginTop: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <span style={{ 
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#1e40af'
+            }}>
+              {selectedUsers.length} {selectedUsers.length === 1 ? 'user' : 'users'} selected
+            </span>
+            <span style={{
+              fontSize: '12px',
+              color: '#6b7280'
+            }}>
+              Choose an action below
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button 
+              style={{ 
+                ...styles.btnOutline,
+                fontSize: '13px',
+                padding: '8px 16px'
+              }}
+              onClick={() => setShowAssignDomainModal(true)}
+            >
+              ASSIGN DOMAIN
+            </button>
 
 {showAssignDomainModal && (
   <div style={styles.modal}>
@@ -741,14 +910,22 @@ const handleExportCSV = async () => {
     </div>
   </div>
 )}
-        <button 
-  style={{ ...styles.btnOutline, opacity: selectedUsers.length === 0 ? 0.6 : 1 }}
-  disabled={selectedUsers.length === 0}
-  onClick={() => setIsDeleteModalOpen(true)}
->
-  DELETE USER
-</button>
-      </div>
+            <button 
+              style={{ 
+                ...styles.btnOutline,
+                fontSize: '13px',
+                padding: '8px 16px',
+                backgroundColor: '#fef2f2',
+                borderColor: '#fca5a5',
+                color: '#dc2626'
+              }}
+              onClick={() => setIsDeleteModalOpen(true)}
+            >
+              DELETE USERS
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* Add User Modal */}
       {showAddModal && (

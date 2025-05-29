@@ -75,7 +75,7 @@ public class AdminDashboardController {
                     Map<String, Object> item = new HashMap<>();
                     item.put("username", progress.getUser().getUsername());
                     item.put("courseName", progress.getCourse().getTitle());
-                    item.put("progress", progress.getOverallProgress().doubleValue() * 100); // Convert from decimal (0-1) to percentage (0-100)
+                    item.put("progress", progress.getOverallProgress().doubleValue()); // Progress is already stored as percentage (0-100)
                     // For timestamp, use the updatedAt timestamp from progress entity
                     if (progress.getUpdatedAt() != null) {
                         item.put("timestamp", progress.getUpdatedAt().toString());

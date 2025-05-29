@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -43,6 +44,7 @@ import api from '../../services/api';
 import MaterialViewer from '../../components/MaterialViewer';
 
 const MaterialsManagement = () => {
+  const location = useLocation();
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openUploadDialog, setOpenUploadDialog] = useState(false);
@@ -65,6 +67,15 @@ const MaterialsManagement = () => {
   useEffect(() => {
     fetchMaterials();
   }, []);
+
+  // Check for quick action state to auto-open upload dialog
+  useEffect(() => {
+    if (location.state?.openUploadModal) {
+      setOpenUploadDialog(true);
+      // Clear the state to prevent reopening on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const fetchMaterials = async () => {
     setLoading(true);

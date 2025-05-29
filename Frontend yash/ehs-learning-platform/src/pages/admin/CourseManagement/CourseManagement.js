@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -37,6 +38,7 @@ import CreateCourseModal from './CourseModal/CreateCourseModal';
 import EditCourseModal from './CourseModal/EditCourseModal';
 
 const CourseManagement = () => {
+  const location = useLocation();
   const [courses, setCourses] = useState([]);
   const [domains, setDomains] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -101,6 +103,15 @@ const CourseManagement = () => {
     fetchCourses();
     fetchDomains();
   }, [pagination.page, filters]);
+
+  // Check for quick action state to auto-open create modal
+  useEffect(() => {
+    if (location.state?.openCreateModal) {
+      setOpenCreateModal(true);
+      // Clear the state to prevent reopening on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const handlePageChange = (event, newPage) => {
     setPagination(prev => ({ ...prev, page: newPage + 1 }));

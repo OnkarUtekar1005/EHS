@@ -69,12 +69,13 @@ const AdminLayout = () => {
     { path: '/admin/domains', icon: <CategoryIcon />, label: 'Domains' },
     { path: '/admin/courses', icon: <BookIcon />, label: 'Courses' },
     { path: '/admin/materials', icon: <CloudUploadIcon />, label: 'Materials' },
-    { path: '/admin/assessments', icon: <AssessmentIcon />, label: 'Assessments' },
-    { path: '/admin/settings', icon: <SettingsIcon />, label: 'Settings' }
+    { path: '/admin/assessments', icon: <AssessmentIcon />, label: 'Assessments' }
   ], []);
 
   const quickActions = useMemo(() => [
-    { path: '/admin/users/new', icon: <PersonAddIcon />, label: 'New User' }
+    { path: '/admin/users', state: { openAddUserModal: true }, icon: <PersonAddIcon />, label: 'New User' },
+    { path: '/admin/materials', state: { openUploadModal: true }, icon: <CloudUploadIcon />, label: 'Upload Material' },
+    { path: '/admin/courses', state: { openCreateModal: true }, icon: <AddBoxIcon />, label: 'Add New Course' }
   ], []);
 
   // Use callbacks for event handlers to prevent unnecessary re-renders
@@ -150,6 +151,7 @@ const AdminLayout = () => {
             <ListItemButton
               component={Link}
               to={action.path}
+              state={action.state}
               className="sidebar-list-item"
             >
               <ListItemIcon>{action.icon}</ListItemIcon>

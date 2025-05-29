@@ -54,7 +54,7 @@ const AssessmentManagement = () => {
   
   // Filter states
   const [filters, setFilters] = useState({
-    status: '',
+    status: 'PASSED',
     domainId: '',
     courseId: '',
     userId: '',
@@ -86,7 +86,7 @@ const AssessmentManagement = () => {
   // Fetch data when filters change
   useEffect(() => {
     fetchData();
-  }, [filters.page, filters.size]);
+  }, [filters]);
   
   const fetchData = async () => {
     setLoading(true);
@@ -195,15 +195,10 @@ const AssessmentManagement = () => {
     });
   };
   
-  // Apply filters
-  const applyFilters = () => {
-    fetchData();
-  };
-  
   // Reset filters
   const resetFilters = () => {
     setFilters({
-      status: '',
+      status: 'PASSED',
       domainId: '',
       courseId: '',
       userId: '',
@@ -317,99 +312,69 @@ const AssessmentManagement = () => {
         Assessment Management
       </Typography>
       
-      <Alert severity="info" sx={{ mb: 3 }}>
-        This feature is under development. Some functionality may be limited until the backend endpoints are fully deployed.
-      </Alert>
-      
-      {/* Summary Cards */}
-      {summary && (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>Total Attempts</Typography>
-                <Typography variant="h3" color="primary">
-                  {summary.totalAttempts}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>Passed</Typography>
-                <Typography variant="h3" color="success.main">
-                  {summary.passedAttempts}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {summary.totalAttempts > 0 
-                    ? `${Math.round((summary.passedAttempts / summary.totalAttempts) * 100)}%`
-                    : '0%'
-                  }
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Failed (Max Attempts)
-                </Typography>
-                <Typography variant="h3" color="error.main">
-                  {summary.failedAttempts}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {summary.totalAttempts > 0 
-                    ? `${Math.round((summary.failedAttempts / summary.totalAttempts) * 100)}%`
-                    : '0%'
-                  }
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      )}
       
       {/* Filters */}
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          Filters
-        </Typography>
+      <Paper sx={{ p: 3, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
+            Filter Assessments
+          </Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={resetFilters}
+            sx={{ minWidth: 100 }}
+          >
+            Clear All
+          </Button>
+        </Box>
         
-        <Grid container spacing={2}>
+        <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
           <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
+            <FormControl fullWidth variant="outlined">
               <InputLabel>Status</InputLabel>
               <Select
                 name="status"
                 value={filters.status}
                 onChange={handleFilterChange}
                 label="Status"
+                sx={{ 
+                  backgroundColor: 'background.paper',
+                  minHeight: '56px'
+                }}
               >
-                <MenuItem value="">All</MenuItem>
-                <MenuItem value="PASSED">Passed</MenuItem>
+                <MenuItem value="">All Statuses</MenuItem>
+                <MenuItem value="PASSED">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'success.main' }} />
+                    Passed
+                  </Box>
+                </MenuItem>
                 <MenuItem value="FAILED">
-                  <Tooltip title="Users who have exhausted all 3 attempts without passing" arrow>
-                    <span>Failed (Max Attempts)</span>
-                  </Tooltip>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'error.main' }} />
+                    Failed (Max Attempts)
+                  </Box>
                 </MenuItem>
               </Select>
             </FormControl>
           </Grid>
           
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Domain</InputLabel>
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth variant="outlined">
+              <InputLabel>Please select the domain</InputLabel>
               <Select
                 name="domainId"
                 value={filters.domainId}
                 onChange={handleFilterChange}
-                label="Domain"
+                label="Please select the domain"
+                sx={{ 
+                  backgroundColor: 'background.paper',
+                  minHeight: '56px',
+                  minWidth: '280px'
+                }}
               >
-                <MenuItem value="">All</MenuItem>
+                <MenuItem value="">All Domains</MenuItem>
                 {Array.isArray(domains) && domains.map((domain) => (
                   <MenuItem key={domain.id} value={domain.id}>
                     {domain.name || 'Untitled Domain'}
@@ -420,72 +385,49 @@ const AssessmentManagement = () => {
           </Grid>
           
           <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Course</InputLabel>
-              <Select
-                name="courseId"
-                value={filters.courseId}
-                onChange={handleFilterChange}
-                label="Course"
-              >
-                <MenuItem value="">All</MenuItem>
-                {Array.isArray(courses) && courses.map((course) => (
-                  <MenuItem key={course.id} value={course.id}>
-                    {course.title || 'Untitled Course'}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} md={3}>
             <TextField
               fullWidth
+              variant="outlined"
               label="Search"
               name="search"
               value={filters.search}
               onChange={handleFilterChange}
-              placeholder="User or component name"
+              placeholder="User or component name..."
+              sx={{ 
+                backgroundColor: 'background.paper',
+                '& .MuiOutlinedInput-root': {
+                  minHeight: '56px'
+                }
+              }}
               InputProps={{
-                endAdornment: <SearchIcon color="action" />
+                startAdornment: <SearchIcon color="action" sx={{ mr: 1 }} />
               }}
             />
-          </Grid>
-          
-          <Grid item xs={12}>
-            <Box display="flex" justifyContent="flex-end" gap={2}>
-              <Button
-                variant="outlined"
-                onClick={resetFilters}
-              >
-                Reset Filters
-              </Button>
-              <Button
-                variant="contained"
-                onClick={applyFilters}
-              >
-                Apply Filters
-              </Button>
-            </Box>
           </Grid>
         </Grid>
       </Paper>
       
       {/* Assessment Attempts Table */}
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <TableContainer sx={{ maxHeight: 440 }}>
+      <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+        <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
+            Assessment Attempts
+          </Typography>
+        </Box>
+        
+        <TableContainer sx={{ maxHeight: 600 }}>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>User</TableCell>
-                <TableCell>Component</TableCell>
-                <TableCell>Course</TableCell>
-                <TableCell>Domain</TableCell>
-                <TableCell>Attempt</TableCell>
-                <TableCell>Score</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>User</TableCell>
+                <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Component</TableCell>
+                <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Course</TableCell>
+                <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Domain</TableCell>
+                <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Attempt</TableCell>
+                <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Score</TableCell>
+                <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Status</TableCell>
+                <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Date</TableCell>
+                <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -497,8 +439,13 @@ const AssessmentManagement = () => {
                 </TableRow>
               ) : attempts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} align="center">
-                    No assessment attempts found
+                  <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
+                    <Typography variant="body1" color="text.secondary">
+                      No assessment attempts found
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Try adjusting your filters or check back later
+                    </Typography>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -510,7 +457,12 @@ const AssessmentManagement = () => {
                                       (attempt.score !== null && !attempt.passed) ? 'rgba(244, 67, 54, 0.08)' : 
                                       attempt.progressStatus === 'COMPLETED' ? 'rgba(76, 175, 80, 0.08)' :
                                       attempt.progressStatus === 'FAILED' ? 'rgba(244, 67, 54, 0.08)' :
-                                      'transparent'
+                                      'transparent',
+                      '&:hover': {
+                        backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                      },
+                      borderBottom: '1px solid',
+                      borderColor: 'divider'
                     }}
                   >
                     <TableCell>
@@ -602,12 +554,26 @@ const AssessmentManagement = () => {
         </TableContainer>
         
         {/* Pagination */}
-        <Box display="flex" justifyContent="center" p={2}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          p: 3,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          backgroundColor: 'grey.50'
+        }}>
+          <Typography variant="body2" color="text.secondary">
+            Showing {attempts.length} of {pageInfo.totalItems} results
+          </Typography>
           <Pagination
             count={pageInfo.totalPages}
             page={pageInfo.currentPage + 1}
             onChange={handlePageChange}
             color="primary"
+            size="medium"
+            showFirstButton
+            showLastButton
           />
         </Box>
       </Paper>
