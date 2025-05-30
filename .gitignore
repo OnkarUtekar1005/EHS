@@ -1,4 +1,78 @@
+# Development Environment Files
 /.metadata/
 **/node_modules/
 **/.claude/settings.local.json
-s
+
+# Deployment Files (excluded from development branch)
+WINDOWS_DEPLOYMENT_GUIDE.md
+NETWORK_DEPLOYMENT_GUIDE.md
+NETWORK_QUICK_START.md
+QUICK_START_CHECKLIST.md
+deploy.bat
+deploy-network.bat
+start-application.bat
+start-application-network.bat
+environment.bat
+environment-network.bat
+install-service.bat
+
+# Production Configuration Files
+**/application-prod.properties
+**/application-network.properties
+
+# IDE and Build Files
+**/.idea/
+**/.vscode/
+**/target/
+**/build/
+**/.DS_Store
+**/thumbs.db
+
+# Database Files
+**/*.db
+**/*.sqlite
+
+# Log Files
+**/logs/
+**/*.log
+
+# Temporary Files
+**/temp/
+**/tmp/
+**/.tmp/
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Java Specific
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+
+# React Build
+**/build/
+**/dist/
+
+# Environment Variables (sensitive)
+**/.env
+**/.env.local
+**/.env.production
+
+# Certificate and Key Files
+**/certificates/
+**/credentials/
+**/*.key
+**/*.pem
+**/*.crt
+
+# Upload Directories
+**/uploads/
+**/files/

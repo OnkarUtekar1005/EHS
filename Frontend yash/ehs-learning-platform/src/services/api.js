@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Set this to false in production
-const DEBUG_MODE = false;
+const DEBUG_MODE = true;
 
 // Helper function to handle API errors
 const handleApiError = (error) => {
