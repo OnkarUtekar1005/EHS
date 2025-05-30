@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -561,27 +562,23 @@ const CourseView = () => {
         </Alert>
       )}
 
-      {/* Back button and page title - Mobile Responsive */}
+      {/* Back button and page title */}
       <Box
         display="flex"
         alignItems="center"
         mb={3}
         justifyContent="space-between"
-        flexDirection={{ xs: 'column', sm: 'row' }}
-        gap={{ xs: 2, sm: 0 }}
       >
         <Button
           startIcon={<ArrowBack />}
           onClick={() => navigate('/my-courses')}
           sx={{
             fontWeight: 500,
-            px: { xs: 3, sm: 2 },
-            py: { xs: 1.5, sm: 1 },
+            px: 2,
+            py: 1,
             borderRadius: '8px',
             bgcolor: 'white',
             boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-            width: { xs: '100%', sm: 'auto' },
-            fontSize: { xs: '0.875rem', sm: '1rem' },
             '&:hover': {
               bgcolor: 'white',
               boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
@@ -601,163 +598,96 @@ const CourseView = () => {
             variant="filled"
             sx={{
               fontWeight: 600,
-              px: { xs: 2, sm: 1.5 },
-              py: { xs: 3, sm: 2.5 },
-              fontSize: { xs: '0.875rem', sm: '0.875rem' },
+              px: 1.5,
+              py: 2.5,
+              fontSize: '0.875rem',
               borderRadius: '8px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              width: { xs: '100%', sm: 'auto' },
-              justifyContent: { xs: 'center', sm: 'flex-start' }
             }}
           />
         )}
       </Box>
 
-      {/* Course Header - Mobile Responsive Card */}
+      {/* Course Header - Single Horizontal Component with Two Color Sections */}
       <Card
         elevation={3}
         sx={{
           mb: 4,
           overflow: 'hidden',
-          borderRadius: { xs: '12px', sm: '16px' },
+          borderRadius: '16px',
           boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
-          height: { xs: 'auto', md: '300px' }
+          height: { md: '300px' }
         }}
       >
-        {/* Course Information Section - Mobile Responsive */}
+        {/* Course Information Section - Left Side, White Background */}
         <Box sx={{
-          flex: { xs: '1', md: '1 1 50%' },
-          p: { xs: 3, sm: 4, md: 3 },
+          flex: '1 1 50%',
+          p: 3,
           bgcolor: 'white',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center'
         }}>
-          <Typography 
-            variant="h4" 
-            component="h1" 
-            fontWeight="700" 
-            gutterBottom 
-            sx={{ 
-              color: 'primary.dark',
-              fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' },
-              lineHeight: { xs: 1.3, sm: 1.2 }
-            }}
-          >
+          <Typography variant="h4" component="h1" fontWeight="700" gutterBottom sx={{ color: 'primary.dark' }}>
             {course?.title}
           </Typography>
 
-          <Box 
-            display="flex" 
-            gap={{ xs: 1, sm: 1.5 }} 
-            flexWrap="wrap" 
-            mb={{ xs: 2, sm: 2.5 }}
-            flexDirection={{ xs: 'column', sm: 'row' }}
-          >
+          <Box display="flex" gap={1.5} flexWrap="wrap" mb={2.5}>
             {course?.domain?.name && (
-              <Typography 
-                variant="subtitle1" 
-                color="text.secondary" 
-                fontWeight="500"
-                sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
-              >
+              <Typography variant="subtitle1" color="text.secondary" fontWeight="500">
                 {course.domain.name}
               </Typography>
             )}
-            <Box sx={{ 
-              display: 'flex', 
-              gap: { xs: 1, sm: 1.5 }, 
-              flexWrap: 'wrap',
-              alignItems: 'center'
-            }}>
-              {course?.timeLimit && (
-                <Typography 
-                  variant="subtitle1" 
-                  color="text.secondary" 
-                  fontWeight="500" 
-                  sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 0.5,
-                    fontSize: { xs: '0.875rem', sm: '1rem' }
-                  }}
-                >
-                  <AccessTimeIcon fontSize="small" color="primary" />
-                  {course.timeLimit} min
-                </Typography>
-              )}
-              {course?.passingScore && (
-                <Typography 
-                  variant="subtitle1" 
-                  color="text.secondary" 
-                  fontWeight="500" 
-                  sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 0.5,
-                    fontSize: { xs: '0.875rem', sm: '1rem' }
-                  }}
-                >
+            {course?.timeLimit && (
+              <Typography variant="subtitle1" color="text.secondary" fontWeight="500" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <AccessTimeIcon fontSize="small" color="primary" />
+                {course.timeLimit} min
+              </Typography>
+            )}
+            {course?.passingScore && (
+              <Typography variant="subtitle1" color="text.secondary" fontWeight="500" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <FlagIcon fontSize="small" color="primary" />
                 Passing: {course.passingScore}%
               </Typography>
             )}
           </Box>
 
-          <Typography 
-            variant="subtitle1" 
-            fontWeight="600" 
-            gutterBottom 
-            color="primary.main" 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 1, 
-              mt: { xs: 1, sm: 1 },
-              fontSize: { xs: '1rem', sm: '1rem' }
-            }}
-          >
+          <Typography variant="subtitle1" fontWeight="600" gutterBottom color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
             <InfoIcon fontSize="small" /> Course Description
           </Typography>
-          <Typography 
-            variant="body1" 
-            color="text.secondary" 
-            sx={{
-              lineHeight: 1.7,
-              mt: 0.5,
-              maxHeight: { xs: 'none', md: '120px' },
-              overflow: 'auto',
-              fontSize: { xs: '0.875rem', sm: '1rem' }
-            }}
-          >
+          <Typography variant="body1" color="text.secondary" sx={{
+            lineHeight: 1.7,
+            mt: 0.5,
+            maxHeight: { md: '120px' },
+            overflow: 'auto'
+          }}>
             {course?.description}
           </Typography>
         </Box>
 
-        {/* Progress Summary Widget - Mobile Responsive */}
+        {/* Progress Summary Widget - Right Side, Blue Background */}
         <Box
           sx={{
-            flex: { xs: '1', md: '1 1 50%' },
+            flex: '1 1 50%',
             bgcolor: 'primary.main',
-            p: { xs: 3, sm: 4, md: 3 },
+            p: 3,
             color: 'white',
             position: 'relative',
             overflow: 'hidden',
             display: 'flex',
             alignItems: 'center',
-            minHeight: { xs: '200px', sm: '250px', md: 'auto' },
             borderLeft: { md: '6px solid', xs: 'none' },
             borderTop: { xs: '6px solid', md: 'none' },
             borderColor: 'primary.light',
             '&::before': {
               content: '""',
               position: 'absolute',
-              top: { xs: '-30px', sm: '-50px' },
-              right: { xs: '-30px', sm: '-50px' },
-              width: { xs: '100px', sm: '150px' },
-              height: { xs: '100px', sm: '150px' },
+              top: '-50px',
+              right: '-50px',
+              width: '150px',
+              height: '150px',
               borderRadius: '50%',
               backgroundColor: 'rgba(255, 255, 255, 0.07)',
               zIndex: 1
@@ -765,10 +695,10 @@ const CourseView = () => {
             '&::after': {
               content: '""',
               position: 'absolute',
-              bottom: { xs: '-20px', sm: '-40px' },
-              left: { xs: '-20px', sm: '-40px' },
-              width: { xs: '80px', sm: '120px' },
-              height: { xs: '80px', sm: '120px' },
+              bottom: '-40px',
+              left: '-40px',
+              width: '120px',
+              height: '120px',
               borderRadius: '50%',
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
               zIndex: 1
@@ -776,13 +706,13 @@ const CourseView = () => {
           }}
         >
           {isEnrolled ? (
-            <Grid container spacing={{ xs: 2, sm: 3 }} alignItems="center" sx={{ position: 'relative', zIndex: 2 }}>
+            <Grid container spacing={3} alignItems="center" sx={{ position: 'relative', zIndex: 2 }}>
               <Grid item xs={12} sm={4} md={4} sx={{ textAlign: 'center' }}>
                 <Box sx={{ position: 'relative', display: 'inline-block' }}>
                   <CircularProgress
                     variant="determinate"
                     value={100}
-                    size={{ xs: 80, sm: 100 }}
+                    size={100}
                     thickness={4}
                     sx={{
                       color: 'rgba(255, 255, 255, 0.2)',
@@ -793,7 +723,7 @@ const CourseView = () => {
                   <CircularProgress
                     variant="determinate"
                     value={courseProgress?.overallProgress || 0}
-                    size={{ xs: 80, sm: 100 }}
+                    size={100}
                     thickness={4}
                     sx={{ color: 'white' }}
                   />
@@ -810,23 +740,10 @@ const CourseView = () => {
                       flexDirection: 'column'
                     }}
                   >
-                    <Typography 
-                      variant="h4" 
-                      component="div" 
-                      fontWeight="bold" 
-                      color="white"
-                      sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}
-                    >
+                    <Typography variant="h4" component="div" fontWeight="bold" color="white">
                       {Math.round(courseProgress?.overallProgress || 0)}%
                     </Typography>
-                    <Typography 
-                      variant="caption" 
-                      color="rgba(255, 255, 255, 0.8)" 
-                      sx={{ 
-                        mt: 0.5,
-                        fontSize: { xs: '0.7rem', sm: '0.75rem' }
-                      }}
-                    >
+                    <Typography variant="caption" color="rgba(255, 255, 255, 0.8)" sx={{ mt: 0.5 }}>
                       Complete
                     </Typography>
                   </Box>
@@ -990,7 +907,6 @@ const CourseView = () => {
             </Box>
           )}
         </Box>
-      </Box>
       </Card>
 
       {/* Course Content Section */}
@@ -1407,13 +1323,7 @@ const CourseView = () => {
                             )}
                           </Grid>
 
-                          <Grid item xs={12} md={4} sx={{ 
-                            display: 'flex', 
-                            justifyContent: { xs: 'center', md: 'flex-end' }, 
-                            alignItems: 'center',
-                            mt: { xs: 2, md: 0 },
-                            width: '100%'
-                          }}>
+                          <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                             {isEnrolled ? (
                               canStart ? (
                                 <>
@@ -1427,15 +1337,13 @@ const CourseView = () => {
                                         handleReviewComponent(component.id, component.type, comp);
                                       }}
                                       disabled={loadingReview}
-                                      size={window.innerWidth < 600 ? "small" : "medium"}
+                                      size="medium"
                                       sx={{
-                                        minWidth: { xs: '100px', md: '120px' },
+                                        minWidth: '120px',
                                         borderRadius: '8px',
                                         textTransform: 'none',
                                         fontWeight: 500,
-                                        py: { xs: 0.75, md: 1 },
-                                        fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                        width: { xs: '100%', sm: 'auto' }
+                                        py: 1
                                       }}
                                     >
                                       {loadingReview ? 'Loading...' : 'Review'}
@@ -1447,16 +1355,14 @@ const CourseView = () => {
                                           <Button
                                             variant="outlined"
                                             color="error"
-                                            size={window.innerWidth < 600 ? "small" : "medium"}
+                                            size="medium"
                                             disabled={true}
                                             sx={{
-                                              minWidth: { xs: '120px', md: '140px' },
+                                              minWidth: '140px',
                                               borderRadius: '8px',
                                               textTransform: 'none',
                                               fontWeight: 500,
-                                              py: { xs: 0.75, md: 1 },
-                                              fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                              width: { xs: '100%', sm: 'auto' }
+                                              py: 1
                                             }}
                                           >
                                             No attempts left
@@ -1473,15 +1379,13 @@ const CourseView = () => {
                                           handleStartComponent(component.id, component.type);
                                         }}
                                         disabled={justEnrolled}
-                                        size={window.innerWidth < 600 ? "small" : "medium"}
+                                        size="medium"
                                         sx={{
-                                          minWidth: { xs: '120px', md: '140px' },
+                                          minWidth: '140px',
                                           borderRadius: '8px',
                                           textTransform: 'none',
                                           fontWeight: 500,
-                                          py: { xs: 0.75, md: 1 },
-                                          fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                          width: { xs: '100%', sm: 'auto' },
+                                          py: 1,
                                           boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
                                         }}
                                       >
@@ -1497,16 +1401,14 @@ const CourseView = () => {
                                         handleStartComponent(component.id, component.type);
                                       }}
                                       disabled={justEnrolled}
-                                      size={window.innerWidth < 600 ? "small" : "medium"}
+                                      size="medium"
                                       color="primary"
                                       sx={{
-                                        minWidth: { xs: '100px', md: '120px' },
+                                        minWidth: '120px',
                                         borderRadius: '8px',
                                         textTransform: 'none',
                                         fontWeight: 500,
-                                        py: { xs: 0.75, md: 1 },
-                                        fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                        width: { xs: '100%', sm: 'auto' },
+                                        py: 1,
                                         boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
                                       }}
                                     >
@@ -1521,15 +1423,13 @@ const CourseView = () => {
                                     <Button
                                       variant="outlined"
                                       disabled
-                                      size={window.innerWidth < 600 ? "small" : "medium"}
+                                      size="medium"
                                       sx={{
-                                        minWidth: { xs: '100px', md: '120px' },
+                                        minWidth: '120px',
                                         borderRadius: '8px',
                                         textTransform: 'none',
                                         fontWeight: 500,
-                                        py: { xs: 0.75, md: 1 },
-                                        fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                        width: { xs: '100%', sm: 'auto' }
+                                        py: 1
                                       }}
                                       startIcon={<Lock />}
                                     >
@@ -1544,15 +1444,13 @@ const CourseView = () => {
                                   <Button
                                     variant="outlined"
                                     disabled
-                                    size={window.innerWidth < 600 ? "small" : "medium"}
+                                    size="medium"
                                     sx={{
-                                      minWidth: { xs: '120px', md: '140px' },
+                                      minWidth: '140px',
                                       borderRadius: '8px',
                                       textTransform: 'none',
                                       fontWeight: 500,
-                                      py: { xs: 0.75, md: 1 },
-                                      fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                      width: { xs: '100%', sm: 'auto' }
+                                      py: 1
                                     }}
                                   >
                                     Enroll to access
@@ -1591,9 +1489,7 @@ const CourseView = () => {
           <Box sx={{
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: { xs: 2, sm: 0 },
+            alignItems: 'center',
             mb: 3,
             pb: 2,
             borderBottom: '1px solid',
@@ -1603,10 +1499,7 @@ const CourseView = () => {
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: { xs: 1, sm: 1.5 },
-                flexDirection: { xs: 'column', sm: 'row' },
-                textAlign: { xs: 'center', sm: 'left' },
-                width: { xs: '100%', sm: 'auto' }
+                gap: 1.5
               }}
             >
               <School
@@ -1618,10 +1511,6 @@ const CourseView = () => {
                 variant="h6"
                 fontWeight="600"
                 color="primary.dark"
-                sx={{
-                  fontSize: { xs: '1.125rem', sm: '1.25rem' },
-                  mt: { xs: 1, sm: 0 }
-                }}
               >
                 Your Learning Journey
               </Typography>
@@ -1631,23 +1520,16 @@ const CourseView = () => {
                 display: 'flex',
                 alignItems: 'center',
                 bgcolor: alpha(theme.palette.primary.main, 0.08),
-                py: { xs: 0.5, sm: 0.5 },
-                px: { xs: 1, sm: 1.5 },
-                borderRadius: '8px',
-                width: { xs: '100%', sm: 'auto' },
-                justifyContent: { xs: 'center', sm: 'flex-start' }
+                py: 0.5,
+                px: 1.5,
+                borderRadius: '8px'
               }}
             >
               <Typography
                 variant="body2"
                 fontWeight="600"
                 color="primary.main"
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 0.5,
-                  fontSize: { xs: '0.875rem', sm: '0.875rem' }
-                }}
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
               >
                 <CheckCircle fontSize="small" />
                 {Math.round(courseProgress?.overallProgress || 0)}% Complete
