@@ -54,4 +54,9 @@ public interface CertificateRepository extends JpaRepository<Certificate, UUID> 
     @Transactional
     @Query("DELETE FROM Certificate c WHERE c.course.id = :courseId")
     void deleteByCourseId(@Param("courseId") UUID courseId);
+    
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM certificates WHERE user_id = :userId", nativeQuery = true)
+    void deleteByUserId(@Param("userId") UUID userId);
 }

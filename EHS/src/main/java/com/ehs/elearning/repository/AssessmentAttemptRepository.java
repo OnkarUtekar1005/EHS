@@ -128,4 +128,9 @@ public interface AssessmentAttemptRepository extends JpaRepository<AssessmentAtt
         "LIMIT 10", 
         nativeQuery = true)
     List<Map<String, Object>> findTopFailingComponents();
+    
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM assessment_attempts WHERE user_id = :userId", nativeQuery = true)
+    void deleteByUserId(@Param("userId") UUID userId);
 }

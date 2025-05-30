@@ -61,4 +61,9 @@ public interface ComponentProgressRepository extends JpaRepository<ComponentProg
     
     @Query("SELECT cp FROM ComponentProgress cp WHERE cp.course.id = :courseId")
     List<ComponentProgress> findByCourseId(@Param("courseId") UUID courseId);
+    
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM component_progress WHERE user_id = :userId", nativeQuery = true)
+    void deleteByUserId(@Param("userId") UUID userId);
 }

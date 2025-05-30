@@ -164,15 +164,36 @@ const UserAssessment = ({ componentId, onComplete }) => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+      <Box 
+        display="flex" 
+        flexDirection="column"
+        justifyContent="center" 
+        alignItems="center" 
+        minHeight={{ xs: '300px', sm: '400px' }}
+        sx={{ p: { xs: 2, sm: 3 } }}
+      >
+        <CircularProgress sx={{ mb: 2 }} />
+        <Typography 
+          variant="body2" 
+          color="text.secondary"
+          sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+        >
+          Loading assessment...
+        </Typography>
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ mt: 2 }}>
+      <Alert 
+        severity="error" 
+        sx={{ 
+          mt: 2,
+          mx: { xs: 1, sm: 0 },
+          fontSize: { xs: '0.875rem', sm: '1rem' }
+        }}
+      >
         {error}
       </Alert>
     );
@@ -180,7 +201,14 @@ const UserAssessment = ({ componentId, onComplete }) => {
 
   if (questions.length === 0) {
     return (
-      <Alert severity="warning" sx={{ mt: 2 }}>
+      <Alert 
+        severity="warning" 
+        sx={{ 
+          mt: 2,
+          mx: { xs: 1, sm: 0 },
+          fontSize: { xs: '0.875rem', sm: '1rem' }
+        }}
+      >
         No questions available for this assessment.
       </Alert>
     );
@@ -190,27 +218,55 @@ const UserAssessment = ({ componentId, onComplete }) => {
   const progress = ((currentQuestion + 1) / questions.length) * 100;
 
   return (
-    <Card>
-      <CardContent>
-        {/* Header with progress and timer */}
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Box flex={1} mr={2}>
-            <Box display="flex" alignItems="center" mb={1}>
-              <Typography variant="caption" color="text.secondary">
+    <Card sx={{ 
+      mx: { xs: 1, sm: 0 },
+      borderRadius: { xs: 2, sm: 1 }
+    }}>
+      <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+        {/* Header with progress and timer - Mobile Responsive */}
+        <Box 
+          display="flex" 
+          justifyContent="space-between" 
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          flexDirection={{ xs: 'column', sm: 'row' }}
+          mb={3}
+          gap={{ xs: 2, sm: 0 }}
+        >
+          <Box flex={1} mr={{ xs: 0, sm: 2 }} width={{ xs: '100%', sm: 'auto' }}>
+            <Box 
+              display="flex" 
+              alignItems="center" 
+              mb={1}
+              flexDirection={{ xs: 'column', sm: 'row' }}
+              gap={{ xs: 1, sm: 0 }}
+            >
+              <Typography 
+                variant="caption" 
+                color="text.secondary"
+                sx={{ 
+                  fontSize: { xs: '0.75rem', sm: '0.75rem' },
+                  textAlign: { xs: 'center', sm: 'left' }
+                }}
+              >
                 Question {currentQuestion + 1} of {questions.length}
               </Typography>
-              <Box ml={2}>
+              <Box ml={{ xs: 0, sm: 2 }}>
                 <Chip
                   size="small"
                   label={`${Object.keys(answers).length} answered`}
                   color={isAllQuestionsAnswered() ? 'success' : 'default'}
+                  sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                 />
               </Box>
             </Box>
             <LinearProgress 
               variant="determinate" 
               value={progress}
-              sx={{ height: 8, borderRadius: 4 }}
+              sx={{ 
+                height: { xs: 6, sm: 8 }, 
+                borderRadius: 4,
+                width: '100%'
+              }}
             />
           </Box>
           {timeRemaining !== null && (
@@ -219,13 +275,27 @@ const UserAssessment = ({ componentId, onComplete }) => {
               label={formatTime(timeRemaining)}
               color={timeRemaining < 300 ? 'error' : 'primary'}
               variant="outlined"
+              sx={{
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                height: { xs: 28, sm: 32 },
+                mt: { xs: 0, sm: 0 }
+              }}
             />
           )}
         </Box>
 
-        {/* Question Content */}
-        <Box mb={4}>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
+        {/* Question Content - Mobile Responsive */}
+        <Box mb={{ xs: 3, sm: 4 }}>
+          <Typography 
+            variant="h6" 
+            gutterBottom 
+            sx={{ 
+              fontWeight: 500,
+              fontSize: { xs: '1.125rem', sm: '1.25rem' },
+              lineHeight: { xs: 1.4, sm: 1.6 },
+              wordBreak: 'break-word'
+            }}
+          >
             {question.question}
           </Typography>
 
@@ -245,7 +315,16 @@ const UserAssessment = ({ componentId, onComplete }) => {
                     value={optionValue}
                     control={<Radio />}
                     label={optionText}
-                    sx={{ py: 0.5 }}
+                    sx={{ 
+                      py: { xs: 0.75, sm: 0.5 },
+                      mx: 0,
+                      width: '100%',
+                      '& .MuiFormControlLabel-label': {
+                        fontSize: { xs: '0.875rem', sm: '1rem' },
+                        lineHeight: 1.5,
+                        wordBreak: 'break-word'
+                      }
+                    }}
                   />
                 );
               })}
@@ -261,30 +340,64 @@ const UserAssessment = ({ componentId, onComplete }) => {
                 value="true" 
                 control={<Radio />} 
                 label="True"
-                sx={{ py: 0.5 }}
+                sx={{ 
+                  py: { xs: 0.75, sm: 0.5 },
+                  mx: 0,
+                  width: '100%',
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: { xs: '0.875rem', sm: '1rem' }
+                  }
+                }}
               />
               <FormControlLabel 
                 value="false" 
                 control={<Radio />} 
                 label="False"
-                sx={{ py: 0.5 }}
+                sx={{ 
+                  py: { xs: 0.75, sm: 0.5 },
+                  mx: 0,
+                  width: '100%',
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: { xs: '0.875rem', sm: '1rem' }
+                  }
+                }}
               />
             </RadioGroup>
           )}
         </Box>
 
-        {/* Navigation and Submit */}
-        <Box display="flex" justifyContent="space-between" alignItems="center">
+        {/* Navigation and Submit - Mobile Responsive */}
+        <Box 
+          display="flex" 
+          justifyContent="space-between" 
+          alignItems="center"
+          flexDirection={{ xs: 'column', sm: 'row' }}
+          gap={{ xs: 2, sm: 0 }}
+        >
           <Button
             variant="outlined"
             startIcon={<NavigateBefore />}
             onClick={handlePrevious}
             disabled={currentQuestion === 0}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              order: { xs: 2, sm: 1 },
+              minHeight: { xs: 44, sm: 36 }
+            }}
+            size={window.innerWidth < 600 ? "large" : "medium"}
           >
             Previous
           </Button>
 
-          <Typography variant="body2" color="text.secondary">
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{
+              order: { xs: 3, sm: 2 },
+              fontSize: { xs: '0.875rem', sm: '0.875rem' },
+              textAlign: 'center'
+            }}
+          >
             {currentQuestion + 1} / {questions.length}
           </Typography>
 
@@ -295,6 +408,12 @@ const UserAssessment = ({ componentId, onComplete }) => {
               startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Send />}
               onClick={handleSubmit}
               disabled={submitting || !isAllQuestionsAnswered()}
+              sx={{
+                width: { xs: '100%', sm: 'auto' },
+                order: { xs: 1, sm: 3 },
+                minHeight: { xs: 44, sm: 36 }
+              }}
+              size={window.innerWidth < 600 ? "large" : "medium"}
             >
               {submitting ? 'Submitting...' : 'Submit Assessment'}
             </Button>
@@ -303,6 +422,12 @@ const UserAssessment = ({ componentId, onComplete }) => {
               variant="contained"
               endIcon={<NavigateNext />}
               onClick={handleNext}
+              sx={{
+                width: { xs: '100%', sm: 'auto' },
+                order: { xs: 1, sm: 3 },
+                minHeight: { xs: 44, sm: 36 }
+              }}
+              size={window.innerWidth < 600 ? "large" : "medium"}
             >
               Next
             </Button>

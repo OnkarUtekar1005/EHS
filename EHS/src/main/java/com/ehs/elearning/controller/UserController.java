@@ -4,7 +4,12 @@ import com.ehs.elearning.model.Domain;
 import com.ehs.elearning.model.Role;
 import com.ehs.elearning.model.Users;
 import com.ehs.elearning.payload.response.MessageResponse;
+import com.ehs.elearning.repository.AssessmentAttemptRepository;
+import com.ehs.elearning.repository.CertificateRepository;
+import com.ehs.elearning.repository.ComponentProgressRepository;
 import com.ehs.elearning.repository.DomainRepository;
+import com.ehs.elearning.repository.PasswordResetTokenRepository;
+import com.ehs.elearning.repository.UserCourseProgressRepository;
 import com.ehs.elearning.repository.UserRepository;
 import com.ehs.elearning.security.UserDetailsImpl;
 
@@ -14,7 +19,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.security.SecureRandom;
 import java.util.*;
@@ -32,7 +41,25 @@ public class UserController {
     private DomainRepository domainRepository;
 
     @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Autowired
+    private ComponentProgressRepository componentProgressRepository;
+
+    @Autowired
+    private UserCourseProgressRepository userCourseProgressRepository;
+
+    @Autowired
+    private AssessmentAttemptRepository assessmentAttemptRepository;
+
+    @Autowired
+    private CertificateRepository certificateRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     // Get all users (admin only)
     @GetMapping
@@ -117,9 +144,47 @@ public class UserController {
     // Delete user (admin only)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
     public ResponseEntity<?> deleteUser(@PathVariable UUID id) {
         return userRepository.findById(id).map(user -> {
+            System.out.println("Deleting user: " + id + " (" + user.getUsername() + ")");
+            
+            // Delete all foreign key dependent records in the correct order
+            // 1. Delete password reset tokens
+            System.out.println("Deleting password reset tokens...");
+            passwordResetTokenRepository.deleteByUser(user);
+            entityManager.flush();
+            
+            // 2. Delete assessment attempts
+            System.out.println("Deleting assessment attempts...");
+            assessmentAttemptRepository.deleteByUserId(id);
+            entityManager.flush();
+            
+            // 3. Delete component progress records
+            System.out.println("Deleting component progress records...");
+            componentProgressRepository.deleteByUserId(id);
+            entityManager.flush();
+            
+            // 4. Delete user course progress records
+            System.out.println("Deleting user course progress records...");
+            userCourseProgressRepository.deleteByUserId(id);
+            entityManager.flush();
+            
+            // 5. Delete certificates
+            System.out.println("Deleting certificates...");
+            certificateRepository.deleteByUserId(id);
+            entityManager.flush();
+            
+            // 6. Clear domain associations (many-to-many relationship)
+            System.out.println("Clearing domain associations...");
+            user.getDomains().clear();
+            userRepository.save(user);
+            entityManager.flush();
+            
+            // 7. Finally delete the user
+            System.out.println("Deleting user record...");
             userRepository.delete(user);
+            
             return ResponseEntity.ok(new MessageResponse("User deleted successfully"));
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -483,10 +548,42 @@ public class UserController {
     // Bulk delete users
     @DeleteMapping("/bulk")
     @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
     public ResponseEntity<?> bulkDeleteUsers(@RequestBody List<UUID> userIds) {
         int deletedCount = 0;
         for (UUID userId : userIds) {
             if (userRepository.existsById(userId)) {
+                userRepository.findById(userId).ifPresent(user -> {
+                    System.out.println("Bulk deleting user: " + userId + " (" + user.getUsername() + ")");
+                    
+                    // Delete all foreign key dependent records in the correct order
+                    // 1. Delete password reset tokens
+                    passwordResetTokenRepository.deleteByUser(user);
+                    entityManager.flush();
+                    
+                    // 2. Delete assessment attempts
+                    assessmentAttemptRepository.deleteByUserId(userId);
+                    entityManager.flush();
+                    
+                    // 3. Delete component progress records
+                    componentProgressRepository.deleteByUserId(userId);
+                    entityManager.flush();
+                    
+                    // 4. Delete user course progress records
+                    userCourseProgressRepository.deleteByUserId(userId);
+                    entityManager.flush();
+                    
+                    // 5. Delete certificates
+                    certificateRepository.deleteByUserId(userId);
+                    entityManager.flush();
+                    
+                    // 6. Clear domain associations (many-to-many relationship)
+                    user.getDomains().clear();
+                    userRepository.save(user);
+                    entityManager.flush();
+                });
+                
+                // 7. Finally delete the user
                 userRepository.deleteById(userId);
                 deletedCount++;
             }

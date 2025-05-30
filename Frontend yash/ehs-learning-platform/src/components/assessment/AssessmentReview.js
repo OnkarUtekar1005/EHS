@@ -42,6 +42,12 @@ const AssessmentReview = ({ open, onClose, assessmentResult, component }) => {
         onClose={onClose}
         maxWidth="md"
         fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            margin: { xs: 1, sm: 2 },
+            width: { xs: 'calc(100% - 16px)', sm: 'auto' }
+          }
+        }}
       >
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -68,6 +74,12 @@ const AssessmentReview = ({ open, onClose, assessmentResult, component }) => {
         onClose={onClose}
         maxWidth="md"
         fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            margin: { xs: 1, sm: 2 },
+            width: { xs: 'calc(100% - 16px)', sm: 'auto' }
+          }
+        }}
       >
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -101,6 +113,12 @@ const AssessmentReview = ({ open, onClose, assessmentResult, component }) => {
         onClose={onClose}
         maxWidth="md"
         fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            margin: { xs: 1, sm: 2 },
+            width: { xs: 'calc(100% - 16px)', sm: 'auto' }
+          }
+        }}
       >
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -143,10 +161,19 @@ const AssessmentReview = ({ open, onClose, assessmentResult, component }) => {
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
-      fullWidth
+      maxWidth={window.innerWidth < 600 ? false : "md"}
+      fullWidth={window.innerWidth >= 600}
+      fullScreen={window.innerWidth < 600}
       scroll="paper"
       aria-labelledby="assessment-review-title"
+      sx={{
+        '& .MuiDialog-paper': {
+          height: { xs: '100vh', sm: 'auto' },
+          maxHeight: { xs: '100vh', sm: '90vh' },
+          margin: { xs: 0, sm: 2 },
+          borderRadius: { xs: 0, sm: 1 }
+        }
+      }}
     >
       <DialogTitle id="assessment-review-title">
         <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -276,8 +303,16 @@ const AssessmentReview = ({ open, onClose, assessmentResult, component }) => {
         })}
       </DialogContent>
 
-      <DialogActions>
-        <Button onClick={onClose} variant="contained">
+      <DialogActions sx={{ p: { xs: 2, sm: 1 } }}>
+        <Button 
+          onClick={onClose} 
+          variant="contained"
+          sx={{
+            width: { xs: '100%', sm: 'auto' },
+            minHeight: { xs: 44, sm: 36 }
+          }}
+          size={window.innerWidth < 600 ? "large" : "medium"}
+        >
           Close
         </Button>
       </DialogActions>

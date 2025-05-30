@@ -203,15 +203,20 @@ const CourseManagement = () => {
       }}
     >
       <Container maxWidth={false} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
-        {/* Header Section */}
-        <Box sx={{ mb: 4, textAlign: 'left', width: '100%' }}>
+        {/* Header Section - Mobile Responsive */}
+        <Box sx={{ 
+          mb: 4, 
+          textAlign: { xs: 'center', sm: 'left' }, 
+          width: '100%' 
+        }}>
           <Typography
             variant="h4"
             component="h1"
             sx={{
               fontWeight: 700,
               mb: 1,
-              color: theme.palette.text.primary
+              color: theme.palette.text.primary,
+              fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
             }}
           >
             Course Management
@@ -219,19 +224,33 @@ const CourseManagement = () => {
           <Typography
             variant="subtitle1"
             color="textSecondary"
-            sx={{ mb: 3 }}
+            sx={{ 
+              mb: 3,
+              fontSize: { xs: '0.875rem', sm: '1rem' }
+            }}
           >
             Create, edit, and manage courses across different domains
           </Typography>
         </Box>
 
-        {/* Filters Section */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        {/* Filters Section - Mobile Responsive */}
+        <Box sx={{ 
+          display: 'flex', 
+          gap: { xs: 1.5, sm: 2 }, 
+          mb: 3, 
+          flexWrap: 'wrap',
+          flexDirection: { xs: 'column', sm: 'row' }
+        }}>
           <TextField
             placeholder="Search courses..."
             value={filters.search}
             onChange={handleSearchChange}
-            sx={{ flex: 1, minWidth: '300px' }}
+            sx={{ 
+              flex: 1, 
+              minWidth: { xs: '100%', sm: '300px' },
+              order: { xs: 1, sm: 1 }
+            }}
+            size={window.innerWidth < 600 ? "small" : "medium"}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -241,134 +260,303 @@ const CourseManagement = () => {
             }}
           />
 
-          <FormControl sx={{ minWidth: 150 }}>
-            <InputLabel>Domain</InputLabel>
-            <Select
-              value={filters.domainId}
-              onChange={handleDomainChange}
-              label="Domain"
-            >
-              <MenuItem value="">All Domains</MenuItem>
-              {domains.map(domain => (
-                <MenuItem key={domain.id} value={domain.id}>
-                  {domain.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Box sx={{ 
+            display: 'flex', 
+            gap: { xs: 1.5, sm: 2 }, 
+            width: { xs: '100%', sm: 'auto' },
+            order: { xs: 2, sm: 2 }
+          }}>
+            <FormControl sx={{ 
+              minWidth: { xs: 120, sm: 150 }, 
+              flex: { xs: 1, sm: 'none' }
+            }}>
+              <InputLabel>Domain</InputLabel>
+              <Select
+                value={filters.domainId}
+                onChange={handleDomainChange}
+                label="Domain"
+                size={window.innerWidth < 600 ? "small" : "medium"}
+              >
+                <MenuItem value="">All Domains</MenuItem>
+                {domains.map(domain => (
+                  <MenuItem key={domain.id} value={domain.id}>
+                    {domain.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-          <FormControl sx={{ minWidth: 150 }}>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={filters.status}
-              onChange={handleStatusChange}
-              label="Status"
-            >
-              <MenuItem value="">All Status</MenuItem>
-              <MenuItem value="DRAFT">Draft</MenuItem>
-              <MenuItem value="PUBLISHED">Published</MenuItem>
-            </Select>
-          </FormControl>
+            <FormControl sx={{ 
+              minWidth: { xs: 100, sm: 150 }, 
+              flex: { xs: 1, sm: 'none' }
+            }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={filters.status}
+                onChange={handleStatusChange}
+                label="Status"
+                size={window.innerWidth < 600 ? "small" : "medium"}
+              >
+                <MenuItem value="">All Status</MenuItem>
+                <MenuItem value="DRAFT">Draft</MenuItem>
+                <MenuItem value="PUBLISHED">Published</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
 
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setOpenCreateModal(true)}
+            sx={{
+              order: { xs: 3, sm: 3 },
+              width: { xs: '100%', sm: 'auto' },
+              minHeight: { xs: 48, sm: 36 }
+            }}
+            size={window.innerWidth < 600 ? "large" : "medium"}
           >
             New Course
           </Button>
         </Box>
 
-        {/* Courses Table */}
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Title</TableCell>
-                <TableCell>Domain</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Components</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {courses.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center">
-                    No courses found. Create your first course!
-                  </TableCell>
-                </TableRow>
-              ) : (
-                courses.map(course => (
-                  <TableRow key={course.id}>
-                  <TableCell>{course.title}</TableCell>
-                  <TableCell>{course.domain.name}</TableCell>
-                  <TableCell>
+        {/* Courses Display - Responsive */}
+        {courses.length === 0 ? (
+          <Paper sx={{ p: 4, textAlign: 'center' }}>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              No courses found
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Create your first course to get started!
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setOpenCreateModal(true)}
+            >
+              Create Course
+            </Button>
+          </Paper>
+        ) : (
+          <>
+            {/* Mobile Card View */}
+            <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 3 }}>
+              {courses.map(course => (
+                <Paper
+                  key={course.id}
+                  sx={{
+                    p: 2,
+                    mb: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    '&:hover': {
+                      borderColor: 'primary.light',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Box sx={{ flex: 1, mr: 2 }}>
+                      <Typography 
+                        variant="subtitle1" 
+                        sx={{ 
+                          fontWeight: 600,
+                          fontSize: '1rem',
+                          mb: 0.5
+                        }}
+                      >
+                        {course.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem', mb: 1 }}>
+                        <strong>Domain:</strong> {course.domain.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        <strong>Components:</strong> {course.componentCount}
+                      </Typography>
+                    </Box>
                     <Chip
                       label={course.status}
                       color={course.status === 'PUBLISHED' ? 'success' : 'default'}
                       size="small"
+                      sx={{ fontSize: '0.75rem' }}
                     />
-                  </TableCell>
-                  <TableCell>{course.componentCount}</TableCell>
-                  <TableCell>
-                    <IconButton
+                  </Box>
+                  
+                  {/* Mobile Actions */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    gap: 1, 
+                    flexWrap: 'wrap',
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
+                    pt: 2
+                  }}>
+                    <Button
                       size="small"
+                      variant="outlined"
+                      startIcon={<EditIcon />}
                       onClick={() => {
                         setSelectedCourseId(course.id);
                         setOpenEditModal(true);
                       }}
-                      title="Edit"
+                      sx={{ flex: 1, minWidth: 0 }}
                     >
-                      <EditIcon />
-                    </IconButton>
+                      Edit
+                    </Button>
                     {course.status === 'DRAFT' ? (
-                      <IconButton
+                      <Button
                         size="small"
+                        variant="outlined"
+                        color="success"
+                        startIcon={<PublishIcon />}
                         onClick={() => handlePublish(course.id)}
-                        title="Publish"
+                        sx={{ flex: 1, minWidth: 0 }}
                       >
-                        <PublishIcon />
-                      </IconButton>
+                        Publish
+                      </Button>
                     ) : (
-                      <IconButton
+                      <Button
                         size="small"
+                        variant="outlined"
+                        color="warning"
+                        startIcon={<TakeDownIcon />}
                         onClick={() => handleTakeDown(course.id)}
-                        title="Take Down"
+                        sx={{ flex: 1, minWidth: 0 }}
                       >
-                        <TakeDownIcon />
-                      </IconButton>
+                        Take Down
+                      </Button>
                     )}
+                    <IconButton
+                      size="small"
+                      onClick={() => handleClone(course.id)}
+                      title="Clone"
+                      sx={{ 
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1
+                      }}
+                    >
+                      <CloneIcon />
+                    </IconButton>
                     <IconButton
                       size="small"
                       onClick={() => handleDelete(course.id)}
                       title="Delete"
                       disabled={course.status === 'PUBLISHED'}
+                      color="error"
+                      sx={{ 
+                        border: '1px solid',
+                        borderColor: course.status === 'PUBLISHED' ? 'divider' : 'error.main',
+                        borderRadius: 1
+                      }}
                     >
                       <DeleteIcon />
                     </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleClone(course.id)}
-                      title="Clone"
-                    >
-                      <CloneIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-          <TablePagination
-            component="div"
-            count={pagination.totalItems}
-            page={pagination.page - 1}
-            onPageChange={handlePageChange}
-            rowsPerPage={pagination.itemsPerPage}
-            rowsPerPageOptions={[5]}
-          />
-        </TableContainer>
+                  </Box>
+                </Paper>
+              ))}
+            </Box>
+
+            {/* Desktop Table View */}
+            <TableContainer component={Paper} sx={{ display: { xs: 'none', md: 'block' } }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Title</TableCell>
+                    <TableCell>Domain</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Components</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {courses.map(course => (
+                    <TableRow key={course.id}>
+                      <TableCell>{course.title}</TableCell>
+                      <TableCell>{course.domain.name}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={course.status}
+                          color={course.status === 'PUBLISHED' ? 'success' : 'default'}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{course.componentCount}</TableCell>
+                      <TableCell>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setSelectedCourseId(course.id);
+                            setOpenEditModal(true);
+                          }}
+                          title="Edit"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        {course.status === 'DRAFT' ? (
+                          <IconButton
+                            size="small"
+                            onClick={() => handlePublish(course.id)}
+                            title="Publish"
+                          >
+                            <PublishIcon />
+                          </IconButton>
+                        ) : (
+                          <IconButton
+                            size="small"
+                            onClick={() => handleTakeDown(course.id)}
+                            title="Take Down"
+                          >
+                            <TakeDownIcon />
+                          </IconButton>
+                        )}
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDelete(course.id)}
+                          title="Delete"
+                          disabled={course.status === 'PUBLISHED'}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleClone(course.id)}
+                          title="Clone"
+                        >
+                          <CloneIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {/* Pagination */}
+            <Box sx={{ mt: 2 }}>
+              <TablePagination
+                component="div"
+                count={pagination.totalItems}
+                page={pagination.page - 1}
+                onPageChange={handlePageChange}
+                rowsPerPage={pagination.itemsPerPage}
+                rowsPerPageOptions={[5]}
+                sx={{
+                  '.MuiTablePagination-toolbar': {
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: { xs: 1, sm: 0 }
+                  },
+                  '.MuiTablePagination-spacer': {
+                    display: { xs: 'none', sm: 'flex' }
+                  },
+                  '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }
+                }}
+              />
+            </Box>
+          </>
+        )}
 
         {/* Create Course Modal */}
       <CreateCourseModal

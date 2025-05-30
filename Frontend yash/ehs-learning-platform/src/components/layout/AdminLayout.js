@@ -104,16 +104,41 @@ const AdminLayout = () => {
 
   // Memoize drawer content to prevent unnecessary re-renders
   const drawer = useMemo(() => (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      overflow: 'auto' // Allow scrolling on mobile if needed
+    }}>
       {isMobile && (
-        <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
-          <IconButton onClick={handleDrawerToggle} aria-label="Close menu">
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          p: 2,
+          borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+        }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Menu
+          </Typography>
+          <IconButton 
+            onClick={handleDrawerToggle} 
+            aria-label="Close menu"
+            size="small"
+          >
             <KeyboardArrowLeftIcon />
           </IconButton>
         </Box>
       )}
       
-      <List component="nav" aria-label="Main navigation" sx={{ mt: 2 }}>
+      <List 
+        component="nav" 
+        aria-label="Main navigation" 
+        sx={{ 
+          mt: isMobile ? 1 : 2,
+          px: { xs: 1, sm: 0 } // Add padding on mobile
+        }}
+      >
         {navigationItems.map(item => (
           <ListItem key={item.path} disablePadding>
             <ListItemButton
@@ -124,44 +149,174 @@ const AdminLayout = () => {
                   ? location.pathname === '/admin'
                   : location.pathname.startsWith(item.path)
               }
+              onClick={isMobile ? handleDrawerToggle : undefined} // Close on mobile after click
+              sx={{
+                borderRadius: { xs: 1, sm: 0 }, // Rounded on mobile
+                mx: { xs: 1, sm: 0 },
+                mb: { xs: 0.5, sm: 0 },
+                minHeight: { xs: 48, sm: 40 }, // Larger touch targets on mobile
+                position: 'relative',
+                transition: 'all 0.2s ease-in-out',
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.15)', // Slightly stronger blue background
+                  color: '#1565c0', // Darker blue for better contrast
+                  borderLeft: { xs: 'none', sm: '4px solid' },
+                  borderLeftColor: { sm: '#1565c0' },
+                  borderRadius: { xs: 1, sm: '0 8px 8px 0' },
+                  fontWeight: 600,
+                  position: 'relative',
+                  '& .MuiListItemIcon-root': {
+                    color: '#1565c0',
+                    transform: 'scale(1.1)', // Slightly larger icon
+                  },
+                  '& .MuiListItemText-primary': {
+                    fontWeight: 600,
+                    color: '#1565c0',
+                  },
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.2)',
+                  },
+                  // Add subtle shadow and border for better visibility
+                  boxShadow: { 
+                    xs: '0 2px 8px rgba(25, 118, 210, 0.2)', 
+                    sm: 'inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
+                  },
+                  // Add subtle gradient for premium feel
+                  background: { 
+                    xs: 'linear-gradient(135deg, rgba(25, 118, 210, 0.15) 0%, rgba(25, 118, 210, 0.12) 100%)',
+                    sm: 'rgba(25, 118, 210, 0.15)'
+                  }
+                },
+                '&:hover:not(.Mui-selected)': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  borderRadius: { xs: 1, sm: 0 }
+                }
+              }}
               className="sidebar-list-item"
             >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
+              <ListItemIcon 
+                sx={{ 
+                  minWidth: { xs: 40, sm: 56 } // Smaller icon spacing on mobile
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText 
+                primary={item.label}
+                primaryTypographyProps={{
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  fontWeight: { xs: 500, sm: 400 }
+                }}
+                sx={{
+                  '& .MuiTypography-root': {
+                    transition: 'font-weight 0.2s ease-in-out'
+                  }
+                }}
+              />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
       
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: 2, mx: { xs: 2, sm: 0 } }} />
       
-      <Box sx={{ px: 2 }}>
+      <Box sx={{ px: { xs: 3, sm: 2 } }}>
         <Typography
           variant="subtitle2"
           color="text.secondary"
-          sx={{ fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.08em' }}
+          sx={{ 
+            fontSize: { xs: '0.75rem', sm: '0.75rem' }, 
+            fontWeight: 600, 
+            letterSpacing: '0.08em',
+            mb: 1
+          }}
         >
           QUICK ACTIONS
         </Typography>
       </Box>
       
-      <List component="nav" aria-label="Quick actions">
+      <List 
+        component="nav" 
+        aria-label="Quick actions"
+        sx={{ px: { xs: 1, sm: 0 } }}
+      >
         {quickActions.map(action => (
           <ListItem key={action.path} disablePadding>
             <ListItemButton
               component={Link}
               to={action.path}
               state={action.state}
+              onClick={isMobile ? handleDrawerToggle : undefined} // Close on mobile after click
+              sx={{
+                borderRadius: { xs: 1, sm: 0 },
+                mx: { xs: 1, sm: 0 },
+                mb: { xs: 0.5, sm: 0 },
+                minHeight: { xs: 48, sm: 40 },
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                  borderRadius: { xs: 1, sm: 0 },
+                  color: 'primary.main',
+                  '& .MuiListItemIcon-root': {
+                    color: 'primary.main',
+                  }
+                }
+              }}
               className="sidebar-list-item"
             >
-              <ListItemIcon>{action.icon}</ListItemIcon>
-              <ListItemText primary={action.label} />
+              <ListItemIcon
+                sx={{ 
+                  minWidth: { xs: 40, sm: 56 }
+                }}
+              >
+                {action.icon}
+              </ListItemIcon>
+              <ListItemText 
+                primary={action.label}
+                primaryTypographyProps={{
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  fontWeight: { xs: 500, sm: 400 }
+                }}
+              />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
+      
+      {/* Mobile user info at bottom */}
+      {isMobile && currentUser && (
+        <Box sx={{ 
+          mt: 'auto', 
+          p: 2, 
+          borderTop: '1px solid rgba(0, 0, 0, 0.12)',
+          backgroundColor: 'grey.50'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar 
+              sx={{ 
+                width: 36, 
+                height: 36,
+                bgcolor: 'primary.main'
+              }}
+              src={currentUser?.profileImage}
+            >
+              {!currentUser?.profileImage && (currentUser?.firstName?.[0] || currentUser?.name?.charAt(0) || 'A')}
+            </Avatar>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                {currentUser?.firstName && currentUser?.lastName
+                  ? `${currentUser.firstName} ${currentUser.lastName}`
+                  : currentUser?.name || 'Admin User'}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {currentUser?.email}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      )}
     </Box>
-  ), [navigationItems, quickActions, isMobile, handleDrawerToggle, location.pathname]);
+  ), [navigationItems, quickActions, isMobile, handleDrawerToggle, location.pathname, currentUser]);
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
@@ -186,8 +341,31 @@ const AdminLayout = () => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+          <Typography 
+            variant="h6" 
+            noWrap 
+            component="div" 
+            sx={{ 
+              flexGrow: 1,
+              fontSize: { xs: '1rem', sm: '1.25rem' },
+              display: { xs: 'none', sm: 'block' }
+            }}
+          >
             Protecther E-Learning Platform - Admin Dashboard
+          </Typography>
+          
+          {/* Mobile title - shorter version */}
+          <Typography 
+            variant="h6" 
+            noWrap 
+            component="div" 
+            sx={{ 
+              flexGrow: 1,
+              fontSize: '1rem',
+              display: { xs: 'block', sm: 'none' }
+            }}
+          >
+            Admin Dashboard
           </Typography>
           
           <Box
@@ -195,12 +373,12 @@ const AdminLayout = () => {
             src={logoImage}
             alt="Company Logo"
             sx={{ 
-              width: 120, 
-              height: 96, 
-              mr: 2,
+              width: { xs: 80, sm: 120 }, // Smaller on mobile
+              height: { xs: 64, sm: 96 }, 
+              mr: { xs: 1, sm: 2 },
               cursor: 'pointer',
               objectFit: 'contain',
-              maxHeight: '56px'
+              maxHeight: { xs: '40px', sm: '56px' } // Smaller on mobile
             }}
           />
           
@@ -213,13 +391,23 @@ const AdminLayout = () => {
               aria-haspopup="true"
               onClick={handleProfileMenuOpen}
               color="inherit"
+              sx={{
+                p: { xs: 0.5, sm: 1 } // Smaller padding on mobile
+              }}
             >
               <Avatar 
-                sx={{ width: 32, height: 32 }} 
+                sx={{ 
+                  width: { xs: 28, sm: 32 }, // Smaller on mobile
+                  height: { xs: 28, sm: 32 },
+                  bgcolor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                  fontSize: { xs: '0.875rem', sm: '1rem' }
+                }} 
                 alt={currentUser?.name || 'User'}
                 src={currentUser?.profileImage}
               >
-                {!currentUser?.profileImage && currentUser?.name?.charAt(0)}
+                {!currentUser?.profileImage && (currentUser?.firstName?.[0] || currentUser?.name?.charAt(0) || 'A')}
               </Avatar>
             </IconButton>
           </Tooltip>
@@ -257,10 +445,11 @@ const AdminLayout = () => {
           [`& .MuiDrawer-paper`]: { 
             width: DRAWER_WIDTH, 
             boxSizing: 'border-box',
-            top: '64px',
-            height: 'calc(100% - 64px)',
+            top: { xs: 0, md: '64px' }, // Full height on mobile
+            height: { xs: '100%', md: 'calc(100% - 64px)' },
             backgroundColor: '#FFFFFF',
-            borderRight: '1px solid rgba(0, 0, 0, 0.12)'
+            borderRight: '1px solid rgba(0, 0, 0, 0.12)',
+            zIndex: { xs: theme.zIndex.drawer + 2, md: theme.zIndex.drawer } // Higher z-index on mobile
           },
           transition: theme.transitions.create(['width'], {
             easing: theme.transitions.easing.sharp,
@@ -274,31 +463,35 @@ const AdminLayout = () => {
         {drawer}
       </Drawer>
       
-      {/* Main content - FIXED ALIGNMENT ISSUE */}
+      {/* Main content - Enhanced mobile responsiveness */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          pt: 3,
+          pt: { xs: 2, sm: 3 }, // Less padding on mobile
           width: { 
             xs: '100%',
             md: open ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%'
           },
-          mt: '64px',
+          mt: { xs: '56px', sm: '64px' }, // Smaller header on mobile
           transition: theme.transitions.create(['width', 'margin'], {
             easing: theme.transitions.easing.easeOut,
             duration: theme.transitions.duration.enteringScreen,
           }),
+          minHeight: { xs: 'calc(100vh - 56px)', sm: 'calc(100vh - 64px)' },
+          overflow: 'auto' // Allow scrolling
         }}
       >
         <Container 
           sx={{ 
             maxWidth: {
               xs: '100%',
+              sm: 'md',
               md: 'lg',
               lg: 'xl'
             },
-            px: { xs: 2, sm: 3 },
+            px: { xs: 1, sm: 2, md: 3 }, // Progressive padding
+            pb: { xs: 2, sm: 3 } // Bottom padding for mobile
           }}
         >
           <Outlet />

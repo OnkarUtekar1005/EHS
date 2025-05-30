@@ -319,15 +319,16 @@ const AssessmentManagement = () => {
       }}
     >
       <Container maxWidth={false} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
-        {/* Header Section */}
-        <Box sx={{ mb: 4, textAlign: 'left', width: '100%' }}>
+        {/* Header Section - Mobile Responsive */}
+        <Box sx={{ mb: 4, textAlign: { xs: 'center', sm: 'left' }, width: '100%' }}>
           <Typography
             variant="h4"
             component="h1"
             sx={{
               fontWeight: 700,
               mb: 1,
-              color: theme.palette.text.primary
+              color: theme.palette.text.primary,
+              fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
             }}
           >
             Assessment Management
@@ -335,30 +336,56 @@ const AssessmentManagement = () => {
           <Typography
             variant="subtitle1"
             color="textSecondary"
-            sx={{ mb: 3 }}
+            sx={{ 
+              mb: 3,
+              fontSize: { xs: '0.875rem', sm: '1rem' }
+            }}
           >
             Monitor and manage assessment attempts across all courses and domains
           </Typography>
         </Box>
         
         {/* Filters */}
-      <Paper sx={{ p: 3, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
+      {/* Filters - Mobile Responsive */}
+      <Paper sx={{ 
+        p: { xs: 2, sm: 3 }, 
+        mb: 4, 
+        borderRadius: 2, 
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
+      }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 2, sm: 0 },
+          mb: 3 
+        }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 600, 
+              color: 'text.primary',
+              fontSize: { xs: '1.125rem', sm: '1.25rem' }
+            }}
+          >
             Filter Assessments
           </Typography>
           <Button
             variant="outlined"
-            size="small"
+            size={window.innerWidth < 600 ? "medium" : "small"}
             onClick={resetFilters}
-            sx={{ minWidth: 100 }}
+            sx={{ 
+              minWidth: { xs: '100%', sm: 100 },
+              width: { xs: '100%', sm: 'auto' }
+            }}
           >
             Clear All
           </Button>
         </Box>
         
-        <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
-          <Grid item xs={12} md={3}>
+        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ alignItems: 'stretch' }}>
+          <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth variant="outlined">
               <InputLabel>Status</InputLabel>
               <Select
@@ -366,9 +393,10 @@ const AssessmentManagement = () => {
                 value={filters.status}
                 onChange={handleFilterChange}
                 label="Status"
+                size={window.innerWidth < 600 ? "small" : "medium"}
                 sx={{ 
                   backgroundColor: 'background.paper',
-                  minHeight: '56px'
+                  minHeight: { xs: '48px', sm: '56px' }
                 }}
               >
                 <MenuItem value="">All Statuses</MenuItem>
@@ -388,7 +416,7 @@ const AssessmentManagement = () => {
             </FormControl>
           </Grid>
           
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} sm={6} md={6}>
             <FormControl fullWidth variant="outlined">
               <InputLabel>Please select the domain</InputLabel>
               <Select
@@ -396,10 +424,11 @@ const AssessmentManagement = () => {
                 value={filters.domainId}
                 onChange={handleFilterChange}
                 label="Please select the domain"
+                size={window.innerWidth < 600 ? "small" : "medium"}
                 sx={{ 
                   backgroundColor: 'background.paper',
-                  minHeight: '56px',
-                  minWidth: '280px'
+                  minHeight: { xs: '48px', sm: '56px' },
+                  minWidth: { xs: '100%', md: '280px' }
                 }}
               >
                 <MenuItem value="">All Domains</MenuItem>
@@ -412,7 +441,7 @@ const AssessmentManagement = () => {
             </FormControl>
           </Grid>
           
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} sm={12} md={3}>
             <TextField
               fullWidth
               variant="outlined"
@@ -421,10 +450,11 @@ const AssessmentManagement = () => {
               value={filters.search}
               onChange={handleFilterChange}
               placeholder="User or component name..."
+              size={window.innerWidth < 600 ? "small" : "medium"}
               sx={{ 
                 backgroundColor: 'background.paper',
                 '& .MuiOutlinedInput-root': {
-                  minHeight: '56px'
+                  minHeight: { xs: '48px', sm: '56px' }
                 }
               }}
               InputProps={{
@@ -435,15 +465,174 @@ const AssessmentManagement = () => {
         </Grid>
       </Paper>
       
-      {/* Assessment Attempts Table */}
-      <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-        <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
+      {/* Assessment Attempts - Mobile Responsive */}
+      <Paper sx={{ 
+        width: '100%', 
+        overflow: 'hidden', 
+        borderRadius: 2, 
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
+      }}>
+        <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 600, 
+              color: 'text.primary',
+              fontSize: { xs: '1.125rem', sm: '1.25rem' }
+            }}
+          >
             Assessment Attempts
           </Typography>
         </Box>
         
-        <TableContainer sx={{ maxHeight: 600 }}>
+        {/* Mobile Card View */}
+        <Box sx={{ display: { xs: 'block', lg: 'none' } }}>
+          {loading ? (
+            <Box sx={{ p: 4, textAlign: 'center' }}>
+              <CircularProgress size={30} />
+            </Box>
+          ) : attempts.length === 0 ? (
+            <Box sx={{ p: 4, textAlign: 'center' }}>
+              <Typography variant="body1" color="text.secondary" gutterBottom>
+                No assessment attempts found
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Try adjusting your filters or check back later
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ p: { xs: 1, sm: 2 } }}>
+              {attempts.map((attempt) => (
+                <Paper
+                  key={attempt.id}
+                  sx={{
+                    p: 2,
+                    mb: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    backgroundColor: attempt.passed ? 'rgba(76, 175, 80, 0.08)' : 
+                                    (attempt.score !== null && !attempt.passed) ? 'rgba(244, 67, 54, 0.08)' : 
+                                    attempt.progressStatus === 'COMPLETED' ? 'rgba(76, 175, 80, 0.08)' :
+                                    attempt.progressStatus === 'FAILED' ? 'rgba(244, 67, 54, 0.08)' :
+                                    'transparent',
+                    '&:hover': {
+                      borderColor: 'primary.light',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }
+                  }}
+                >
+                  <Box sx={{ mb: 2 }}>
+                    <Typography 
+                      variant="subtitle1" 
+                      sx={{ 
+                        fontWeight: 600,
+                        fontSize: '1rem',
+                        mb: 0.5
+                      }}
+                    >
+                      {attempt.username}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                      {attempt.email}
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.5 }}>
+                      <strong>Component:</strong> {attempt.componentTitle || 'N/A'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.5 }}>
+                      <strong>Course:</strong> {attempt.courseTitle || 'N/A'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.5 }}>
+                      <strong>Domain:</strong> {attempt.domainName || 'N/A'}
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                      <strong>Attempt:</strong> {attempt.passed ? `Passed (${attempt.attemptNumber}/3)` : 
+                      attempt.remainingAttempts === 0 ? 'Exhausted (3/3)' : 
+                      `${attempt.attemptNumber}/3 (${attempt.remainingAttempts} left)`}
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                      <strong>Score:</strong> {attempt.score !== null ? `${attempt.score}%` : 
+                       attempt.progressScore !== null ? `${attempt.progressScore}%` : 'Incomplete'}
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                    {attempt.submittedAt ? (
+                      attempt.passed ? (
+                        <Chip label="Passed" color="success" size="small" />
+                      ) : (
+                        <Chip label="Failed" color="error" size="small" />
+                      )
+                    ) : attempt.progressStatus === 'COMPLETED' ? (
+                      <Chip label="Completed" color="success" size="small" />
+                    ) : attempt.progressStatus === 'FAILED' ? (
+                      <Chip label="Failed" color="error" size="small" />
+                    ) : attempt.progressStatus === 'IN_PROGRESS' ? (
+                      <Chip label="In Progress" color="warning" size="small" />
+                    ) : (
+                      <Chip label="Not Started" color="default" size="small" />
+                    )}
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                      {attempt.submittedAt ? 
+                        new Date(attempt.submittedAt).toLocaleDateString() : 
+                        new Date(attempt.startedAt).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                  
+                  {/* Mobile Actions */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    gap: 1, 
+                    flexWrap: 'wrap',
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
+                    pt: 2
+                  }}>
+                    {attempt.canAdminIntervene ? (
+                      <>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="warning"
+                          startIcon={<ResetIcon />}
+                          onClick={() => openResetModal(attempt)}
+                          sx={{ flex: 1, minWidth: 0 }}
+                        >
+                          Reset
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="success"
+                          startIcon={<PassIcon />}
+                          onClick={() => openPassModal(attempt)}
+                          sx={{ flex: 1, minWidth: 0 }}
+                        >
+                          Pass
+                        </Button>
+                      </>
+                    ) : (
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                        {attempt.passed ? 'Passed' : 
+                         attempt.remainingAttempts > 0 ? `${attempt.remainingAttempts} attempts left` : 
+                         'No actions available'}
+                      </Typography>
+                    )}
+                  </Box>
+                </Paper>
+              ))}
+            </Box>
+          )}
+        </Box>
+        
+        {/* Desktop Table View */}
+        <TableContainer sx={{ maxHeight: 600, display: { xs: 'none', lg: 'block' } }}>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
@@ -581,17 +770,26 @@ const AssessmentManagement = () => {
           </Table>
         </TableContainer>
         
-        {/* Pagination */}
+        {/* Pagination - Mobile Responsive */}
         <Box sx={{ 
           display: 'flex', 
-          justifyContent: 'space-between', 
+          justifyContent: { xs: 'center', sm: 'space-between' }, 
           alignItems: 'center', 
-          p: 3,
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 2, sm: 0 },
+          p: { xs: 2, sm: 3 },
           borderTop: '1px solid',
           borderColor: 'divider',
           backgroundColor: 'grey.50'
         }}>
-          <Typography variant="body2" color="text.secondary">
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              order: { xs: 2, sm: 1 }
+            }}
+          >
             Showing {attempts.length} of {pageInfo.totalItems} results
           </Typography>
           <Pagination
@@ -599,15 +797,29 @@ const AssessmentManagement = () => {
             page={pageInfo.currentPage + 1}
             onChange={handlePageChange}
             color="primary"
-            size="medium"
-            showFirstButton
-            showLastButton
+            size={window.innerWidth < 600 ? "small" : "medium"}
+            showFirstButton={window.innerWidth >= 600}
+            showLastButton={window.innerWidth >= 600}
+            sx={{
+              order: { xs: 1, sm: 2 }
+            }}
           />
         </Box>
       </Paper>
       
-      {/* Reset Attempts Modal */}
-      <Dialog open={resetModalOpen} onClose={() => setResetModalOpen(false)}>
+      {/* Reset Attempts Modal - Mobile Responsive */}
+      <Dialog 
+        open={resetModalOpen} 
+        onClose={() => setResetModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            margin: { xs: 1, sm: 2 },
+            width: { xs: 'calc(100% - 16px)', sm: 'auto' }
+          }
+        }}
+      >
         <DialogTitle>Reset Assessment Attempts</DialogTitle>
         <DialogContent>
           <Typography paragraph>
@@ -625,20 +837,47 @@ const AssessmentManagement = () => {
             It cannot be undone.
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setResetModalOpen(false)}>Cancel</Button>
+        <DialogActions sx={{
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 1, sm: 0 },
+          p: { xs: 2, sm: 1 }
+        }}>
+          <Button 
+            onClick={() => setResetModalOpen(false)}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              order: { xs: 2, sm: 1 }
+            }}
+          >
+            Cancel
+          </Button>
           <Button 
             variant="contained" 
             color="warning"
             onClick={handleResetAttempts}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              order: { xs: 1, sm: 2 }
+            }}
           >
             Reset Attempts
           </Button>
         </DialogActions>
       </Dialog>
       
-      {/* Mark as Passed Modal */}
-      <Dialog open={passModalOpen} onClose={() => setPassModalOpen(false)}>
+      {/* Mark as Passed Modal - Mobile Responsive */}
+      <Dialog 
+        open={passModalOpen} 
+        onClose={() => setPassModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            margin: { xs: 1, sm: 2 },
+            width: { xs: 'calc(100% - 16px)', sm: 'auto' }
+          }
+        }}
+      >
         <DialogTitle>Mark Assessment as Passed</DialogTitle>
         <DialogContent>
           <Typography paragraph>
@@ -663,12 +902,28 @@ const AssessmentManagement = () => {
             />
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPassModalOpen(false)}>Cancel</Button>
+        <DialogActions sx={{
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 1, sm: 0 },
+          p: { xs: 2, sm: 1 }
+        }}>
+          <Button 
+            onClick={() => setPassModalOpen(false)}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              order: { xs: 2, sm: 1 }
+            }}
+          >
+            Cancel
+          </Button>
           <Button 
             variant="contained" 
             color="success"
             onClick={handleMarkAsPassed}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              order: { xs: 1, sm: 2 }
+            }}
           >
             Mark as Passed
           </Button>

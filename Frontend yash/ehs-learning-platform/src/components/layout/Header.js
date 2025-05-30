@@ -95,12 +95,16 @@ const Header = ({ toggleSidebar, sidebarOpen, drawerWidth }) => {
             src={logoImage}
             alt="Company Logo"
             sx={{ 
-              width: 120, 
-              height: 96, 
-              mr: 2,
+              width: 228, // 90% bigger: 120 * 1.9 = 228
+              height: 182, // 90% bigger: 96 * 1.9 = 182
+              mr: 3,
               cursor: 'pointer',
               objectFit: 'contain',
-              maxHeight: '56px'
+              maxHeight: '106px', // 90% bigger: 56 * 1.9 = 106
+              transition: 'transform 0.2s ease-in-out',
+              '&:hover': {
+                transform: 'scale(1.05)',
+              }
             }}
           />
           
@@ -112,8 +116,33 @@ const Header = ({ toggleSidebar, sidebarOpen, drawerWidth }) => {
             aria-haspopup="true"
             onClick={handleProfileMenuOpen}
             color="inherit"
+            sx={{
+              ml: 1,
+              p: 0.5,
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                transform: 'scale(1.05)',
+              }
+            }}
           >
-            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.dark' }}>
+            <Avatar 
+              sx={{ 
+                width: 44, // Bigger avatar: 32 -> 44
+                height: 44, 
+                bgcolor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                border: '2px solid rgba(255, 255, 255, 0.2)',
+                fontWeight: 600,
+                fontSize: '1.1rem',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  boxShadow: '0 6px 12px rgba(0,0,0,0.3)',
+                  transform: 'translateY(-1px)',
+                }
+              }}
+            >
               {getAvatarLetters()}
             </Avatar>
           </IconButton>

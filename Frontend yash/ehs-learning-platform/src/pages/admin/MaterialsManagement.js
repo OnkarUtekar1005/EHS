@@ -273,15 +273,16 @@ const MaterialsManagement = () => {
       }}
     >
       <Container maxWidth={false} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
-        {/* Header Section */}
-        <Box sx={{ mb: 4, textAlign: 'left', width: '100%' }}>
+        {/* Header Section - Mobile Responsive */}
+        <Box sx={{ mb: 4, textAlign: { xs: 'center', sm: 'left' }, width: '100%' }}>
           <Typography
             variant="h4"
             component="h1"
             sx={{
               fontWeight: 700,
               mb: 1,
-              color: theme.palette.text.primary
+              color: theme.palette.text.primary,
+              fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
             }}
           >
             Materials Management
@@ -289,18 +290,33 @@ const MaterialsManagement = () => {
           <Typography
             variant="subtitle1"
             color="textSecondary"
-            sx={{ mb: 3 }}
+            sx={{ 
+              mb: 3,
+              fontSize: { xs: '0.875rem', sm: '1rem' }
+            }}
           >
             Upload and manage learning materials for courses
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        {/* Search and Actions - Mobile Responsive */}
+        <Box sx={{ 
+          display: 'flex', 
+          gap: { xs: 1.5, sm: 2 }, 
+          mb: 3, 
+          flexWrap: 'wrap',
+          flexDirection: { xs: 'column', sm: 'row' }
+        }}>
           <TextField
             placeholder="Search materials..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{ flex: 1, minWidth: '300px' }}
+            sx={{ 
+              flex: 1, 
+              minWidth: { xs: '100%', sm: '300px' },
+              order: { xs: 1, sm: 1 }
+            }}
+            size={window.innerWidth < 600 ? "small" : "medium"}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -314,6 +330,12 @@ const MaterialsManagement = () => {
             variant="contained"
             startIcon={<UploadIcon />}
             onClick={() => handleOpenUploadDialog()}
+            sx={{
+              order: { xs: 2, sm: 2 },
+              width: { xs: '100%', sm: 'auto' },
+              minHeight: { xs: 48, sm: 36 }
+            }}
+            size={window.innerWidth < 600 ? "large" : "medium"}
           >
             Upload Material
           </Button>
@@ -328,92 +350,229 @@ const MaterialsManagement = () => {
             </Typography>
           </Paper>
         ) : (
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Title</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Size</TableCell>
-                  <TableCell>Uploaded</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredMaterials
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((material) => (
-                    <TableRow key={material.id}>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {getFileIcon(material.type)}
-                          <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                              {material.title}
-                            </Typography>
-                            {material.description && (
-                              <Typography variant="caption" color="textSecondary">
-                                {material.description}
+          <>
+            {/* Mobile Card View */}
+            <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 3 }}>
+              {filteredMaterials
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((material) => (
+                <Paper
+                  key={material.id}
+                  sx={{
+                    p: 2,
+                    mb: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    '&:hover': {
+                      borderColor: 'primary.light',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                    <Box sx={{ mr: 2 }}>
+                      {getFileIcon(material.type)}
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography 
+                        variant="subtitle1" 
+                        sx={{ 
+                          fontWeight: 600,
+                          fontSize: '1rem',
+                          mb: 0.5,
+                          wordBreak: 'break-word'
+                        }}
+                      >
+                        {material.title}
+                      </Typography>
+                      {material.description && (
+                        <Typography 
+                          variant="body2" 
+                          color="text.secondary" 
+                          sx={{ 
+                            fontSize: '0.875rem', 
+                            mb: 1,
+                            wordBreak: 'break-word'
+                          }}
+                        >
+                          {material.description}
+                        </Typography>
+                      )}
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
+                        <Chip label={material.type} size="small" sx={{ fontSize: '0.75rem' }} />
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                          {formatFileSize(material.fileSize)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                          {new Date(material.createdAt).toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                  
+                  {/* Mobile Actions */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    gap: 1, 
+                    flexWrap: 'wrap',
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
+                    pt: 2
+                  }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<ViewIcon />}
+                      onClick={() => {
+                        setPreviewMaterial(material);
+                        setOpenPreview(true);
+                      }}
+                      sx={{ flex: 1, minWidth: 0 }}
+                    >
+                      View
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<EditIcon />}
+                      onClick={() => handleOpenUploadDialog(material)}
+                      sx={{ flex: 1, minWidth: 0 }}
+                    >
+                      Edit
+                    </Button>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(material.id)}
+                      color="error"
+                      sx={{ 
+                        border: '1px solid',
+                        borderColor: 'error.main',
+                        borderRadius: 1
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                </Paper>
+              ))}
+            </Box>
+
+            {/* Desktop Table View */}
+            <TableContainer component={Paper} sx={{ display: { xs: 'none', md: 'block' } }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Title</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Size</TableCell>
+                    <TableCell>Uploaded</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredMaterials
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((material) => (
+                      <TableRow key={material.id}>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {getFileIcon(material.type)}
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                {material.title}
                               </Typography>
-                            )}
+                              {material.description && (
+                                <Typography variant="caption" color="textSecondary">
+                                  {material.description}
+                                </Typography>
+                              )}
+                            </Box>
                           </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Chip label={material.type} size="small" />
-                      </TableCell>
-                      <TableCell>{formatFileSize(material.fileSize)}</TableCell>
-                      <TableCell>
-                        {new Date(material.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Tooltip title="View">
-                          <IconButton
-                            size="small"
-                            onClick={() => {
-                              setPreviewMaterial(material);
-                              setOpenPreview(true);
-                            }}
-                          >
-                            <ViewIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Edit">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleOpenUploadDialog(material)}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDelete(material.id)}
-                            color="error"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-            <TablePagination
-              component="div"
-              count={filteredMaterials.length}
-              page={page}
-              onPageChange={handlePageChange}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={handleRowsPerPageChange}
-              rowsPerPageOptions={[5, 10, 25]}
-            />
-          </TableContainer>
+                        </TableCell>
+                        <TableCell>
+                          <Chip label={material.type} size="small" />
+                        </TableCell>
+                        <TableCell>{formatFileSize(material.fileSize)}</TableCell>
+                        <TableCell>
+                          {new Date(material.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Tooltip title="View">
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setPreviewMaterial(material);
+                                setOpenPreview(true);
+                              }}
+                            >
+                              <ViewIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Edit">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenUploadDialog(material)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDelete(material.id)}
+                              color="error"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            
+            {/* Pagination - Mobile Responsive */}
+            <Box sx={{ mt: 2 }}>
+              <TablePagination
+                component="div"
+                count={filteredMaterials.length}
+                page={page}
+                onPageChange={handlePageChange}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleRowsPerPageChange}
+                rowsPerPageOptions={[5, 10, 25]}
+                sx={{
+                  '.MuiTablePagination-toolbar': {
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: { xs: 1, sm: 0 }
+                  },
+                  '.MuiTablePagination-spacer': {
+                    display: { xs: 'none', sm: 'flex' }
+                  },
+                  '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }
+                }}
+              />
+            </Box>
+          </>
         )}
 
         {/* Upload/Edit Dialog */}
-      <Dialog open={openUploadDialog} onClose={handleCloseUploadDialog} maxWidth="sm" fullWidth>
+      <Dialog 
+        open={openUploadDialog} 
+        onClose={handleCloseUploadDialog} 
+        maxWidth="sm" 
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            margin: { xs: 1, sm: 2 },
+            width: { xs: 'calc(100% - 16px)', sm: 'auto' }
+          }
+        }}
+      >
         <DialogTitle>
           {selectedMaterial ? 'Edit Material' : 'Upload New Material'}
         </DialogTitle>
