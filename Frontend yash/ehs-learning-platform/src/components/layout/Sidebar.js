@@ -1,20 +1,21 @@
 // src/components/layout/Sidebar.js
 import React, { useState, useEffect } from 'react';
-import { 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemIcon, 
-  ListItemText, 
-  Divider, 
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
   Typography,
   Box,
   Toolbar
 } from '@mui/material';
-import { 
+import {
   Dashboard as DashboardIcon,
   Person as ProfileIcon,
-  School as CourseIcon
+  School as CourseIcon,
+  Assessment as ReportsIcon
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -78,11 +79,25 @@ const Sidebar = ({ isOpen, drawerWidth }) => {
             <ListItemText primary="My Courses" />
           </ListItem>
           
+          {/* Reports */}
+          <ListItem
+            button
+            component={Link}
+            to="/reports"
+            selected={selectedItem === '/reports'}
+            onClick={() => setSelectedItem('/reports')}
+          >
+            <ListItemIcon>
+              <ReportsIcon />
+            </ListItemIcon>
+            <ListItemText primary="Reports" />
+          </ListItem>
+
           {/* Profile */}
-          <ListItem 
-            button 
-            component={Link} 
-            to="/profile" 
+          <ListItem
+            button
+            component={Link}
+            to="/profile"
             selected={selectedItem === '/profile'}
             onClick={() => setSelectedItem('/profile')}
           >
