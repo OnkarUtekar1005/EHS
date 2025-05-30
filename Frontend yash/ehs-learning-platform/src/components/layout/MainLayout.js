@@ -32,7 +32,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import SecurityIcon from '@mui/icons-material/Security';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import DomainIcon from '@mui/icons-material/Domain';
-import NotificationsIcon from '@mui/icons-material/Notifications';
+import logoImage from '../../assets/logo-image.jpg';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import SchoolIcon from '@mui/icons-material/School';
 
@@ -201,15 +201,21 @@ const MainLayout = () => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            EHS E-Learning Platform
+            Protecther E-Learning Platform
           </Typography>
-          <IconButton
-            size="large"
-            aria-label="show notifications"
-            color="inherit"
-          >
-            <NotificationsIcon />
-          </IconButton>
+          <Box
+            component="img"
+            src={logoImage}
+            alt="Company Logo"
+            sx={{ 
+              width: 120, 
+              height: 96, 
+              mr: 2,
+              cursor: 'pointer',
+              objectFit: 'contain',
+              maxHeight: '56px'
+            }}
+          />
           <IconButton
             size="large"
             edge="end"

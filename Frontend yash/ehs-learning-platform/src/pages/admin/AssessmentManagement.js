@@ -29,7 +29,8 @@ import {
   Tooltip,
   Alert,
   Snackbar,
-  Pagination
+  Pagination,
+  useTheme
 } from '@mui/material';
 import {
   Refresh as ResetIcon,
@@ -39,6 +40,7 @@ import {
 import api, { assessmentService, courseService, domainService } from '../../services/api';
 
 const AssessmentManagement = () => {
+  const theme = useTheme();
   // State variables
   const [attempts, setAttempts] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -307,13 +309,39 @@ const AssessmentManagement = () => {
   };
   
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Assessment Management
-      </Typography>
-      
-      
-      {/* Filters */}
+    <Box
+      sx={{
+        backgroundColor: theme.palette.background.default,
+        minHeight: '100vh',
+        pt: { xs: 2, md: 4 },
+        pb: 8,
+        width: '100%'
+      }}
+    >
+      <Container maxWidth={false} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
+        {/* Header Section */}
+        <Box sx={{ mb: 4, textAlign: 'left', width: '100%' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              fontWeight: 700,
+              mb: 1,
+              color: theme.palette.text.primary
+            }}
+          >
+            Assessment Management
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            color="textSecondary"
+            sx={{ mb: 3 }}
+          >
+            Monitor and manage assessment attempts across all courses and domains
+          </Typography>
+        </Box>
+        
+        {/* Filters */}
       <Paper sx={{ p: 3, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
@@ -661,7 +689,8 @@ const AssessmentManagement = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 

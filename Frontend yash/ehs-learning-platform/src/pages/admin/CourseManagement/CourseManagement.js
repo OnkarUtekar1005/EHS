@@ -22,7 +22,8 @@ import {
   InputLabel,
   InputAdornment,
   Snackbar,
-  Alert
+  Alert,
+  useTheme
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -38,6 +39,7 @@ import CreateCourseModal from './CourseModal/CreateCourseModal';
 import EditCourseModal from './CourseModal/EditCourseModal';
 
 const CourseManagement = () => {
+  const theme = useTheme();
   const location = useLocation();
   const [courses, setCourses] = useState([]);
   const [domains, setDomains] = useState([]);
@@ -191,11 +193,37 @@ const CourseManagement = () => {
   };
 
   return (
-    <Container>
-      <Box sx={{ py: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Course Management
-        </Typography>
+    <Box
+      sx={{
+        backgroundColor: theme.palette.background.default,
+        minHeight: '100vh',
+        pt: { xs: 2, md: 4 },
+        pb: 8,
+        width: '100%'
+      }}
+    >
+      <Container maxWidth={false} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
+        {/* Header Section */}
+        <Box sx={{ mb: 4, textAlign: 'left', width: '100%' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              fontWeight: 700,
+              mb: 1,
+              color: theme.palette.text.primary
+            }}
+          >
+            Course Management
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            color="textSecondary"
+            sx={{ mb: 3 }}
+          >
+            Create, edit, and manage courses across different domains
+          </Typography>
+        </Box>
 
         {/* Filters Section */}
         <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
@@ -341,9 +369,8 @@ const CourseManagement = () => {
             rowsPerPageOptions={[5]}
           />
         </TableContainer>
-      </Box>
 
-      {/* Create Course Modal */}
+        {/* Create Course Modal */}
       <CreateCourseModal
         open={openCreateModal}
         onClose={() => setOpenCreateModal(false)}
@@ -379,7 +406,8 @@ const CourseManagement = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 

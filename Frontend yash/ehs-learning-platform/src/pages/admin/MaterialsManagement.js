@@ -27,7 +27,8 @@ import {
   MenuItem,
   LinearProgress,
   Alert,
-  Tooltip
+  Tooltip,
+  useTheme
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
@@ -44,6 +45,7 @@ import api from '../../services/api';
 import MaterialViewer from '../../components/MaterialViewer';
 
 const MaterialsManagement = () => {
+  const theme = useTheme();
   const location = useLocation();
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -261,14 +263,37 @@ const MaterialsManagement = () => {
   );
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ py: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Materials Management
-        </Typography>
-        <Typography variant="body1" color="textSecondary" gutterBottom>
-          Upload and manage learning materials for courses
-        </Typography>
+    <Box
+      sx={{
+        backgroundColor: theme.palette.background.default,
+        minHeight: '100vh',
+        pt: { xs: 2, md: 4 },
+        pb: 8,
+        width: '100%'
+      }}
+    >
+      <Container maxWidth={false} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
+        {/* Header Section */}
+        <Box sx={{ mb: 4, textAlign: 'left', width: '100%' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              fontWeight: 700,
+              mb: 1,
+              color: theme.palette.text.primary
+            }}
+          >
+            Materials Management
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            color="textSecondary"
+            sx={{ mb: 3 }}
+          >
+            Upload and manage learning materials for courses
+          </Typography>
+        </Box>
 
         <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
           <TextField
@@ -386,9 +411,8 @@ const MaterialsManagement = () => {
             />
           </TableContainer>
         )}
-      </Box>
 
-      {/* Upload/Edit Dialog */}
+        {/* Upload/Edit Dialog */}
       <Dialog open={openUploadDialog} onClose={handleCloseUploadDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
           {selectedMaterial ? 'Edit Material' : 'Upload New Material'}
@@ -482,7 +506,8 @@ const MaterialsManagement = () => {
         }}
         material={previewMaterial}
       />
-    </Container>
+      </Container>
+    </Box>
   );
 };
 

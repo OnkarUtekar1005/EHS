@@ -35,7 +35,7 @@ import CategoryIcon from '@mui/icons-material/Category';
 import BookIcon from '@mui/icons-material/Book';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import NotificationsIcon from '@mui/icons-material/Notifications';
+import logoImage from '../../assets/logo-image.jpg';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -187,20 +187,22 @@ const AdminLayout = () => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            EHS E-Learning Platform - Admin Dashboard
+            Protecther E-Learning Platform - Admin Dashboard
           </Typography>
           
-          <Tooltip title="Notifications">
-            <IconButton
-              size="large"
-              aria-label={`show ${notificationCount} notifications`}
-              color="inherit"
-            >
-              <Badge badgeContent={notificationCount} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-          </Tooltip>
+          <Box
+            component="img"
+            src={logoImage}
+            alt="Company Logo"
+            sx={{ 
+              width: 120, 
+              height: 96, 
+              mr: 2,
+              cursor: 'pointer',
+              objectFit: 'contain',
+              maxHeight: '56px'
+            }}
+          />
           
           <Tooltip title="Account">
             <IconButton

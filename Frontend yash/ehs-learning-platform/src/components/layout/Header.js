@@ -14,9 +14,9 @@ import {
   Divider
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import logoImage from '../../assets/logo-image.jpg';
 
 const Header = ({ toggleSidebar, sidebarOpen, drawerWidth }) => {
   const navigate = useNavigate();
@@ -86,17 +86,23 @@ const Header = ({ toggleSidebar, sidebarOpen, drawerWidth }) => {
         </IconButton>
         
         <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-          EHS E-Learning Platform
+          Protecther E-Learning Platform
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton
-            size="large"
-            aria-label="show notifications"
-            color="inherit"
-          >
-            <NotificationsIcon />
-          </IconButton>
+          <Box
+            component="img"
+            src={logoImage}
+            alt="Company Logo"
+            sx={{ 
+              width: 120, 
+              height: 96, 
+              mr: 2,
+              cursor: 'pointer',
+              objectFit: 'contain',
+              maxHeight: '56px'
+            }}
+          />
           
           <IconButton
             size="large"

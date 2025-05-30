@@ -3,10 +3,12 @@ import { userService } from '../../../services/api';
 import Papa from 'papaparse';
 import { domainService } from '../../../services/api';
 import { useLocation } from 'react-router-dom';
+import { Box, Container, Typography, useTheme } from '@mui/material';
 
 
 
 const UserManagement = () => {
+  const theme = useTheme();
   // States
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -582,23 +584,46 @@ const handleExportCSV = async () => {
   };
 
   return (
-    <div style={styles.container}>
-      {/* Header Section */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={styles.header}>User Management</h1>
-        <p style={styles.subHeader}>
-          Manage users, assign domains, and track employee access across your organization
-        </p>
-      </div>
-      
-      {/* Action Buttons */}
-      <div style={{ 
-        marginBottom: '24px', 
-        display: 'flex', 
-        gap: '12px', 
-        flexWrap: 'wrap',
-        alignItems: 'center'
-      }}>
+    <Box
+      sx={{
+        backgroundColor: theme.palette.background.default,
+        minHeight: '100vh',
+        pt: { xs: 2, md: 4 },
+        pb: 8,
+        width: '100%'
+      }}
+    >
+      <Container maxWidth={false} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
+        {/* Header Section */}
+        <Box sx={{ mb: 4, textAlign: 'left', width: '100%' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              fontWeight: 700,
+              mb: 1,
+              color: theme.palette.text.primary
+            }}
+          >
+            User Management
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            color="textSecondary"
+            sx={{ mb: 3 }}
+          >
+            Manage users, assign domains, and track employee access across your organization
+          </Typography>
+        </Box>
+        
+        {/* Action Buttons */}
+        <Box sx={{ 
+          marginBottom: '24px', 
+          display: 'flex', 
+          gap: '12px', 
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
         <button style={styles.btnPrimary} onClick={() => setShowAddModal(true)}>
           <span style={{ marginRight: '5px' }}>+</span> ADD USER
         </button>
@@ -608,17 +633,17 @@ const handleExportCSV = async () => {
         <button style={styles.btnOutline} onClick={handleExportCSV}>
           <span style={{ marginRight: '5px' }}>↓</span> EXPORT CSV
         </button>
-      </div>
-      
-      {/* Filters Section */}
-      <div style={{ 
-        marginBottom: '24px',
-        padding: '20px',
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-        border: '1px solid #e5e7eb'
-      }}>
+        </Box>
+        
+        {/* Filters Section */}
+        <Box sx={{ 
+          marginBottom: '24px',
+          padding: '20px',
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          border: '1px solid #e5e7eb'
+        }}>
         <h3 style={{ 
           margin: '0 0 16px 0',
           color: '#374151',
@@ -701,11 +726,17 @@ const handleExportCSV = async () => {
               ))}
             </select>
           </div>
-        </div>
-      </div>
-      
-      {/* Users Table */}
-      <div style={styles.table}>
+          </div>
+        </Box>
+        
+        {/* Users Table */}
+        <Box sx={{
+          width: '100%',
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+        }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
@@ -818,25 +849,24 @@ const handleExportCSV = async () => {
               ))
             )}
           </tbody>
-        </table>
-      </div>
-      
-      {/* Selection Actions */}
-      {selectedUsers.length > 0 && (
-        <div style={{
-          ...styles.selectionRow,
-          backgroundColor: '#f0f9ff',
-          padding: '16px 20px',
-          borderRadius: '8px',
-          border: '1px solid #bfdbfe',
-          marginTop: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '12px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          </table>
+        </Box>
+        
+        {/* Selection Actions */}
+        {selectedUsers.length > 0 && (
+          <Box sx={{
+            backgroundColor: '#f0f9ff',
+            padding: '16px 20px',
+            borderRadius: '8px',
+            border: '1px solid #bfdbfe',
+            marginTop: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <span style={{ 
               fontSize: '14px',
               fontWeight: '600',
@@ -850,8 +880,8 @@ const handleExportCSV = async () => {
             }}>
               Choose an action below
             </span>
-          </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          </Box>
+          <Box sx={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button 
               style={{ 
                 ...styles.btnOutline,
@@ -923,11 +953,11 @@ const handleExportCSV = async () => {
             >
               DELETE USERS
             </button>
-          </div>
-        </div>
+          </Box>
+        </Box>
       )}
-      
-      {/* Add User Modal */}
+        
+        {/* Add User Modal */}
       {showAddModal && (
         <div style={styles.modal}>
           <div style={styles.modalContent}>
@@ -1156,7 +1186,8 @@ const handleExportCSV = async () => {
           </div>
         </div>
       )}
-    </div>
+      </Container>
+    </Box>
   );
 };
 

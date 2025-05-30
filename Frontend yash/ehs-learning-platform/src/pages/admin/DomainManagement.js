@@ -21,7 +21,8 @@ import {
   DialogTitle,
   CircularProgress,
   Alert,
-  InputAdornment
+  InputAdornment,
+  useTheme
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -32,6 +33,7 @@ import {
 import { domainService } from '../../services/api';
 
 const DomainManagement = () => {
+  const theme = useTheme();
   const [domains, setDomains] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -201,17 +203,48 @@ const DomainManagement = () => {
   };
   
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Domain Management</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAddDialog}
-        >
-          Add Domain
-        </Button>
-      </Box>
+    <Box
+      sx={{
+        backgroundColor: theme.palette.background.default,
+        minHeight: '100vh',
+        pt: { xs: 2, md: 4 },
+        pb: 8,
+        width: '100%'
+      }}
+    >
+      <Container maxWidth={false} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
+        {/* Header Section */}
+        <Box sx={{ mb: 4, textAlign: 'left', width: '100%' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              fontWeight: 700,
+              mb: 1,
+              color: theme.palette.text.primary
+            }}
+          >
+            Domain Management
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            color="textSecondary"
+            sx={{ mb: 3 }}
+          >
+            Organize courses and content by creating and managing learning domains
+          </Typography>
+        </Box>
+
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Box />
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAddDialog}
+          >
+            Add Domain
+          </Button>
+        </Box>
       
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -352,7 +385,8 @@ const DomainManagement = () => {
           )}
         </DialogActions>
       </Dialog>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 
