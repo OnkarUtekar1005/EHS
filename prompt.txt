@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Context of the project : an enviornment health safety elearning application with 2 roles 
 admin : which has to make training modules, publish them for users, edit them on the go, and manage users while being able to get all the access of most of the application
 user : which has to be able to view and complete training modules and see their progress and report
@@ -12,3 +13,20 @@ Now  todays  task /goal is to create functionality  where when user is logged in
 first create theplan to do this work first create make the backend changes necessary create endpoints/use existing and create  necessary service and functionality
 then second create the frontend chnages and use the same endpoints as backend so that backend and fronted is in sync 
 note this should not affect any other working of the current system 
+=======
+Context of the project : an enviornment health safety elearning application with 2 roles 
+admin : which has to make training modules, publish them for users, edit them on the go, and manage users while being able to get all the access of most of the application
+user : which has to be able to view and complete training modules and see their progress and report
+dont use flow documentation v1 and v2 they are of no use use v3 that is currenlty that is being used in the project
+here lies the currently changes that i need for the project 
+Currently we are developing the project and have done a some amount of progress towards the final goals
+what has been done now : admin module is functional for some extent, he can add users in bulk and solo, he can get the list of all users with all the passwords for their first login and he can assign domains for them
+also in admin modules he can add training modules, edit them, delete them, publish them, takedown them , and get the list of all training modules. Within the training modules there are pre assessment , training content, post assessment. and basic evalutaion
+User functionality is to be able to view and complete training modules and see their progress.
+understand the project 
+Now  todays  task /goal is to develop the user side reports only  below is a detailed description 1 , create a plan based on what you have understand and then start implementing
+Descriptions 1: On the USer reporst tab show a graph that will show the users graph that will contain the data of the user for the current moth and howmany courses he completed and passed and fails for that month
+with a list completed course and a button  to download certficate it only show5 list of course and if there are more the give it a new page(new page mean like on current page but new course when clicked on page 2) for next five and so on 
+make it mobile responsive as well
+description 2: Also  On dashboard show only three courses just three not more that that and make that also mobile phone responsive
+>>>>>>> c022600651e79e292016cbeb0c4b8e58c222ce63

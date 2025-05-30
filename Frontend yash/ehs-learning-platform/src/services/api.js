@@ -334,4 +334,31 @@ export const certificateService = {
   verifyCertificate: (certificateNumber) => api.get(`/v2/certificates/verify/${certificateNumber}`)
 };
 
+// Reports services
+export const reportsService = {
+  // Get user reports - try both endpoints to see which one works
+  getUserReport: () => {
+    console.log("Fetching user reports");
+    // Try the full endpoint path first
+    return api.get('/api/v2/user/reports')
+      .catch(error => {
+        console.log("First endpoint failed, trying alternative:", error);
+        // If that fails, try the short version
+        return api.get('/v2/user/reports');
+      });
+  },
+
+  // Get user reports summary
+  getUserReportSummary: () => api.get('/v2/user/reports/summary'),
+
+  // Get user courses progress details
+  getUserCourseProgressDetails: () => api.get('/v2/user/reports/courses'),
+
+  // Get user assessment statistics
+  getUserAssessmentStats: () => api.get('/v2/user/reports/assessments'),
+
+  // Get chart data for reports
+  getUserChartData: () => api.get('/v2/user/reports/charts')
+};
+
 export default api;
