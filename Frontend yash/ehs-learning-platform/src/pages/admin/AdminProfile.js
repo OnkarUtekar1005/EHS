@@ -16,20 +16,16 @@ import {
   CircularProgress,
   Tab,
   Tabs,
-  InputAdornment,
-  IconButton,
   Divider
 } from '@mui/material';
 import { 
   AdminPanelSettings as AdminIcon,
   Edit as EditIcon,
   Save as SaveIcon,
-  Cancel as CancelIcon,
-  Visibility,
-  VisibilityOff
+  Cancel as CancelIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import { userService, authService } from '../../services/api';
+import { userService } from '../../services/api';
 
 // TabPanel component for tab content
 function TabPanel(props) {
@@ -74,22 +70,6 @@ const AdminProfile = () => {
   const [profileSuccess, setProfileSuccess] = useState(false);
   const [profileErrors, setProfileErrors] = useState({});
   const [profileFetched, setProfileFetched] = useState(false);
-  
-  // Password Change State
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-  const [showPasswords, setShowPasswords] = useState({
-    currentPassword: false,
-    newPassword: false,
-    confirmPassword: false
-  });
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
-  const [passwordErrors, setPasswordErrors] = useState({});
   
   // Memoized function to fetch user profile
   const fetchUserProfile = useCallback(async () => {
@@ -287,85 +267,6 @@ const AdminProfile = () => {
     setProfileSuccess(false);
   };
   
-  // Password Change Handlers
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear field error if user is typing
-    if (passwordErrors[name]) {
-      setPasswordErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const togglePasswordVisibility = (field) => {
-    setShowPasswords(prev => ({
-      ...prev,
-      [field]: !prev[field]
-    }));
-  };
-
-  const validatePasswordForm = () => {
-    const errors = {};
-    
-    if (!passwordData.currentPassword) {
-      errors.currentPassword = 'Current password is required';
-    }
-    
-    if (!passwordData.newPassword) {
-      errors.newPassword = 'New password is required';
-    } else if (passwordData.newPassword.length < 8) {
-      errors.newPassword = 'Password must be at least 8 characters';
-    }
-    
-    if (!passwordData.confirmPassword) {
-      errors.confirmPassword = 'Please confirm your new password';
-    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-    }
-    
-    setPasswordErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    
-    if (!validatePasswordForm()) return;
-    
-    try {
-      setPasswordLoading(true);
-      setPasswordError('');
-      setPasswordSuccess('');
-      
-      // Make the actual API call to change password
-      await authService.changePassword(passwordData);
-      
-      // Reset form on success
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-      
-      setPasswordSuccess('Password changed successfully');
-    } catch (error) {
-      console.error("Password change error:", error);
-      setPasswordError(
-        error.response?.data?.message || 
-        'Failed to change password. Please ensure your current password is correct.'
-      );
-    } finally {
-      setPasswordLoading(false);
-    }
-  };
-  
   if (profileLoading && !profileData.firstName) {
     return (
       <Container maxWidth="md" sx={{ mt: 4 }}>
@@ -385,7 +286,6 @@ const AdminProfile = () => {
           <Tabs value={tabValue} onChange={handleTabChange} aria-label="profile tabs">
             <Tab label="Profile Information" id="profile-tab-0" />
             <Tab label="Admin Permissions" id="profile-tab-1" />
-            <Tab label="Change Password" id="profile-tab-2" />
           </Tabs>
         </Box>
         
@@ -629,120 +529,6 @@ const AdminProfile = () => {
               </Grid>
             )}
           </Grid>
-        </TabPanel>
-        
-        {/* Change Password Tab */}
-        <TabPanel value={tabValue} index={2}>
-          {passwordError && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {passwordError}
-            </Alert>
-          )}
-          
-          {passwordSuccess && (
-            <Alert severity="success" sx={{ mb: 3 }}>
-              {passwordSuccess}
-            </Alert>
-          )}
-          
-          <Box component="form" onSubmit={handleChangePassword}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  required
-                  label="Current Password"
-                  name="currentPassword"
-                  type={showPasswords.currentPassword ? 'text' : 'password'}
-                  value={passwordData.currentPassword}
-                  onChange={handlePasswordChange}
-                  disabled={passwordLoading}
-                  error={!!passwordErrors.currentPassword}
-                  helperText={passwordErrors.currentPassword}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={() => togglePasswordVisibility('currentPassword')}
-                          edge="end"
-                        >
-                          {showPasswords.currentPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  required
-                  label="New Password"
-                  name="newPassword"
-                  type={showPasswords.newPassword ? 'text' : 'password'}
-                  value={passwordData.newPassword}
-                  onChange={handlePasswordChange}
-                  disabled={passwordLoading}
-                  error={!!passwordErrors.newPassword}
-                  helperText={passwordErrors.newPassword}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={() => togglePasswordVisibility('newPassword')}
-                          edge="end"
-                        >
-                          {showPasswords.newPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  required
-                  label="Confirm New Password"
-                  name="confirmPassword"
-                  type={showPasswords.confirmPassword ? 'text' : 'password'}
-                  value={passwordData.confirmPassword}
-                  onChange={handlePasswordChange}
-                  disabled={passwordLoading}
-                  error={!!passwordErrors.confirmPassword}
-                  helperText={passwordErrors.confirmPassword}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={() => togglePasswordVisibility('confirmPassword')}
-                          edge="end"
-                        >
-                          {showPasswords.confirmPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={passwordLoading}
-                  >
-                    {passwordLoading ? 
-                      <><CircularProgress size={20} sx={{ mr: 1 }} /> Changing Password...</> : 
-                      'Change Password'}
-                  </Button>
-                </Box>
-              </Grid>
-            </Grid>
-          </Box>
         </TabPanel>
       </Paper>
       

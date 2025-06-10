@@ -523,27 +523,6 @@ const Dashboard = () => {
             )}
           </Box>
 
-          {/* System Notification */}
-          <Paper
-            elevation={0}
-            sx={{
-              p: isMobile ? 2 : 3,
-              borderRadius: 2,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-            }}
-          >
-            <Typography
-              variant={isMobile ? "subtitle1" : "h6"}
-              gutterBottom
-              sx={{ fontWeight: 600 }}
-            >
-              System Notification
-            </Typography>
-            <Typography variant={isMobile ? "body2" : "body1"}>
-              The platform is currently being optimized with new features.
-              Stay tuned for updates. Please check back later.
-            </Typography>
-          </Paper>
         </Container>
       </Box>
       

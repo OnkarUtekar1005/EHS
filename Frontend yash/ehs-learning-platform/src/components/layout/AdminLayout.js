@@ -66,8 +66,8 @@ const AdminLayout = () => {
   const navigationItems = useMemo(() => [
     { path: '/admin', icon: <DashboardIcon />, label: 'Dashboard' },
     { path: '/admin/users', icon: <PeopleIcon />, label: 'Users' },
-    { path: '/admin/domains', icon: <CategoryIcon />, label: 'Domains' },
-    { path: '/admin/courses', icon: <BookIcon />, label: 'Courses' },
+    { path: '/admin/domains', icon: <CategoryIcon />, label: 'Books' },
+    { path: '/admin/courses', icon: <BookIcon />, label: 'Chapter/Modules' },
     { path: '/admin/materials', icon: <CloudUploadIcon />, label: 'Materials' },
     { path: '/admin/assessments', icon: <AssessmentIcon />, label: 'Assessments' }
   ], []);

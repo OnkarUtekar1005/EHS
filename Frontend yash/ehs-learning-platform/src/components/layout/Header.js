@@ -85,8 +85,31 @@ const Header = ({ toggleSidebar, sidebarOpen, drawerWidth }) => {
           <MenuIcon />
         </IconButton>
         
-        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+        <Typography 
+          variant="h6" 
+          noWrap 
+          component="div" 
+          sx={{ 
+            flexGrow: 1,
+            fontSize: { xs: '1rem', sm: '1.25rem' },
+            display: { xs: 'none', sm: 'block' }
+          }}
+        >
           Protecther E-Learning Platform
+        </Typography>
+        
+        {/* Mobile title - shorter version */}
+        <Typography 
+          variant="h6" 
+          noWrap 
+          component="div" 
+          sx={{ 
+            flexGrow: 1,
+            fontSize: '1rem',
+            display: { xs: 'block', sm: 'none' }
+          }}
+        >
+          Protecther
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -95,12 +118,12 @@ const Header = ({ toggleSidebar, sidebarOpen, drawerWidth }) => {
             src={logoImage}
             alt="Company Logo"
             sx={{ 
-              width: 228, // 90% bigger: 120 * 1.9 = 228
-              height: 182, // 90% bigger: 96 * 1.9 = 182
-              mr: 3,
+              width: { xs: 80, sm: 120, md: 228 }, // Smaller on mobile
+              height: { xs: 64, sm: 96, md: 182 },
+              mr: { xs: 1, sm: 2, md: 3 }, // Less margin on mobile
               cursor: 'pointer',
               objectFit: 'contain',
-              maxHeight: '106px', // 90% bigger: 56 * 1.9 = 106
+              maxHeight: { xs: '40px', sm: '56px', md: '106px' }, // Much smaller on mobile
               transition: 'transform 0.2s ease-in-out',
               '&:hover': {
                 transform: 'scale(1.05)',

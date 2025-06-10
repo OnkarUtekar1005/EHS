@@ -567,7 +567,7 @@ const UserReports = () => {
         {/* Stats Cards */}
         <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: 4 }}>
           {/* Completed Courses Card */}
-          <Grid item xs={6} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={4}>
             <Paper
               elevation={0}
               sx={{
@@ -601,7 +601,7 @@ const UserReports = () => {
           </Grid>
           
           {/* Average Score Card */}
-          <Grid item xs={6} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={4}>
             <Paper
               elevation={0}
               sx={{
@@ -635,7 +635,7 @@ const UserReports = () => {
           </Grid>
           
           {/* Learning Time Card */}
-          <Grid item xs={6} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={4}>
             <Paper
               elevation={0}
               sx={{
@@ -669,7 +669,7 @@ const UserReports = () => {
           </Grid>
           
           {/* Improvement Rate Card */}
-          <Grid item xs={6} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={4}>
             <Paper
               elevation={0}
               sx={{
@@ -737,29 +737,34 @@ const UserReports = () => {
               <Tabs 
                 value={activeTab} 
                 onChange={handleTabChange}
+                variant={isMobile ? "scrollable" : "standard"}
+                scrollButtons={isMobile ? "auto" : false}
+                allowScrollButtonsMobile
                 sx={{ 
                   '& .MuiTab-root': {
                     textTransform: 'none',
                     fontWeight: 500,
-                    fontSize: '1rem'
+                    fontSize: { xs: '0.875rem', sm: '1rem' },
+                    minHeight: { xs: 48, sm: 56 },
+                    px: { xs: 1, sm: 2 }
                   }
                 }}
               >
                 <Tab 
-                  icon={<CheckCircle />} 
-                  label="Completed Courses" 
+                  icon={<CheckCircle fontSize={isMobile ? "small" : "medium"} />} 
+                  label={isMobile ? "Completed" : "Completed Courses"} 
                   iconPosition="start"
-                  sx={{ mr: 2 }}
+                  sx={{ mr: { xs: 0, sm: 2 } }}
                 />
                 <Tab 
-                  icon={<AssessmentIcon />} 
-                  label="Assessment Performance" 
+                  icon={<AssessmentIcon fontSize={isMobile ? "small" : "medium"} />} 
+                  label={isMobile ? "Assessment" : "Assessment Performance"} 
                   iconPosition="start"
-                  sx={{ mr: 2 }}
+                  sx={{ mr: { xs: 0, sm: 2 } }}
                 />
                 <Tab 
-                  icon={<TrendingUpIcon />} 
-                  label="Skill Improvement" 
+                  icon={<TrendingUpIcon fontSize={isMobile ? "small" : "medium"} />} 
+                  label={isMobile ? "Improvement" : "Skill Improvement"} 
                   iconPosition="start"
                 />
               </Tabs>
@@ -951,35 +956,40 @@ const UserReports = () => {
                   </Typography>
                   
                   {getAssessmentPerformance().length > 0 ? (
-                    <TableContainer>
-                      <Table>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell sx={{ fontWeight: 600 }}>Course</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Completion Date</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Score</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Performance</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Certificate</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {getAssessmentPerformance().map((course) => (
-                            <TableRow key={course.courseId} sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}>
-                              <TableCell>{course.courseTitle}</TableCell>
-                              <TableCell>{formatDate(course.lastAccessedDate)}</TableCell>
-                              <TableCell>{course.postAssessmentScore}%</TableCell>
-                              <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                                  <LinearProgress 
-                                    variant="determinate" 
-                                    value={course.postAssessmentScore} 
-                                    sx={{ 
-                                      width: '100px', 
-                                      height: 8, 
-                                      borderRadius: 4,
-                                      mr: 1
-                                    }} 
-                                  />
+                    isMobile ? (
+                      // Mobile: Card Layout
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {getAssessmentPerformance().map((course) => (
+                          <Card key={course.courseId} sx={{ borderRadius: 2 }}>
+                            <CardContent sx={{ p: 2 }}>
+                              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                                {course.courseTitle}
+                              </Typography>
+                              
+                              <Grid container spacing={2} sx={{ mb: 2 }}>
+                                <Grid item xs={6}>
+                                  <Typography variant="caption" color="text.secondary">
+                                    Completed
+                                  </Typography>
+                                  <Typography variant="body2" fontWeight={600}>
+                                    {formatDate(course.lastAccessedDate)}
+                                  </Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                  <Typography variant="caption" color="text.secondary">
+                                    Score
+                                  </Typography>
+                                  <Typography variant="body2" fontWeight={600}>
+                                    {course.postAssessmentScore}%
+                                  </Typography>
+                                </Grid>
+                              </Grid>
+
+                              <Box sx={{ mb: 2 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                  <Typography variant="body2" color="text.secondary">
+                                    Performance
+                                  </Typography>
                                   <Chip 
                                     label={
                                       course.postAssessmentScore >= 90 ? "Excellent" :
@@ -996,35 +1006,108 @@ const UserReports = () => {
                                     size="small"
                                   />
                                 </Box>
-                              </TableCell>
-                              <TableCell>
-                                {course.certificateUrl ? (
-                                  <Button
-                                    variant="outlined"
-                                    size="small"
-                                    startIcon={<Download />}
-                                    onClick={() => handleDownloadCertificate(course.certificateUrl)}
-                                    sx={{ borderRadius: 2 }}
-                                  >
-                                    Download
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    variant="outlined"
-                                    color="secondary"
-                                    size="small"
-                                    onClick={() => handleGenerateCertificate(course.courseId)}
-                                    sx={{ borderRadius: 2 }}
-                                  >
-                                    Generate
-                                  </Button>
-                                )}
-                              </TableCell>
+                                <LinearProgress
+                                  variant="determinate"
+                                  value={course.postAssessmentScore}
+                                  sx={{ height: 6, borderRadius: 3 }}
+                                />
+                              </Box>
+
+                              <Button
+                                variant={course.certificateUrl ? "contained" : "outlined"}
+                                color={course.certificateUrl ? "primary" : "secondary"}
+                                size="small"
+                                fullWidth
+                                startIcon={<Download />}
+                                onClick={() => course.certificateUrl ? 
+                                  handleDownloadCertificate(course.certificateUrl) : 
+                                  handleGenerateCertificate(course.courseId)
+                                }
+                                sx={{ borderRadius: 2 }}
+                              >
+                                {course.certificateUrl ? "Download Certificate" : "Generate Certificate"}
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </Box>
+                    ) : (
+                      // Desktop: Table Layout
+                      <TableContainer>
+                        <Table>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 600 }}>Course</TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>Completion Date</TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>Score</TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>Performance</TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>Certificate</TableCell>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                          </TableHead>
+                          <TableBody>
+                            {getAssessmentPerformance().map((course) => (
+                              <TableRow key={course.courseId} sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}>
+                                <TableCell>{course.courseTitle}</TableCell>
+                                <TableCell>{formatDate(course.lastAccessedDate)}</TableCell>
+                                <TableCell>{course.postAssessmentScore}%</TableCell>
+                                <TableCell>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                                    <LinearProgress 
+                                      variant="determinate" 
+                                      value={course.postAssessmentScore} 
+                                      sx={{ 
+                                        width: '100px', 
+                                        height: 8, 
+                                        borderRadius: 4,
+                                        mr: 1
+                                      }} 
+                                    />
+                                    <Chip 
+                                      label={
+                                        course.postAssessmentScore >= 90 ? "Excellent" :
+                                        course.postAssessmentScore >= 80 ? "Great" :
+                                        course.postAssessmentScore >= 70 ? "Good" : 
+                                        "Passed"
+                                      }
+                                      color={
+                                        course.postAssessmentScore >= 90 ? "success" :
+                                        course.postAssessmentScore >= 80 ? "primary" :
+                                        course.postAssessmentScore >= 70 ? "info" : 
+                                        "default"
+                                      }
+                                      size="small"
+                                    />
+                                  </Box>
+                                </TableCell>
+                                <TableCell>
+                                  {course.certificateUrl ? (
+                                    <Button
+                                      variant="outlined"
+                                      size="small"
+                                      startIcon={<Download />}
+                                      onClick={() => handleDownloadCertificate(course.certificateUrl)}
+                                      sx={{ borderRadius: 2 }}
+                                    >
+                                      Download
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="outlined"
+                                      color="secondary"
+                                      size="small"
+                                      onClick={() => handleGenerateCertificate(course.courseId)}
+                                      sx={{ borderRadius: 2 }}
+                                    >
+                                      Generate
+                                    </Button>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )
                   ) : (
                     <Alert 
                       severity="info" 
@@ -1047,55 +1130,117 @@ const UserReports = () => {
                   </Typography>
                   
                   {getImprovementMetrics().length > 0 ? (
-                    <TableContainer>
-                      <Table>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell sx={{ fontWeight: 600 }}>Course</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Pre-Assessment</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Post-Assessment</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Improvement</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Time Invested</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {getImprovementMetrics().map((course) => (
-                            <TableRow key={course.courseId} sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}>
-                              <TableCell>{course.courseTitle}</TableCell>
-                              <TableCell>{course.preAssessmentScore}%</TableCell>
-                              <TableCell>{course.postAssessmentScore}%</TableCell>
-                              <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    isMobile ? (
+                      // Mobile: Card Layout
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {getImprovementMetrics().map((course) => (
+                          <Card key={course.courseId} sx={{ borderRadius: 2 }}>
+                            <CardContent sx={{ p: 2 }}>
+                              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                                {course.courseTitle}
+                              </Typography>
+                              
+                              <Grid container spacing={2} sx={{ mb: 2 }}>
+                                <Grid item xs={6}>
+                                  <Typography variant="caption" color="text.secondary">
+                                    Pre-Assessment
+                                  </Typography>
+                                  <Typography variant="h6" fontWeight={600}>
+                                    {course.preAssessmentScore}%
+                                  </Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                  <Typography variant="caption" color="text.secondary">
+                                    Post-Assessment
+                                  </Typography>
+                                  <Typography variant="h6" fontWeight={600}>
+                                    {course.postAssessmentScore}%
+                                  </Typography>
+                                </Grid>
+                              </Grid>
+
+                              <Box sx={{ mb: 2 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                  <Typography variant="body2" color="text.secondary">
+                                    Improvement
+                                  </Typography>
                                   <Typography 
                                     variant="body2" 
+                                    fontWeight="bold"
                                     sx={{ 
-                                      mr: 1,
-                                      color: course.improvement > 0 ? 'success.main' : 'error.main',
-                                      fontWeight: 'medium'
+                                      color: course.improvement > 0 ? 'success.main' : 'error.main'
                                     }}
                                   >
                                     {course.improvement > 0 ? `+${course.improvement}%` : `${course.improvement}%`}
                                   </Typography>
-                                  <LinearProgress 
-                                    variant="determinate" 
-                                    value={Math.min(100, course.improvement * 2)} // Scale for better visual
-                                    color={course.improvement > 0 ? "success" : "error"}
-                                    sx={{ 
-                                      width: '100px', 
-                                      height: 8, 
-                                      borderRadius: 4
-                                    }} 
-                                  />
                                 </Box>
-                              </TableCell>
-                              <TableCell>
-                                {formatTimeSpent(course.timeSpentSeconds)}
-                              </TableCell>
+                                <LinearProgress
+                                  variant="determinate"
+                                  value={Math.min(100, Math.abs(course.improvement) * 2)}
+                                  color={course.improvement > 0 ? "success" : "error"}
+                                  sx={{ height: 6, borderRadius: 3 }}
+                                />
+                              </Box>
+
+                              <Typography variant="body2" color="text.secondary">
+                                Time invested: {formatTimeSpent(course.timeSpentSeconds)}
+                              </Typography>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </Box>
+                    ) : (
+                      // Desktop: Table Layout
+                      <TableContainer>
+                        <Table>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 600 }}>Course</TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>Pre-Assessment</TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>Post-Assessment</TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>Improvement</TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>Time Invested</TableCell>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                          </TableHead>
+                          <TableBody>
+                            {getImprovementMetrics().map((course) => (
+                              <TableRow key={course.courseId} sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}>
+                                <TableCell>{course.courseTitle}</TableCell>
+                                <TableCell>{course.preAssessmentScore}%</TableCell>
+                                <TableCell>{course.postAssessmentScore}%</TableCell>
+                                <TableCell>
+                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <Typography 
+                                      variant="body2" 
+                                      sx={{ 
+                                        mr: 1,
+                                        color: course.improvement > 0 ? 'success.main' : 'error.main',
+                                        fontWeight: 'medium'
+                                      }}
+                                    >
+                                      {course.improvement > 0 ? `+${course.improvement}%` : `${course.improvement}%`}
+                                    </Typography>
+                                    <LinearProgress 
+                                      variant="determinate" 
+                                      value={Math.min(100, course.improvement * 2)} // Scale for better visual
+                                      color={course.improvement > 0 ? "success" : "error"}
+                                      sx={{ 
+                                        width: '100px', 
+                                        height: 8, 
+                                        borderRadius: 4
+                                      }} 
+                                    />
+                                  </Box>
+                                </TableCell>
+                                <TableCell>
+                                  {formatTimeSpent(course.timeSpentSeconds)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )
                   ) : (
                     <Alert 
                       severity="info" 
@@ -1131,59 +1276,13 @@ const UserReports = () => {
                 color: theme.palette.text.primary
               }}
             >
-              Learning Achievements
+              Learning Activity
             </Typography>
           </Box>
           
           <Grid container spacing={3}>
-            {/* Certificates Summary */}
-            <Grid item xs={12} md={6}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 3,
-                  borderRadius: 2,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                  height: '100%'
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Avatar
-                    sx={{
-                      bgcolor: theme.palette.secondary.light,
-                      mr: 2
-                    }}
-                  >
-                    <TrophyIcon sx={{ color: theme.palette.secondary.main }} />
-                  </Avatar>
-                  <Typography variant="h6">
-                    Certificates Earned
-                  </Typography>
-                </Box>
-                
-                <Typography variant="body1" paragraph>
-                  You have earned {stats.certificatesEarned} out of {stats.completedCourses} possible certificates.
-                </Typography>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={(stats.certificatesEarned / Math.max(1, stats.completedCourses)) * 100} 
-                    sx={{ 
-                      flexGrow: 1,
-                      height: 10,
-                      borderRadius: 5
-                    }} 
-                  />
-                  <Typography variant="body2" sx={{ ml: 2, fontWeight: 'medium' }}>
-                    {Math.round((stats.certificatesEarned / Math.max(1, stats.completedCourses)) * 100)}%
-                  </Typography>
-                </Box>
-              </Paper>
-            </Grid>
-            
             {/* Learning Streak */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12}>
               <Paper
                 elevation={0}
                 sx={{
@@ -1203,7 +1302,7 @@ const UserReports = () => {
                     <TimeIcon sx={{ color: theme.palette.success.main }} />
                   </Avatar>
                   <Typography variant="h6">
-                    Learning Activity
+                    Learning Progress
                   </Typography>
                 </Box>
                 

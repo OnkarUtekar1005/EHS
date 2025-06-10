@@ -34,9 +34,6 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
       passingScore: 70,
       timeLimit: 30,
       shuffleQuestions: false,
-      showResults: true,
-      allowRetake: true,
-      maxAttempts: 3,
       questions: []
     }
   });
@@ -75,9 +72,6 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
           passingScore: 70,
           timeLimit: 30,
           shuffleQuestions: false,
-          showResults: true,
-          allowRetake: true,
-          maxAttempts: 3,
           questions: []
         }
       });
@@ -320,45 +314,7 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
               }
               label="Required Component"
             />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.data.showResults}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    data: { ...prev.data, showResults: e.target.checked }
-                  }))}
-                />
-              }
-              label="Show Results After Submission"
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.data.allowRetake}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    data: { ...prev.data, allowRetake: e.target.checked }
-                  }))}
-                />
-              }
-              label="Allow Retakes"
-            />
           </Box>
-
-          {formData.data.allowRetake && (
-            <TextField
-              label="Maximum Attempts"
-              type="number"
-              value={formData.data.maxAttempts}
-              onChange={(e) => setFormData(prev => ({
-                ...prev,
-                data: { ...prev.data, maxAttempts: parseInt(e.target.value) || 1 }
-              }))}
-              InputProps={{ inputProps: { min: 1 } }}
-              sx={{ mb: 2, width: 200 }}
-            />
-          )}
 
           <Divider sx={{ my: 2 }} />
 

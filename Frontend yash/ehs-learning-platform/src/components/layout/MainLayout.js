@@ -29,9 +29,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import SecurityIcon from '@mui/icons-material/Security';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import DomainIcon from '@mui/icons-material/Domain';
 import logoImage from '../../assets/logo-image.jpg';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import SchoolIcon from '@mui/icons-material/School';
@@ -39,19 +36,12 @@ import SchoolIcon from '@mui/icons-material/School';
 // Drawer width
 const drawerWidth = 240;
 
-// Domain mock data - replace with API data in production
-const DOMAINS = [
-  { id: 1, name: 'Fire Safety', icon: <SecurityIcon /> },
-  { id: 2, name: 'OSHA', icon: <DomainIcon /> },
-  { id: 3, name: 'First Aid', icon: <LocalHospitalIcon /> },
-];
-
 const MainLayout = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { logout } = useAuth();
+  const { logout, currentUser } = useAuth();
   
   const [open, setOpen] = useState(!isMobile);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -145,35 +135,50 @@ const MainLayout = () => {
         </ListItem>
       </List>
       
-      <Divider sx={{ my: 2 }} />
+      {/* Spacer to push user info to bottom */}
+      <Box sx={{ flexGrow: 1 }} />
       
-      <Box className="domain-header">
-        <Typography
-          variant="subtitle2"
-          color="text.secondary"
-          sx={{ fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.08em' }}
-        >
-          DOMAINS
-        </Typography>
-      </Box>
-      
-      <List>
-        {DOMAINS.map((domain) => (
-          <ListItem key={domain.id} disablePadding>
-            <ListItemButton
-              component={Link}
-              to={`/domains/${domain.id}`}
-              selected={location.pathname === `/domains/${domain.id}`}
-              className="sidebar-list-item"
+      {/* User info at bottom - similar to admin sidebar */}
+      {currentUser && (
+        <Box sx={{ 
+          mt: 'auto', 
+          p: 2, 
+          borderTop: '1px solid rgba(0, 0, 0, 0.12)',
+          backgroundColor: 'grey.50'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar 
+              sx={{ 
+                width: 36, 
+                height: 36,
+                bgcolor: 'primary.main',
+                fontSize: '0.875rem',
+                fontWeight: 600
+              }}
             >
-              <ListItemIcon>
-                {domain.icon}
-              </ListItemIcon>
-              <ListItemText primary={domain.name} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+              {currentUser?.firstName && currentUser?.lastName ? 
+                `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase() :
+                currentUser?.username ? 
+                  currentUser.username[0].toUpperCase() : 
+                  'U'
+              }
+            </Avatar>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                {currentUser?.firstName && currentUser?.lastName
+                  ? `${currentUser.firstName} ${currentUser.lastName}`
+                  : currentUser?.username || 'User'}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {currentUser?.email || 'No email'}
+              </Typography>
+              <Typography variant="caption" color="primary.main" sx={{ display: 'block', fontWeight: 500 }}>
+                User
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 
@@ -200,32 +205,71 @@ const MainLayout = () => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+          <Typography 
+            variant="h6" 
+            noWrap 
+            component="div" 
+            sx={{ 
+              flexGrow: 1,
+              fontSize: { xs: '1rem', sm: '1.25rem' },
+              display: { xs: 'none', sm: 'block' }
+            }}
+          >
             Protecther E-Learning Platform
+          </Typography>
+          
+          {/* Mobile title - shorter version */}
+          <Typography 
+            variant="h6" 
+            noWrap 
+            component="div" 
+            sx={{ 
+              flexGrow: 1,
+              fontSize: '1rem',
+              display: { xs: 'block', sm: 'none' }
+            }}
+          >
+            Protecther
           </Typography>
           <Box
             component="img"
             src={logoImage}
             alt="Company Logo"
             sx={{ 
-              width: 120, 
-              height: 96, 
-              mr: 2,
+              width: { xs: 80, sm: 120, md: 180 }, // Smaller on mobile
+              height: { xs: 64, sm: 96, md: 144 },
+              mr: { xs: 1, sm: 2 }, // Less margin on mobile
               cursor: 'pointer',
               objectFit: 'contain',
-              maxHeight: '56px'
+              maxHeight: { xs: '40px', sm: '56px', md: '80px' } // Much smaller on mobile
             }}
           />
           <IconButton
-            size="large"
+            size={isMobile ? "medium" : "large"}
             edge="end"
             aria-label="account"
             aria-controls="menu-appbar"
             aria-haspopup="true"
             onClick={handleProfileMenuOpen}
             color="inherit"
+            sx={{
+              p: { xs: 0.5, sm: 1 }
+            }}
           >
-            <Avatar sx={{ width: 32, height: 32 }} />
+            <Avatar sx={{ 
+              width: { xs: 28, sm: 32 }, 
+              height: { xs: 28, sm: 32 },
+              bgcolor: 'primary.main',
+              fontSize: { xs: '0.75rem', sm: '1rem' },
+              fontWeight: 600
+            }}>
+              {currentUser?.firstName && currentUser?.lastName ? 
+                `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase() :
+                currentUser?.username ? 
+                  currentUser.username[0].toUpperCase() : 
+                  'U'
+              }
+            </Avatar>
           </IconButton>
         </Toolbar>
       </AppBar>
