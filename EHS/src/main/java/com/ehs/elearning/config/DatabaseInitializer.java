@@ -18,7 +18,6 @@ public class DatabaseInitializer {
     @PostConstruct
     @Transactional
     public void initializeDatabase() {
-        System.out.println("Initializing database fields...");
         
         // Fix any courses with null hasBeenPublished
         List<Course> allCourses = courseRepository.findAll();
@@ -34,10 +33,8 @@ public class DatabaseInitializer {
                     }
                 }
                 courseRepository.save(course);
-                System.out.println("Fixed null hasBeenPublished for course: " + course.getTitle());
             }
         }
         
-        System.out.println("Database initialization complete");
     }
 }

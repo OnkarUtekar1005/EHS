@@ -59,7 +59,6 @@ const Dashboard = () => {
         setShowIncompleteWarning(true);
       }
     } catch (error) {
-      console.error('Error checking incomplete attempts:', error);
     }
   };
 
@@ -75,7 +74,6 @@ const Dashboard = () => {
       });
 
       const publishedCourses = coursesResponse.data.courses || [];
-      console.log('Published courses (limited to 3):', publishedCourses);
 
       // Find which of these published courses have been completed by the user and have certificates
       const coursesWithCertificates = await Promise.all(
@@ -97,7 +95,6 @@ const Dashboard = () => {
             }
             return null;
           } catch (error) {
-            console.error(`Error fetching certificate for course ${course.id}:`, error);
             return null;
           }
         })
@@ -105,7 +102,6 @@ const Dashboard = () => {
 
       // Filter out null values (courses without certificates or not completed)
       const validCourses = coursesWithCertificates.filter(course => course !== null);
-      console.log('Courses with certificates (limited to 3):', validCourses);
 
       setCompletedCourses(validCourses);
 
@@ -116,7 +112,6 @@ const Dashboard = () => {
         certificatesCount: validCourses.filter(course => course.hasCertificate).length
       });
     } catch (error) {
-      console.error('Error loading courses:', error);
       setError('Failed to load your completed courses');
     } finally {
       setLoading(false);
@@ -151,7 +146,6 @@ const Dashboard = () => {
       // Now download the certificate
       handleDownloadCertificate(response.data.certificateId);
     } catch (error) {
-      console.error('Error generating certificate:', error);
       setError('Failed to generate certificate: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
@@ -172,7 +166,6 @@ const Dashboard = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error downloading certificate:', error);
       setError('Failed to download certificate: ' + (error.response?.data?.message || error.message));
     }
   };

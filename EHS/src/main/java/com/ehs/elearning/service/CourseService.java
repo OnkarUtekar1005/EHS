@@ -156,21 +156,6 @@ public class CourseService {
         return savedClone;
     }
     
-    // Search courses with filters - SIMPLIFIED VERSION
-    public Page<Course> searchCourses(String search, UUID domainId, CourseStatus status, Pageable pageable) {
-        // For now, implement a simple filtering logic without complex queries
-        if (domainId != null && status != null) {
-            return courseRepository.findByDomainIdAndStatus(domainId, status, pageable);
-        } else if (domainId != null) {
-            return courseRepository.findByDomainId(domainId, pageable);
-        } else if (status != null) {
-            return courseRepository.findByStatus(status, pageable);
-        } else {
-            return courseRepository.findAll(pageable);
-        }
-        
-        // TODO: Implement search functionality later
-    }
     
     // Get course with components
     public Course getCourseWithComponents(UUID courseId) {

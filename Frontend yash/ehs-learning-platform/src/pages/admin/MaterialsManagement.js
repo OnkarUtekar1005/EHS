@@ -223,7 +223,7 @@ const MaterialsManagement = () => {
       await fetchMaterials();
     } catch (error) {
       console.error('Error deleting material:', error);
-      alert('Failed to delete material');
+      console.error('Failed to delete material');
     }
   };
 

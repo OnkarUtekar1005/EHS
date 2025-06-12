@@ -147,42 +147,34 @@ public class UserController {
     @Transactional
     public ResponseEntity<?> deleteUser(@PathVariable UUID id) {
         return userRepository.findById(id).map(user -> {
-            System.out.println("Deleting user: " + id + " (" + user.getUsername() + ")");
             
             // Delete all foreign key dependent records in the correct order
             // 1. Delete password reset tokens
-            System.out.println("Deleting password reset tokens...");
             passwordResetTokenRepository.deleteByUser(user);
             entityManager.flush();
             
             // 2. Delete assessment attempts
-            System.out.println("Deleting assessment attempts...");
             assessmentAttemptRepository.deleteByUserId(id);
             entityManager.flush();
             
             // 3. Delete component progress records
-            System.out.println("Deleting component progress records...");
             componentProgressRepository.deleteByUserId(id);
             entityManager.flush();
             
             // 4. Delete user course progress records
-            System.out.println("Deleting user course progress records...");
             userCourseProgressRepository.deleteByUserId(id);
             entityManager.flush();
             
             // 5. Delete certificates
-            System.out.println("Deleting certificates...");
             certificateRepository.deleteByUserId(id);
             entityManager.flush();
             
             // 6. Clear domain associations (many-to-many relationship)
-            System.out.println("Clearing domain associations...");
             user.getDomains().clear();
             userRepository.save(user);
             entityManager.flush();
             
             // 7. Finally delete the user
-            System.out.println("Deleting user record...");
             userRepository.delete(user);
             
             return ResponseEntity.ok(new MessageResponse("User deleted successfully"));
@@ -554,7 +546,6 @@ public class UserController {
         for (UUID userId : userIds) {
             if (userRepository.existsById(userId)) {
                 userRepository.findById(userId).ifPresent(user -> {
-                    System.out.println("Bulk deleting user: " + userId + " (" + user.getUsername() + ")");
                     
                     // Delete all foreign key dependent records in the correct order
                     // 1. Delete password reset tokens

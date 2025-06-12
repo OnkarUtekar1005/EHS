@@ -44,12 +44,7 @@ public class MailConfig {
         mailSender.setUsername(username);
         mailSender.setPassword(password);
 
-        System.out.println("Mail Configuration:");
-        System.out.println("Host: " + host);
-        System.out.println("Port: " + port);
-        System.out.println("Username: " + username);
-        System.out.println("Password length: " + (password != null ? password.length() : 0));
-        System.out.println("Email Enabled: " + emailEnabled);
+        // Mail configuration loaded
 
         // Configure Java Mail properties
         Properties props = mailSender.getJavaMailProperties();
@@ -64,7 +59,6 @@ public class MailConfig {
         props.put("mail.smtp.connectiontimeout", "30000");
         props.put("mail.smtp.writetimeout", "30000");
 
-        System.out.println("JavaMailSender configured with host: " + host);
         return mailSender;
     }
 }

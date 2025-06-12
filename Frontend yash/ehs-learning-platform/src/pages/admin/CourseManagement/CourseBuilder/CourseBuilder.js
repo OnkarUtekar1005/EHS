@@ -98,7 +98,7 @@ const CourseBuilder = ({ courseId, course, onUpdate }) => {
   const handleDeleteComponent = async (componentId) => {
     // Check if course has been published
     if (course?.hasBeenPublished) {
-      alert('Cannot delete components from a course that has been previously published. You can only modify existing components.');
+      console.warn('Cannot delete components from a course that has been previously published. You can only modify existing components.');
       return;
     }
 
@@ -112,7 +112,7 @@ const CourseBuilder = ({ courseId, course, onUpdate }) => {
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Error deleting component:', error);
-      alert(error.response?.data?.message || 'Error deleting component');
+      console.error(error.response?.data?.message || 'Error deleting component');
     }
   };
 
@@ -127,7 +127,7 @@ const CourseBuilder = ({ courseId, course, onUpdate }) => {
       } else {
         // Check if course has been published before adding new component
         if (course?.hasBeenPublished) {
-          alert('Cannot add new components to a course that has been previously published. You can only modify existing components.');
+          console.warn('Cannot add new components to a course that has been previously published. You can only modify existing components.');
           setOpenAddDialog(false);
           setEditingComponent(null);
           setSelectedType(null);
@@ -144,7 +144,7 @@ const CourseBuilder = ({ courseId, course, onUpdate }) => {
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Error saving component:', error);
-      alert(error.response?.data?.message || 'Error saving component');
+      console.error(error.response?.data?.message || 'Error saving component');
     }
   };
 

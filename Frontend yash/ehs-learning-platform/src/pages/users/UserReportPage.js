@@ -45,14 +45,13 @@ const UserReportPage = () => {
       setReport(response.data);
       setLoading(false);
     } catch (err) {
-      console.error("Error fetching report data:", err);
       setError("Failed to load learning report. Please try again later.");
       setLoading(false);
     }
   };
 
   const handleExportPDF = () => {
-    alert('PDF export functionality is not implemented yet.');
+    console.warn('PDF export functionality is not implemented yet.');
   };
 
   const formatDate = (dateStr) => {

@@ -6,13 +6,7 @@ const DEBUG_MODE = true;
 
 // Helper function to handle API errors
 const handleApiError = (error) => {
-  console.error('API Error:', error);
   if (error.response) {
-    console.error('Response error details:', {
-      status: error.response.status,
-      headers: error.response.headers,
-      data: error.response.data
-    });
   }
   return error;
 };
@@ -20,18 +14,11 @@ const handleApiError = (error) => {
 // Debug function to get token details
 const debugToken = () => {
     const token = localStorage.getItem('token');
-    console.log('==== TOKEN DEBUG ====');
-    console.log('Token exists:', !!token);
     if (token) {
-      console.log('Token length:', token.length);
-      console.log('Token starts with "Bearer ":', token.startsWith('Bearer '));
-      console.log('First 20 chars of token:', token.substring(0, 20) + '...');
       
       // Check token format (should have 3 parts separated by dots)
       const tokenParts = token.split('.');
-      console.log('Token has valid JWT format (3 parts):', tokenParts.length === 3);
     }
-    console.log('=====================');
 };
 
 // Create axios instance with base URL
@@ -47,20 +34,13 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     
-    // Log this for debugging
-    console.log('Adding token to request:', token ? 'Token exists' : 'No token');
-    
     if (token) {
       // Make sure the token format is correct
       config.headers.Authorization = `Bearer ${token}`;
-      
-      // Log for debugging
-      console.log('Authorization header:', config.headers.Authorization);
     }
     return config;
   },
   (error) => {
-    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -72,14 +52,9 @@ let isRedirecting = false;
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error);
     
     // Debug mode: don't redirect on 401 so you can see the console logs
     if (DEBUG_MODE && error.response && error.response.status === 401) {
-      console.warn('Unauthorized request detected, but not redirecting (DEBUG_MODE)');
-      console.log('Request URL:', error.config.url);
-      console.log('Request method:', error.config.method);
-      console.log('Auth header:', error.config.headers.Authorization || 'No Auth header');
       
       // Don't redirect in debug mode, just return the error
       return Promise.reject(error);
@@ -87,7 +62,6 @@ api.interceptors.response.use(
     
     // Normal behavior for production - only runs if DEBUG_MODE is false
     if (!DEBUG_MODE && error.response && error.response.status === 401 && !isRedirecting) {
-      console.log('Unauthorized request detected, redirecting to login');
       
       // Set redirecting flag
       isRedirecting = true;
@@ -106,11 +80,6 @@ api.interceptors.response.use(
     
     // Log complete error details for debugging
     if (error.response) {
-      console.error('Response error details:', {
-        status: error.response.status,
-        headers: error.response.headers,
-        data: error.response.data
-      });
     }
     
     return Promise.reject(error);
@@ -128,7 +97,6 @@ export const authService = {
           // IMPORTANT: Store the token WITHOUT 'Bearer ' prefix
           // The interceptor will add it when making requests
           localStorage.setItem('token', response.data.token);
-          console.log('Token stored in localStorage after login', response.data.token.substring(0, 10) + '...');
 
           // Store user info
           localStorage.setItem('user', JSON.stringify(response.data));
@@ -136,7 +104,6 @@ export const authService = {
 
         return response;
       } catch (error) {
-        console.error('Login error:', error);
         throw error;
       }
     },
@@ -146,7 +113,6 @@ export const authService = {
           await api.post('/auth/logout');
         }
       } catch (error) {
-        console.warn('Logout API error (continuing with local logout):', error);
       } finally {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -157,19 +123,13 @@ export const authService = {
 
     // New password reset flow endpoints
     requestPasswordReset: (emailData) => {
-      console.log('Requesting password reset for:', emailData);
       return api.post('/auth/forgot-password', emailData);
     },
     validateResetToken: (token) => {
-      console.log('Validating reset token:', token);
       const endpoint = `/auth/reset-password/validate?token=${token}`;
-      console.log('Validation endpoint:', endpoint);
-      console.log('Full URL:', api.defaults.baseURL + endpoint);
       return api.get(endpoint);
     },
     resetPassword: (resetData) => {
-      console.log('Resetting password with token');
-      console.log('Reset password payload:', JSON.stringify(resetData, null, 2));
       return api.post('/auth/reset-password', resetData);
     },
 };
@@ -197,7 +157,8 @@ export const domainService = {
   getById: (id) => api.get(`/domains/${id}`),
   create: (domainData) => api.post('/domains', domainData),
   update: (id, domainData) => api.put(`/domains/${id}`, domainData),
-  delete: (id) => api.delete(`/domains/${id}`)
+  delete: (id) => api.delete(`/domains/${id}`),
+  search: (query) => api.get(`/domains/search?query=${encodeURIComponent(query)}`)
 };
 
 // Course services
@@ -261,19 +222,16 @@ export const assessmentService = {
   
   // Get user attempts
   getUserAttempts: (componentId) => {
-    console.log('Fetching user attempts for component:', componentId);
     return api.get(`/v2/user/assessments/${componentId}/attempts`);
   },
   
   // Get latest attempt
   getLatestAttempt: (componentId) => {
-    console.log('Fetching latest attempt for component:', componentId);
     return api.get(`/v2/user/assessments/${componentId}/latest-attempt`);
   },
   
   // Get a specific attempt
   getAttempt: (attemptId) => {
-    console.log('Fetching specific attempt:', attemptId);
     return api.get(`/v2/user/assessments/attempts/${attemptId}`);
   },
   
@@ -338,14 +296,7 @@ export const certificateService = {
 export const reportsService = {
   // Get user reports - try both endpoints to see which one works
   getUserReport: () => {
-    console.log("Fetching user reports");
-    // Try the full endpoint path first
-    return api.get('/api/v2/user/reports')
-      .catch(error => {
-        console.log("First endpoint failed, trying alternative:", error);
-        // If that fails, try the short version
-        return api.get('/v2/user/reports');
-      });
+    return api.get('/v2/user/reports');
   },
 
   // Get user reports summary

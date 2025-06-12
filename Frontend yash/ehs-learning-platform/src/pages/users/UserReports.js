@@ -48,7 +48,6 @@ import {
 } from '../../services/api';
 
 const UserReports = () => {
-  console.log("UserReports component rendering");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
@@ -81,9 +80,7 @@ const UserReports = () => {
       setLoading(true);
       // Try to fetch the reports data
       try {
-        console.log("Fetching user reports data");
         const response = await reportsService.getUserReport();
-        console.log("Reports data:", response.data);
         setReports(response.data);
         
         // Calculate total pages for pagination
@@ -134,7 +131,6 @@ const UserReports = () => {
           });
         }
       } catch (reportError) {
-        console.error("Error with reports endpoint, using fallback data:", reportError);
         
         // Use fallback mock data for development/testing
         const mockData = generateMockReportData();
@@ -187,7 +183,6 @@ const UserReports = () => {
       
       setLoading(false);
     } catch (err) {
-      console.error("Error fetching reports data:", err);
       setError("Failed to load reports data. Please try again later.");
       setLoading(false);
     }
@@ -223,7 +218,6 @@ const UserReports = () => {
       // Now download the certificate
       handleDownloadCertificate(response.data.certificateId);
     } catch (error) {
-      console.error('Error generating certificate:', error);
       setError('Failed to generate certificate: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
@@ -250,7 +244,6 @@ const UserReports = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error downloading certificate:', error);
       setError('Failed to download certificate: ' + (error.response?.data?.message || error.message));
     }
   };

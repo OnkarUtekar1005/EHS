@@ -38,7 +38,6 @@ const Sidebar = ({ isOpen, drawerWidth }) => {
   const getAvatarLetters = () => {
     if (!currentUser) return 'U';
     
-    console.log('Sidebar currentUser:', currentUser); // Debug log
     
     if (currentUser.firstName && currentUser.lastName) {
       return `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase();

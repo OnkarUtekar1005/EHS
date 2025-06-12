@@ -41,7 +41,6 @@ const Header = ({ toggleSidebar, sidebarOpen, drawerWidth }) => {
       handleMenuClose();
       navigate('/login');
     } catch (error) {
-      console.error('Logout error:', error);
     } finally {
       setLoggingOut(false);
     }

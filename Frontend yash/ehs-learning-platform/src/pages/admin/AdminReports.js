@@ -123,7 +123,7 @@ const AdminReports = () => {
     // Simulate export process
     setTimeout(() => {
       setLoading(false);
-      alert(`Exporting report as ${format}...`);
+      console.log(`Exporting report as ${format}...`);
     }, 1500);
   };
 

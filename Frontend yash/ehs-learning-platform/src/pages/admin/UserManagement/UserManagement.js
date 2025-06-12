@@ -149,7 +149,7 @@ useEffect(() => {
   // Handle bulk import
   const handleBulkImport = async () => {
     if (!csvFile) {
-      alert('Please select a CSV file');
+      console.warn('Please select a CSV file');
       return;
     }
   
@@ -161,7 +161,7 @@ useEffect(() => {
           // Validate data first
           const invalidEntries = results.data.filter(item => !item.username || !item.email);
           if (invalidEntries.length > 0) {
-            alert(`${invalidEntries.length} users have invalid data`);
+            console.warn(`${invalidEntries.length} users have invalid data`);
             return;
           }
           
@@ -178,17 +178,17 @@ useEffect(() => {
             fetchUsers();
             
             setShowBulkImportModal(false);
-            alert(`${createdUsers.length} users imported successfully`);
+            console.log(`${createdUsers.length} users imported successfully`);
           }
           
           // Show error if some users failed
           if (failedUsers.length > 0) {
             console.error('Failed users:', failedUsers);
-            alert(`${failedUsers.length} users failed to import`);
+            console.error(`${failedUsers.length} users failed to import`);
           }
         } catch (error) {
           console.error('Error in bulk import:', error);
-          alert('Error processing bulk import');
+          console.error('Error processing bulk import');
         }
       }
     });
@@ -209,10 +209,10 @@ useEffect(() => {
       setIsDeleteModalOpen(false);
       
       // Show success message (optional: you could use a toast/snackbar instead)
-      alert(`${selectedUsers.length} users deleted successfully`);
+      console.log(`${selectedUsers.length} users deleted successfully`);
     } catch (error) {
       console.error('Error deleting users:', error);
-      alert(error.response?.data?.message || 'Failed to delete users');
+      console.error(error.response?.data?.message || 'Failed to delete users');
     }
   };
   
@@ -243,12 +243,12 @@ useEffect(() => {
   // Add this function to handle domain assignment
   const handleAssignDomains = async () => {
     if (selectedUsers.length === 0) {
-      alert('Please select users first');
+      console.warn('Please select users first');
       return;
     }
   
     if (!selectedDomainId) {
-      alert('Please select a domain to assign');
+      console.warn('Please select a domain to assign');
       return;
     }
   
@@ -261,10 +261,10 @@ useEffect(() => {
       // Refresh users to show updated domain assignments
       fetchUsers();
       setShowAssignDomainModal(false);
-      alert('Domain assigned successfully');
+      console.log('Domain assigned successfully');
     } catch (error) {
       console.error('Error assigning domain:', error);
-      alert('Failed to assign domain');
+      console.error('Failed to assign domain');
     }
   };
 
@@ -307,7 +307,7 @@ const handleExportCSV = async () => {
     document.body.removeChild(link);
   } catch (error) {
     console.error('Error exporting users:', error);
-    alert('Failed to export users');
+    console.error('Failed to export users');
   }
 };
   const DeleteConfirmationModal = ({ 
@@ -1020,12 +1020,11 @@ const handleExportCSV = async () => {
                     if (response.data && response.data.password) {
                       handleAddUser(response.data.password);
                     } else {
-                      console.warn('No password returned from backend');
                       handleAddUser("Error retrieving password");
                     }
                   } catch (error) {
                     console.error('Error adding user:', error);
-                    alert('Failed to add user');
+                    console.error('Failed to add user');
                   }
                 }}
               >
@@ -1164,7 +1163,7 @@ const handleExportCSV = async () => {
                   }}
                   onClick={() => {
                     navigator.clipboard.writeText(generatedPassword);
-                    alert('Password copied to clipboard');
+                    console.log('Password copied to clipboard');
                   }}
                 >
                   Copy

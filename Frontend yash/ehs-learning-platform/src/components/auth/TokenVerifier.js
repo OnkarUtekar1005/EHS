@@ -15,27 +15,22 @@ const TokenVerifier = () => {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        console.log('TokenVerifier: No token found');
         navigate('/login');
         return;
       }
       
-      console.log('TokenVerifier: Checking token validity');
       try {
         // Call the API to verify token is valid
         const isValid = await authService.verifyToken();
         
         if (!isValid) {
-          console.warn('TokenVerifier: Token verification failed');
           // Clear invalid token
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           navigate('/login');
         } else {
-          console.log('TokenVerifier: Token verification successful');
         }
       } catch (error) {
-        console.error('TokenVerifier: Error verifying token', error);
         // Clear token on error
         localStorage.removeItem('token');
         localStorage.removeItem('user');

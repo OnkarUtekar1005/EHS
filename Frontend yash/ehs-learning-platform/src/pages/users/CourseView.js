@@ -196,7 +196,6 @@ const CourseView = () => {
         navigate(`/course/${courseId}/material/${componentId}`);
         break;
       default:
-        console.error('Unknown component type:', componentType);
     }
   };
 
@@ -270,11 +269,9 @@ const CourseView = () => {
   // Function to handle the review button click
   const handleReviewComponent = async (componentId, componentType, componentProgress) => {
     try {
-      console.log('Review button clicked for component:', componentId, 'type:', componentType);
 
       // Prevent multiple clicks
       if (loadingReview) {
-        console.log('Already loading, ignoring click');
         return;
       }
 
@@ -283,11 +280,9 @@ const CourseView = () => {
       // Find the component in the course
       const componentData = course.components.find(c => c.id === componentId);
       if (!componentData) {
-        console.error('Component not found in course data');
         throw new Error('Component not found');
       }
 
-      console.log('Found component data:', componentData);
 
       // First show the dialog with the component data, we'll load the attempt data asynchronously
       setCurrentReviewComponent(componentData);
@@ -307,26 +302,19 @@ const CourseView = () => {
         // Set the mock result first, then try to load the real data
         setAssessmentResult(mockResult);
 
-        console.log('Fetching latest attempt for assessment component');
         try {
           // Fetch the latest assessment attempt for this component
           const response = await assessmentService.getLatestAttempt(componentId);
-          console.log('Latest attempt response:', response);
 
           if (response && response.data) {
-            console.log('Setting assessment result from latest attempt:', response.data);
             setAssessmentResult(response.data);
           } else {
-            console.warn('No data found in latest attempt response, trying all attempts');
             throw new Error('No data in latest attempt');
           }
         } catch (apiError) {
-          console.error('API error getting latest attempt:', apiError);
           // Try getting all attempts as fallback
           try {
-            console.log('Trying to get all attempts as fallback');
             const attemptsResponse = await assessmentService.getUserAttempts(componentId);
-            console.log('All attempts response:', attemptsResponse);
 
             if (attemptsResponse && attemptsResponse.data && attemptsResponse.data.length > 0) {
               // Get the most recent attempt
@@ -334,46 +322,37 @@ const CourseView = () => {
                 new Date(b.submittedAt || b.createdAt) - new Date(a.submittedAt || a.createdAt)
               )[0];
 
-              console.log('Using latest attempt from list:', latestAttempt);
 
               // If we got an attempt ID but no detailed results, try to fetch the specific attempt
               if (latestAttempt.id && (!latestAttempt.detailedResults || latestAttempt.detailedResults.length === 0)) {
                 try {
-                  console.log('Attempt found but no detailed results, fetching specific attempt:', latestAttempt.id);
                   const attemptResponse = await assessmentService.getAttempt(latestAttempt.id);
 
                   if (attemptResponse && attemptResponse.data) {
-                    console.log('Got detailed attempt data:', attemptResponse.data);
                     setAssessmentResult(attemptResponse.data);
                   } else {
-                    console.warn('No detailed data in specific attempt response, using basic attempt data');
                     setAssessmentResult(latestAttempt);
                   }
                 } catch (attemptError) {
-                  console.error('Error fetching specific attempt:', attemptError);
                   setAssessmentResult(latestAttempt);
                 }
               } else {
                 setAssessmentResult(latestAttempt);
               }
             } else {
-              console.warn('No assessment attempts found in the fallback request');
               // Keep using the mock result
             }
           } catch (fallbackError) {
-            console.error('Fallback attempt also failed:', fallbackError);
             // Keep using the mock result
           }
         }
       } else if (componentType === 'MATERIAL') {
         // For materials, just navigate to the material view
-        console.log('Navigating to material view');
         setReviewDialogOpen(false); // Close dialog before navigating
         navigate(`/course/${courseId}/material/${componentId}`);
       }
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Failed to load review data';
-      console.error('Error in handleReviewComponent:', errorMessage, err);
       setError(errorMessage);
 
       // Keep the dialog open with error state instead of showing an alert
@@ -1554,7 +1533,6 @@ const CourseView = () => {
       <AssessmentReview
         open={reviewDialogOpen}
         onClose={() => {
-          console.log('Closing review dialog');
           setReviewDialogOpen(false);
           setCurrentReviewComponent(null);
           setAssessmentResult(null);

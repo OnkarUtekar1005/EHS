@@ -60,7 +60,6 @@ const UserAssessment = ({ componentId, onComplete }) => {
       
       // Get questions first (this doesn't create any database entries)
       const questionsResponse = await assessmentService.getQuestions(componentId);
-      console.log('Questions response:', questionsResponse.data);
       setQuestions(questionsResponse.data.questions);
       
       // Set time limit (convert minutes to seconds)
@@ -74,12 +73,10 @@ const UserAssessment = ({ componentId, onComplete }) => {
       
       // Start assessment attempt
       const attemptResponse = await assessmentService.startAttempt(componentId);
-      console.log('Attempt response:', attemptResponse.data);
       setAttemptId(attemptResponse.data.attemptId);
       
       setLoading(false);
     } catch (error) {
-      console.error('Error loading assessment:', error);
       
       // Extract error message from response
       let errorMessage = 'Failed to load assessment. Please try again.';
@@ -91,7 +88,6 @@ const UserAssessment = ({ componentId, onComplete }) => {
       
       // If it's a duplicate key error, retry after a delay
       if (errorMessage.includes('duplicate key')) {
-        console.log('Duplicate key error detected, retrying...');
         setTimeout(() => {
           loadAssessment();
         }, 1000);
@@ -105,7 +101,6 @@ const UserAssessment = ({ componentId, onComplete }) => {
   };
 
   const handleAnswerChange = (questionId, answer) => {
-    console.log('Answer changed - Question ID:', questionId, 'Answer:', answer);
     setAnswers({
       ...answers,
       [questionId]: answer
@@ -128,15 +123,10 @@ const UserAssessment = ({ componentId, onComplete }) => {
     try {
       setSubmitting(true);
       
-      console.log('Submitting assessment with answers:', answers);
-      console.log('Attempt ID:', attemptId);
       
       const result = await assessmentService.submitAttempt(attemptId, answers);
-      console.log('Assessment result:', result.data);
       onComplete?.(result.data);
     } catch (error) {
-      console.error('Error submitting assessment:', error);
-      console.error('Error response:', error.response);
       
       // Extract error message from response
       let errorMessage = 'Failed to submit assessment. Please try again.';

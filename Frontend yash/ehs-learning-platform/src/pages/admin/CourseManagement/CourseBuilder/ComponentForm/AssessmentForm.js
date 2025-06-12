@@ -253,7 +253,6 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
           questions: transformedQuestions
         }
       };
-      console.log('Assessment form data being saved:', dataToSave);
       onSave(dataToSave);
     }
   };

@@ -94,7 +94,6 @@ const MyCourses = () => {
         setShowIncompleteWarning(true);
       }
     } catch (error) {
-      console.error('Error checking incomplete attempts:', error);
     }
   };
 
@@ -132,13 +131,11 @@ const MyCourses = () => {
         }
         setUserProgress(progressMap);
       } catch (progressErr) {
-        console.warn('Could not load progress:', progressErr);
         // Continue without progress data
         setUserProgress({});
       }
 
     } catch (err) {
-      console.error('Error loading courses:', err);
       setError(err.response?.data?.message || 'Failed to load courses');
     } finally {
       setLoading(false);

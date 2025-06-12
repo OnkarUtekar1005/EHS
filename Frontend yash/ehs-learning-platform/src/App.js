@@ -118,10 +118,32 @@ const ProtectedRoute = ({ children, requireAdmin }) => {
   
   // Require admin but user is not admin
   if (requireAdmin && !isAdmin()) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   
   return children;
+};
+
+// Role-based redirect component for root path
+const RoleBasedRedirect = () => {
+  const { currentUser, loading, isAdmin } = useAuth();
+  
+  // Show loading state while auth check is in progress
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  // Redirect to login if not authenticated
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  // Redirect based on user role
+  if (isAdmin()) {
+    return <Navigate to="/admin" replace />;
+  } else {
+    return <Navigate to="/dashboard" replace />;
+  }
 };
 
 function AppContent() {
@@ -134,9 +156,12 @@ function AppContent() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/certificate/verify/:certificateNumber" element={<CertificateVerification />} />
         
+        {/* Root route - redirects based on user role */}
+        <Route path="/" element={<RoleBasedRedirect />} />
+        
         {/* User routes */}
         <Route 
-          path="/" 
+          path="/dashboard" 
           element={
             <ProtectedRoute requireAdmin={false}>
               <MainLayout />
@@ -144,6 +169,15 @@ function AppContent() {
           }
         >
           <Route index element={<Dashboard />} />
+        </Route>
+        
+        <Route 
+          element={
+            <ProtectedRoute requireAdmin={false}>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/profile" element={<Profile />} />
           <Route path="/my-courses" element={<MyCourses />} />
           <Route path="/reports" element={<UserReports />} />

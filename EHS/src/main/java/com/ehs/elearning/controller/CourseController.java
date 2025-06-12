@@ -40,24 +40,19 @@ public class CourseController {
     @Autowired
     private UserRepository userRepository;
     
+    @Autowired
+    private com.ehs.elearning.repository.CourseRepository courseRepository;
+    
     // Get all courses with pagination and filtering
     @GetMapping("/courses")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getCourses(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "5") int limit,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) UUID domainId,
-            @RequestParam(required = false) String status) {
+            @RequestParam(defaultValue = "5") int limit) {
         
         try {
-            CourseStatus courseStatus = null;
-            if (status != null && !status.isEmpty()) {
-                courseStatus = CourseStatus.valueOf(status.toUpperCase());
-            }
-            
             Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
-            Page<Course> coursePage = courseService.searchCourses(search, domainId, courseStatus, pageable);
+            Page<Course> coursePage = courseRepository.findAll(pageable);
             
             // Map courses to response DTOs with component count
             List<CourseResponse> courseResponses = coursePage.getContent().stream()
@@ -84,6 +79,7 @@ public class CourseController {
                 .body(new MessageResponse("Error fetching courses: " + e.getMessage()));
         }
     }
+    
     
     // Create a new course
     @PostMapping("/courses")

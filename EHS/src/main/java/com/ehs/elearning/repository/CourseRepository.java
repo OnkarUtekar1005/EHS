@@ -51,4 +51,5 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
     
     // Dashboard statistics methods
     List<Course> findTop5ByOrderByCreatedAtDesc();
+    
 }

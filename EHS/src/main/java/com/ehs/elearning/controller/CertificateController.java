@@ -70,9 +70,6 @@ public class CertificateController {
             boolean isPublished = course.getStatus() == Course.CourseStatus.PUBLISHED;
 
             // Log for debugging
-            System.out.println("Course ID: " + courseId);
-            System.out.println("Course Status: " + course.getStatus());
-            System.out.println("Is Published: " + isPublished);
 
             Optional<Certificate> certificate = certificateService.findByUserAndCourse(userId, courseId);
 

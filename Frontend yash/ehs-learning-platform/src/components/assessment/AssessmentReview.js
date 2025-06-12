@@ -23,11 +23,6 @@ import {
  * Displays the detailed results of an assessment with all questions and answers
  */
 const AssessmentReview = ({ open, onClose, assessmentResult, component }) => {
-  console.log('AssessmentReview component rendering with:', {
-    open,
-    assessmentResult,
-    component
-  });
 
   // Don't render anything if the dialog shouldn't be open
   if (!open) {

@@ -43,7 +43,6 @@ const ResetPassword = () => {
   useEffect(() => {
     const validateToken = async () => {
       if (!token) {
-        console.error("No token found in URL");
         setTokenValid(false);
         setIsValidatingToken(false);
         return;

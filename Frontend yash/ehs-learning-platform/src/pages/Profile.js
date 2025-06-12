@@ -60,13 +60,11 @@ const Profile = () => {
         throw new Error('User ID not found');
       }
       
-      console.log("Fetching user profile for ID:", userId);
       
       // Make the API call to get user details
       const response = await userService.getById(userId);
       const userData = response.data;
       
-      console.log("User data received:", userData);
       
       // Update auth context only if the data is different
       if (JSON.stringify(currentUser) !== JSON.stringify(userData)) {
@@ -86,7 +84,6 @@ const Profile = () => {
       // Mark profile as fetched to prevent duplicate calls
       setProfileFetched(true);
     } catch (error) {
-      console.error("API Error:", error);
       setProfileError(
         error.response?.data?.message || 
         `Failed to load profile data: ${error.message}`
@@ -198,8 +195,6 @@ const Profile = () => {
         throw new Error('User information not available');
       }
       
-      console.log("Saving profile for user ID:", currentUser.id);
-      console.log("Profile data to save:", profileData);
       
       // Only include editable fields in the update request
       const updateData = {
@@ -213,7 +208,6 @@ const Profile = () => {
       const response = await userService.update(currentUser.id, updateData);
       const updatedUserData = response.data;
       
-      console.log("Updated user data:", updatedUserData);
       
       // Update the auth context with the response from the API
       updateUserData({
@@ -228,7 +222,6 @@ const Profile = () => {
       setProfileFetched(false);
       fetchUserProfile();
     } catch (error) {
-      console.error("Profile update error:", error);
       setProfileError(
         error.response?.data?.message || 
         'Failed to update profile. Please try again.'

@@ -88,13 +88,11 @@ const AdminProfile = () => {
         throw new Error('User ID not found');
       }
       
-      console.log("Fetching admin profile for ID:", userId);
       
       // Make the API call to get user details
       const response = await userService.getById(userId);
       const userData = response.data;
       
-      console.log("Admin data received:", userData);
       
       // Update auth context only if the data is different
       if (JSON.stringify(currentUser) !== JSON.stringify(userData)) {
@@ -117,7 +115,6 @@ const AdminProfile = () => {
       // Mark profile as fetched to prevent duplicate calls
       setProfileFetched(true);
     } catch (error) {
-      console.error("API Error:", error);
       setProfileError(
         error.response?.data?.message || 
         `Failed to load profile data: ${error.message}`
@@ -256,7 +253,6 @@ const AdminProfile = () => {
       setProfileFetched(false);
       fetchUserProfile();
     } catch (err) {
-      console.error('Failed to update profile:', err);
       setProfileError(err.response?.data?.message || 'Failed to update profile');
     } finally {
       setProfileLoading(false);

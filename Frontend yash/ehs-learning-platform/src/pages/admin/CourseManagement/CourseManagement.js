@@ -50,8 +50,8 @@ const CourseManagement = () => {
     totalItems: 0,
     itemsPerPage: 5
   });
+  const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
-    search: '',
     domainId: '',
     status: ''
   });
@@ -68,14 +68,15 @@ const CourseManagement = () => {
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      // Use v2 endpoint which avoids the problematic query
+      // Use v2 endpoint with filters and pagination
       const params = {
         page: pagination.page,
         limit: pagination.itemsPerPage
       };
       
+      // No server-side filtering needed - we'll filter client-side
+      
       const response = await api.get('/v2/admin/courses', { params });
-      console.log('Course response:', response.data);
       setCourses(response.data.courses || []);
       setPagination(response.data.pagination || {
         page: 1,
@@ -84,7 +85,6 @@ const CourseManagement = () => {
         itemsPerPage: 5
       });
     } catch (error) {
-      console.error('Error fetching courses:', error);
       setCourses([]);
     } finally {
       setLoading(false);
@@ -97,14 +97,18 @@ const CourseManagement = () => {
       const response = await api.get('/domains');
       setDomains(response.data);
     } catch (error) {
-      console.error('Error fetching domains:', error);
     }
   };
 
+  // Effect for pagination only - filters are client-side
   useEffect(() => {
     fetchCourses();
+  }, [pagination.page]);
+
+  // Fetch domains on mount
+  useEffect(() => {
     fetchDomains();
-  }, [pagination.page, filters]);
+  }, []);
 
   // Check for quick action state to auto-open create modal
   useEffect(() => {
@@ -119,29 +123,40 @@ const CourseManagement = () => {
     setPagination(prev => ({ ...prev, page: newPage + 1 }));
   };
 
-  const handleSearchChange = (event) => {
-    setFilters(prev => ({ ...prev, search: event.target.value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
-  };
 
   const handleDomainChange = (event) => {
     setFilters(prev => ({ ...prev, domainId: event.target.value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const handleStatusChange = (event) => {
     setFilters(prev => ({ ...prev, status: event.target.value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
   };
+
+  // Client-side filtering logic
+  const filteredCourses = courses.filter(course => {
+    const matchesSearch = !searchQuery || 
+      course.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesDomain = !filters.domainId || 
+      course.domain.id === filters.domainId;
+    const matchesStatus = !filters.status || 
+      course.status === filters.status;
+    
+    return matchesSearch && matchesDomain && matchesStatus;
+  });
+
+  // Update pagination to work with filtered results
+  const paginatedCourses = filteredCourses.slice(
+    (pagination.page - 1) * pagination.itemsPerPage,
+    pagination.page * pagination.itemsPerPage
+  );
+
+  const totalFilteredPages = Math.ceil(filteredCourses.length / pagination.itemsPerPage);
 
   const handlePublish = async (courseId) => {
     try {
       await api.post(`/v2/admin/courses/${courseId}/publish`);
       fetchCourses();
     } catch (error) {
-      console.error('Error publishing course:', error);
-      console.error('Error response:', error.response?.data);
-      alert(error.response?.data?.message || 'Error publishing course');
     }
   };
 
@@ -150,7 +165,6 @@ const CourseManagement = () => {
       await api.post(`/v2/admin/courses/${courseId}/takedown`);
       fetchCourses();
     } catch (error) {
-      console.error('Error taking down course:', error);
     }
   };
 
@@ -160,7 +174,6 @@ const CourseManagement = () => {
         await api.delete(`/v2/admin/courses/${courseId}`);
         fetchCourses();
       } catch (error) {
-        console.error('Error deleting course:', error);
       }
     }
   };
@@ -170,7 +183,6 @@ const CourseManagement = () => {
       await api.post(`/v2/admin/courses/${courseId}/clone`);
       fetchCourses();
     } catch (error) {
-      console.error('Error cloning course:', error);
     }
   };
 
@@ -233,22 +245,21 @@ const CourseManagement = () => {
           </Typography>
         </Box>
 
-        {/* Filters Section - Mobile Responsive */}
+        {/* Search Section */}
         <Box sx={{ 
           display: 'flex', 
-          gap: { xs: 1.5, sm: 2 }, 
+          gap: { xs: 1, sm: 2 }, 
           mb: 3, 
           flexWrap: 'wrap',
-          flexDirection: { xs: 'column', sm: 'row' }
+          alignItems: 'center'
         }}>
           <TextField
-            placeholder="Search courses..."
-            value={filters.search}
-            onChange={handleSearchChange}
+            placeholder="Search courses by title..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             sx={{ 
               flex: 1, 
-              minWidth: { xs: '100%', sm: '300px' },
-              order: { xs: 1, sm: 1 }
+              minWidth: { xs: '100%', sm: '300px' }
             }}
             size={window.innerWidth < 600 ? "small" : "medium"}
             InputProps={{
@@ -259,6 +270,16 @@ const CourseManagement = () => {
               ),
             }}
           />
+        </Box>
+
+        {/* Filters Section */}
+        <Box sx={{ 
+          display: 'flex', 
+          gap: { xs: 1.5, sm: 2 }, 
+          mb: 3, 
+          flexWrap: 'wrap',
+          flexDirection: { xs: 'column', sm: 'row' }
+        }}>
 
           <Box sx={{ 
             display: 'flex', 
@@ -319,28 +340,45 @@ const CourseManagement = () => {
           </Button>
         </Box>
 
+
+        {/* Search Status */}
+        {searchQuery && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Searching course titles for: <strong>"{searchQuery}"</strong>
+              {filteredCourses.length > 0 && ` (${filteredCourses.length} found)`}
+            </Typography>
+          </Box>
+        )}
+
         {/* Courses Display - Responsive */}
-        {courses.length === 0 ? (
+        {filteredCourses.length === 0 ? (
           <Paper sx={{ p: 4, textAlign: 'center' }}>
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              No courses found
+              {searchQuery || filters.domainId || filters.status 
+                ? 'No courses match your search criteria' 
+                : 'No courses found'}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Create your first course to get started!
+              {searchQuery || filters.domainId || filters.status 
+                ? 'Try adjusting your search terms or filters.' 
+                : 'Create your first course to get started!'}
             </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setOpenCreateModal(true)}
-            >
-              Create Course
-            </Button>
+            {(!searchQuery && !filters.domainId && !filters.status) && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setOpenCreateModal(true)}
+              >
+                Create Course
+              </Button>
+            )}
           </Paper>
         ) : (
           <>
             {/* Mobile Card View */}
             <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 3 }}>
-              {courses.map(course => (
+              {paginatedCourses.map(course => (
                 <Paper
                   key={course.id}
                   sx={{
@@ -470,7 +508,7 @@ const CourseManagement = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {courses.map(course => (
+                  {paginatedCourses.map(course => (
                     <TableRow key={course.id}>
                       <TableCell>{course.title}</TableCell>
                       <TableCell>{course.domain.name}</TableCell>
@@ -536,7 +574,7 @@ const CourseManagement = () => {
             <Box sx={{ mt: 2 }}>
               <TablePagination
                 component="div"
-                count={pagination.totalItems}
+                count={filteredCourses.length}
                 page={pagination.page - 1}
                 onPageChange={handlePageChange}
                 rowsPerPage={pagination.itemsPerPage}

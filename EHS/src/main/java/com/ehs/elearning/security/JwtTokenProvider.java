@@ -112,7 +112,6 @@ public class JwtTokenProvider {
             Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
             return true;
         } catch (SecurityException | MalformedJwtException e) {
-            System.out.printf("Invalid JWT signature: {}", e.getMessage());
         } catch (ExpiredJwtException e) {
         } catch (UnsupportedJwtException e) {
         } catch (IllegalArgumentException e) {

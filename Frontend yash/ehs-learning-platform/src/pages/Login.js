@@ -35,13 +35,11 @@ const Login = () => {
   useEffect(() => {
     if (currentUser) {
       // Check user role and redirect accordingly
-      console.log("Current user detected:", currentUser);
-      console.log("Is admin?", isAdmin());
       
       if (isAdmin()) {
         navigate('/admin');
       } else {
-        navigate('/');
+        navigate('/dashboard');
       }
     }
   }, [currentUser, navigate, isAdmin]);
@@ -105,21 +103,19 @@ const Login = () => {
       // Call login from AuthContext
       const response = await login(formData);
       
-      // Extra debugging to check user data
-      console.log("Login successful, user data:", response.data);
       
       // Manual check if user is admin for immediate redirect
       const userData = response.data;
-      const adminUser = userData.roles?.includes('admin') || 
-                        userData.role === 'admin' || 
-                        userData.userType === 'admin';
+      const adminUser = userData.roles?.some(role => role.toLowerCase() === 'admin') || 
+                        userData.role?.toLowerCase() === 'admin' || 
+                        userData.userType?.toLowerCase() === 'admin';
       
       // Immediate redirect based on role
       if (adminUser) {
         navigate('/admin');
       } else {
         // Redirect to dashboard or the page they were trying to access
-        const from = location.state?.from?.pathname || '/';
+        const from = location.state?.from?.pathname || '/dashboard';
         navigate(from);
       }
       

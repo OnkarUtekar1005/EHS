@@ -34,10 +34,8 @@ export const AuthProvider = ({ children }) => {
     // Try the API call in the background
     try {
       authService.logout().catch(err => {
-        console.warn('Background logout request error:', err);
       });
     } catch (err) {
-      console.warn('Error initiating logout request:', err);
     }
   };
 
@@ -74,7 +72,6 @@ export const AuthProvider = ({ children }) => {
         const response = await authService.getCurrentUser();
         setCurrentUser(response.data);
       } catch (err) {
-        console.error('Error fetching current user:', err);
         
         const userStr = localStorage.getItem('user');
         if (userStr) {
