@@ -34,3 +34,7 @@ build/
 
 ### Google Drive credentials ###
 /src/main/resources/credentials/
+
+### Environment variables ###
+.env
+/src/main/resources/.env
