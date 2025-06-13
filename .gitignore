@@ -61,17 +61,9 @@ Thumbs.db
 **/build/
 **/dist/
 
-# Environment Variables (sensitive)
-**/.env
-**/.env.local
-**/.env.production
 
-# Certificate and Key Files
-**/certificates/
-**/credentials/
-**/*.key
-**/*.pem
-**/*.crt
+
+
 
 # Upload Directories
 **/uploads/
