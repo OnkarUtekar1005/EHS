@@ -159,7 +159,7 @@ const Login = () => {
             }}
           >
             <Typography variant="h4" component="h1" gutterBottom>
-              EHS E-Learning Platform
+              Protecther E-Learning Platform
             </Typography>
             <Typography variant="subtitle1" color="text.secondary">
               Log in to access your account
