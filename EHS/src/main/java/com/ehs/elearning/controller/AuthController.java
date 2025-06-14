@@ -35,8 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import jakarta.validation.Valid;
-
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping(value = "/api/auth", produces = "application/json")
 public class AuthController {
