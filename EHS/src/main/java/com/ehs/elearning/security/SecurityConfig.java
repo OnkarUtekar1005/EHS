@@ -65,17 +65,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "https://protecther.site",      // Production domain
-            "https://www.protecther.site",  // WWW subdomain
+            "https://www.protecther.site",  // WWW subdomain  
             "http://localhost:*",           // Local development
-            "https://localhost:*",
-            "http://127.0.0.1:*",
-            "https://127.0.0.1:*",
-            "http://192.168.*:*",          // Private networks
-            "https://192.168.*:*",
-            "http://10.*:*",
-            "https://10.*:*",
-            "http://172.16.*:*",
-            "https://172.16.*:*"
+            "https://localhost:*"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

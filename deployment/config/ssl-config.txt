@@ -1,0 +1,21 @@
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+C = IN
+ST = India
+L = Mumbai
+O = Protecther E-Learning
+OU = IT Department
+CN = protecther.site
+
+[v3_req]
+keyUsage = keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = protecther.site
+DNS.2 = www.protecther.site
