@@ -36,84 +36,84 @@ public class UserCourseController {
     @Autowired
     private UserCourseProgressRepository courseProgressRepository;
     
-//    // Get courses for the current user based on their domains
-//    @GetMapping("/courses")
-//    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-//    public ResponseEntity<?> getUserCourses(
-//            @RequestParam(defaultValue = "1") int page,
-//            @RequestParam(defaultValue = "10") int limit,
-//            @RequestParam(required = false) String search,
-//            @RequestParam(defaultValue = "false") boolean showAll,
-//            Authentication authentication) {
-//        
-//        try {
-//            String currentUsername = authentication.getName();
-//            Users currentUser = userRepository.findByUsername(currentUsername)
-//                .orElseThrow(() -> new RuntimeException("Current user not found"));
-//            
-//            
-//            Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "publishedAt"));
-//            
-//            List<Course> courses;
-//            Page<Course> coursePage;
-//            
-//            if (showAll) {
-//                // Show all published courses
-//                coursePage = courseService.searchCourses(search, null, CourseStatus.PUBLISHED, pageable);
-//            } else {
-//                // Show only courses from user's domains
-//                List<UUID> userDomainIds = currentUser.getDomains().stream()
-//                    .map(domain -> domain.getId())
-//                    .collect(Collectors.toList());
-//                
-//                if (userDomainIds.isEmpty()) {
-//                    // User has no domains assigned, return empty list
-//                    coursePage = Page.empty(pageable);
-//                } else {
-//                    // Get courses from user's domains
-//                    courses = new ArrayList<>();
-//                    for (UUID domainId : userDomainIds) {
-//                        Page<Course> domainCourses = courseService.searchCourses(search, domainId, CourseStatus.PUBLISHED, pageable);
-//                        courses.addAll(domainCourses.getContent());
-//                    }
-//                    
-//                    // Remove duplicates
-//                    courses = courses.stream().distinct().collect(Collectors.toList());
-//                    
-//                    // Create a page from the list
-//                    int start = (int) pageable.getOffset();
-//                    int end = Math.min((start + pageable.getPageSize()), courses.size());
-//                    List<Course> pageContent = courses.subList(start, end);
-//                    coursePage = new org.springframework.data.domain.PageImpl<>(pageContent, pageable, courses.size());
-//                }
-//            }
-//            
-//            // Map courses to response DTOs
-//            List<CourseResponse> courseResponses = coursePage.getContent().stream()
-//                .map(course -> {
-//                    CourseResponse response = new CourseResponse(course);
-//                    response.setComponentCount(course.getComponents().size());
-//                    return response;
-//                })
-//                .collect(Collectors.toList());
-//            
-//            Map<String, Object> response = new HashMap<>();
-//            response.put("courses", courseResponses);
-//            response.put("pagination", Map.of(
-//                "page", page,
-//                "totalPages", coursePage.getTotalPages(),
-//                "totalItems", coursePage.getTotalElements(),
-//                "itemsPerPage", limit
-//            ));
-//            response.put("showingAll", showAll);
-//            
-//            return ResponseEntity.ok(response);
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                .body(new MessageResponse("Error fetching courses: " + e.getMessage()));
-//        }
-//    }
-//    
+    // Get courses for the current user based on their domains
+    @GetMapping("/courses")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> getUserCourses(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "false") boolean showAll,
+            Authentication authentication) {
+        
+        try {
+            String currentUsername = authentication.getName();
+            Users currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new RuntimeException("Current user not found"));
+            
+            
+            Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "publishedAt"));
+            
+            List<Course> courses;
+            Page<Course> coursePage;
+            
+            if (showAll) {
+                // Show all published courses
+                coursePage = courseService.searchCourses(search, null, CourseStatus.PUBLISHED, pageable);
+            } else {
+                // Show only courses from user's domains
+                List<UUID> userDomainIds = currentUser.getDomains().stream()
+                    .map(domain -> domain.getId())
+                    .collect(Collectors.toList());
+                
+                if (userDomainIds.isEmpty()) {
+                    // User has no domains assigned, return empty list
+                    coursePage = Page.empty(pageable);
+                } else {
+                    // Get courses from user's domains
+                    courses = new ArrayList<>();
+                    for (UUID domainId : userDomainIds) {
+                        Page<Course> domainCourses = courseService.searchCourses(search, domainId, CourseStatus.PUBLISHED, pageable);
+                        courses.addAll(domainCourses.getContent());
+                    }
+                    
+                    // Remove duplicates
+                    courses = courses.stream().distinct().collect(Collectors.toList());
+                    
+                    // Create a page from the list
+                    int start = (int) pageable.getOffset();
+                    int end = Math.min((start + pageable.getPageSize()), courses.size());
+                    List<Course> pageContent = courses.subList(start, end);
+                    coursePage = new org.springframework.data.domain.PageImpl<>(pageContent, pageable, courses.size());
+                }
+            }
+            
+            // Map courses to response DTOs
+            List<CourseResponse> courseResponses = coursePage.getContent().stream()
+                .map(course -> {
+                    CourseResponse response = new CourseResponse(course);
+                    response.setComponentCount(course.getComponents().size());
+                    return response;
+                })
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("courses", courseResponses);
+            response.put("pagination", Map.of(
+                "page", page,
+                "totalPages", coursePage.getTotalPages(),
+                "totalItems", coursePage.getTotalElements(),
+                "itemsPerPage", limit
+            ));
+            response.put("showingAll", showAll);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new MessageResponse("Error fetching courses: " + e.getMessage()));
+        }
+    }
+    
     // Get a specific course detail
     @GetMapping("/courses/{courseId}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
