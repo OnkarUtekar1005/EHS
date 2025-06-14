@@ -52,4 +52,17 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
     // Dashboard statistics methods
     List<Course> findTop5ByOrderByCreatedAtDesc();
     
+    // Search methods for course title and description
+    Page<Course> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+        String title, String description, Pageable pageable);
+    
+    Page<Course> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCaseAndDomainId(
+        String title, String description, UUID domainId, Pageable pageable);
+    
+    Page<Course> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCaseAndStatus(
+        String title, String description, CourseStatus status, Pageable pageable);
+    
+    Page<Course> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCaseAndDomainIdAndStatus(
+        String title, String description, UUID domainId, CourseStatus status, Pageable pageable);
+    
 }

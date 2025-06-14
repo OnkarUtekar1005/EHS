@@ -176,6 +176,37 @@ public class CourseService {
         return courseRepository.findAll();
     }
     
+    // Search courses with optional filters
+    public Page<Course> searchCourses(String search, UUID domainId, CourseStatus status, Pageable pageable) {
+        if (search != null && !search.trim().isEmpty()) {
+            // Search by title or description
+            if (domainId != null && status != null) {
+                return courseRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCaseAndDomainIdAndStatus(
+                    search.trim(), search.trim(), domainId, status, pageable);
+            } else if (domainId != null) {
+                return courseRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCaseAndDomainId(
+                    search.trim(), search.trim(), domainId, pageable);
+            } else if (status != null) {
+                return courseRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCaseAndStatus(
+                    search.trim(), search.trim(), status, pageable);
+            } else {
+                return courseRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+                    search.trim(), search.trim(), pageable);
+            }
+        } else {
+            // No search term
+            if (domainId != null && status != null) {
+                return courseRepository.findByDomainIdAndStatus(domainId, status, pageable);
+            } else if (domainId != null) {
+                return courseRepository.findByDomainId(domainId, pageable);
+            } else if (status != null) {
+                return courseRepository.findByStatus(status, pageable);
+            } else {
+                return courseRepository.findAll(pageable);
+            }
+        }
+    }
+    
     // Get course count
     public long getCourseCount() {
         return courseRepository.count();
