@@ -67,7 +67,13 @@ public class SecurityConfig {
             "http://localhost:*",  // Any localhost port
             "https://localhost:*",
             "http://127.0.0.1:*",
-            "https://127.0.0.1:*"
+            "https://127.0.0.1:*",
+            "http://192.168.*:*",  // Any 192.168.x.x network
+            "https://192.168.*:*",
+            "http://10.*:*",       // Any 10.x.x.x network
+            "https://10.*:*",
+            "http://172.16.*:*",   // Any 172.16.x.x network
+            "https://172.16.*:*"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
