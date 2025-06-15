@@ -70,7 +70,7 @@ public class UserCourseController {
                     // User has no domains assigned, return empty list
                     coursePage = Page.empty(pageable);
                 } else {
-                    // Get courses from user's domains
+                    // Get courses from user's domains	
                     courses = new ArrayList<>();
                     for (UUID domainId : userDomainIds) {
                         Page<Course> domainCourses = courseService.searchCourses(search, domainId, CourseStatus.PUBLISHED, pageable);
