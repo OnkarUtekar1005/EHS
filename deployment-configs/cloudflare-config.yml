@@ -1,0 +1,12 @@
+# CloudFlare Tunnel Configuration
+# Replace YOUR_TUNNEL_ID with your actual tunnel ID
+
+tunnel: YOUR_TUNNEL_ID
+credentials-file: C:\Users\%USERNAME%\.cloudflared\YOUR_TUNNEL_ID.json
+
+ingress:
+  - hostname: protecther.site
+    service: http://localhost:80
+  - hostname: www.protecther.site
+    service: http://localhost:80
+  - service: http_status:404
