@@ -11,9 +11,8 @@ also in admin modules he can add training modules, edit them, delete them, publi
 User functionality is to be able to view and complete training modules and see their progress and download there certificates.
 Understand the project first 
 Now todays task for you is that the user has reported a issue  while testing the application
-Issue :When a admin adds a course and add the course details and then add the components (pre assessment ,post assessment and material)then try to add questions in the pre assessment there is a 
-add question button when every the user adds question and fills the data  the list of question increase when he is at 50th question or any question more than 5 then he has to scroll up to click the button add questions to add another question  which is annoying 
-so instead of having that button up there the user suggested to have it on the left side same as the cancel and addassement button are but on another side since this is static
- also in the current directoory there is a image named image.png for you to refer
+Issue :When a admin logins and land on the dashborad there are some cards such as active user total domains etc all these cards are there and then a blank space
+the user want these cards width to be changed such that the blank space is covered and all the cards have equal width and not dynamic
+ also in the current directoory there is a image named image.png for you to refer where i have highlighted the blank space with a yellow box/rectangle
 
 first create a plan and steps to fix this and the follow the plan as a software developer and fix it 

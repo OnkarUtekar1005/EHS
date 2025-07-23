@@ -165,9 +165,17 @@ const AdminDashboard = () => {
         </Box>
 
         {/* Stats Cards - Enhanced mobile layout */}
-        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 4 }}>
+        <Box
+          sx={{
+            mb: 4,
+            display: { xs: 'flex', sm: 'flex', md: 'flex' },
+            flexDirection: { xs: 'column', sm: 'row' },
+            flexWrap: { xs: 'nowrap', sm: 'wrap', md: 'nowrap' },
+            gap: { xs: 2, sm: 2, md: 3 }
+          }}
+        >
           {/* Active Users Card */}
-          <Grid item xs={6} sm={6} md={4} lg={2.4}>
+          <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
             <Paper
               elevation={0}
               sx={{
@@ -222,10 +230,10 @@ const AdminDashboard = () => {
                 Active Users
               </Typography>
             </Paper>
-          </Grid>
+          </Box>
           
           {/* Total Domains Card */}
-          <Grid item xs={6} sm={6} md={4} lg={2.4}>
+          <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
             <Paper
               elevation={0}
               sx={{
@@ -280,10 +288,10 @@ const AdminDashboard = () => {
                 Total Domains
               </Typography>
             </Paper>
-          </Grid>
+          </Box>
           
           {/* User Assignments Card */}
-          <Grid item xs={6} sm={6} md={4} lg={2.4}>
+          <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
             <Paper
               elevation={0}
               sx={{
@@ -331,10 +339,10 @@ const AdminDashboard = () => {
                 User Assignments
               </Typography>
             </Paper>
-          </Grid>
+          </Box>
           
           {/* Pending Actions Card */}
-          <Grid item xs={6} sm={6} md={4} lg={2.4}>
+          <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
             <Paper
               elevation={0}
               sx={{
@@ -404,10 +412,10 @@ const AdminDashboard = () => {
                 </Typography>
               )}
             </Paper>
-          </Grid>
+          </Box>
           
           {/* Total Courses Card */}
-          <Grid item xs={6} sm={6} md={4} lg={2.4}>
+          <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
             <Paper
               elevation={0}
               sx={{
@@ -473,8 +481,8 @@ const AdminDashboard = () => {
                 Manage Courses
               </Typography>
             </Paper>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
 
         {/* Activity Tracking Section - Mobile Enhanced */}
         <Box sx={{ mb: 4 }}>
