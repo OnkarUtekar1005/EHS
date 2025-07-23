@@ -317,16 +317,8 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
 
           <Divider sx={{ my: 2 }} />
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box sx={{ mb: 2 }}>
             <Typography variant="h6">Questions</Typography>
-            <Button
-              startIcon={<AddIcon />}
-              variant="outlined"
-              size="small"
-              onClick={addQuestion}
-            >
-              Add Question
-            </Button>
           </Box>
 
           {errors.questions && (
@@ -454,11 +446,20 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
           ))}
         </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained">
-          {component ? 'Update' : 'Add'} Assessment
+      <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
+        <Button
+          startIcon={<AddIcon />}
+          variant="outlined"
+          onClick={addQuestion}
+        >
+          Add Question
         </Button>
+        <Box>
+          <Button onClick={onClose} sx={{ mr: 1 }}>Cancel</Button>
+          <Button onClick={handleSubmit} variant="contained">
+            {component ? 'Update' : 'Add'} Assessment
+          </Button>
+        </Box>
       </DialogActions>
     </Dialog>
   );

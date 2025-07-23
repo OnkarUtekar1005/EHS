@@ -155,57 +155,87 @@ const MaterialsManagement = () => {
   };
 
   const handleUpload = async () => {
-    console.log('=== MATERIAL UPLOAD STARTED ===');
+    console.log('=== MATERIAL OPERATION STARTED ===');
     console.log('Upload data:', uploadData);
+    console.log('Is editing:', !!selectedMaterial);
     
-    if (!uploadData.file || !uploadData.title) {
-      console.error('Missing required fields');
-      setUploadError('Please select a file and provide a title');
-      return;
-    }
+    // Different validation for create vs edit
+    if (selectedMaterial) {
+      // Edit mode - only title is required
+      if (!uploadData.title) {
+        console.error('Missing title for edit');
+        setUploadError('Please provide a title');
+        return;
+      }
+    } else {
+      // Create mode - both file and title are required
+      if (!uploadData.file || !uploadData.title) {
+        console.error('Missing required fields for create');
+        setUploadError('Please select a file and provide a title');
+        return;
+      }
 
-    console.log('File details:', {
-      name: uploadData.file.name,
-      size: uploadData.file.size,
-      type: uploadData.file.type
-    });
+      console.log('File details:', {
+        name: uploadData.file.name,
+        size: uploadData.file.size,
+        type: uploadData.file.type
+      });
+    }
 
     setUploading(true);
     setUploadError('');
 
     try {
-      const formData = new FormData();
-      formData.append('file', uploadData.file);
-      formData.append('title', uploadData.title);
-      formData.append('description', uploadData.description);
-      formData.append('type', uploadData.type);
+      let response;
+      
+      if (selectedMaterial) {
+        // Update existing material - use PUT request
+        const formData = new FormData();
+        formData.append('title', uploadData.title);
+        formData.append('description', uploadData.description);
 
-      // Log FormData contents
-      console.log('FormData entries:');
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-      }
+        console.log('Updating material:', selectedMaterial.id);
+        response = await api.put(`/v2/materials/${selectedMaterial.id}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        console.log('Update response:', response.data);
+      } else {
+        // Create new material - use POST request
+        const formData = new FormData();
+        formData.append('file', uploadData.file);
+        formData.append('title', uploadData.title);
+        formData.append('description', uploadData.description);
+        formData.append('type', uploadData.type);
 
-      console.log('Sending request to server...');
-      const response = await api.post('/v2/materials/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+        // Log FormData contents
+        console.log('FormData entries:');
+        for (let [key, value] of formData.entries()) {
+          console.log(`${key}:`, value);
         }
-      });
 
-      console.log('Upload response:', response.data);
+        console.log('Sending upload request to server...');
+        response = await api.post('/v2/materials/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        console.log('Upload response:', response.data);
+      }
       
       await fetchMaterials();
       handleCloseUploadDialog();
-      console.log('=== MATERIAL UPLOAD COMPLETED ===');
+      console.log('=== MATERIAL OPERATION COMPLETED ===');
     } catch (error) {
-      console.error('=== MATERIAL UPLOAD ERROR ===');
+      console.error('=== MATERIAL OPERATION ERROR ===');
       console.error('Full error:', error);
       console.error('Response data:', error.response?.data);
       console.error('Response status:', error.response?.status);
       console.error('Response headers:', error.response?.headers);
       
-      const errorMessage = error.response?.data?.message || 'Failed to upload file. Please try again.';
+      const errorMessage = error.response?.data?.message || 
+        (selectedMaterial ? 'Failed to update material. Please try again.' : 'Failed to upload file. Please try again.');
       console.error('Error message to display:', errorMessage);
       setUploadError(errorMessage);
     } finally {

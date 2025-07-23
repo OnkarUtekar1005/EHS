@@ -700,7 +700,7 @@ const handleExportCSV = async () => {
             >
               <option>All Roles</option>
               <option value="ADMIN">Admin</option>
-              <option value="USER">Employee</option>
+              <option value="USER">User</option>
             </select>
           </div>
           <div style={{ flex: '0 0 200px' }}>

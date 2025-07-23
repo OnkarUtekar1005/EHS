@@ -24,7 +24,7 @@ const debugToken = () => {
 // Create axios instance with base URL
 // For network deployment, use relative path so it works with nginx proxy
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || '/api',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080/api',
   headers: {
     'Content-Type': 'application/json'
   }
