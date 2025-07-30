@@ -291,14 +291,14 @@ const CourseManagement = () => {
               minWidth: { xs: 120, sm: 150 }, 
               flex: { xs: 1, sm: 'none' }
             }}>
-              <InputLabel>Domain</InputLabel>
+              <InputLabel>Books</InputLabel>
               <Select
                 value={filters.domainId}
                 onChange={handleDomainChange}
-                label="Domain"
+                label="Books"
                 size={window.innerWidth < 600 ? "small" : "medium"}
               >
-                <MenuItem value="">All Domains</MenuItem>
+                <MenuItem value="">All Books</MenuItem>
                 {domains.map(domain => (
                   <MenuItem key={domain.id} value={domain.id}>
                     {domain.name}
@@ -406,7 +406,7 @@ const CourseManagement = () => {
                         {course.title}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem', mb: 1 }}>
-                        <strong>Domain:</strong> {course.domain.name}
+                        <strong>Books:</strong> {course.domain.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
                         <strong>Components:</strong> {course.componentCount}
@@ -501,7 +501,7 @@ const CourseManagement = () => {
                 <TableHead>
                   <TableRow>
                     <TableCell>Title</TableCell>
-                    <TableCell>Domain</TableCell>
+                    <TableCell>Books</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Components</TableCell>
                     <TableCell>Actions</TableCell>

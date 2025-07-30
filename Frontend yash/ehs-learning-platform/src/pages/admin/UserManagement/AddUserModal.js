@@ -47,11 +47,33 @@ function AddUserModal({ open, onClose, onUserAdded }) {
     setSelectedDomains(newSelectedDomains);
   };
   
+  // Handle username input with emoji filtering
+  const handleUsernameChange = (e) => {
+    let value = e.target.value;
+    
+    // Remove emojis and non-alphanumeric characters (allow underscore, hyphen, dot)
+    value = value.replace(/[\u{1f300}-\u{1f5ff}\u{1f900}-\u{1f9ff}\u{1f600}-\u{1f64f}\u{1f680}-\u{1f6ff}\u{2600}-\u{26ff}\u{2700}-\u{27bf}\u{1f1e6}-\u{1f1ff}\u{1f191}-\u{1f251}\u{1f004}\u{1f0cf}\u{1f170}-\u{1f171}\u{1f17e}-\u{1f17f}\u{1f18e}\u{3030}\u{2b50}\u{2b55}\u{2934}-\u{2935}\u{2b05}-\u{2b07}\u{2b1b}-\u{2b1c}\u{3297}\u{3299}\u{303d}\u{00a9}\u{00ae}\u{2122}\u{23f3}\u{24c2}\u{23e9}-\u{23ef}\u{25b6}\u{23f8}-\u{23fa}]/gu, '');
+    
+    // Only allow alphanumeric characters, underscore, hyphen, and dot
+    value = value.replace(/[^a-zA-Z0-9._-]/g, '');
+    
+    setUsername(value);
+  };
+
   // Validate form
   const validateForm = () => {
     const newErrors = {};
 
-    if (!username) newErrors.username = 'Username is required';
+    if (!username) {
+      newErrors.username = 'Username is required';
+    } else if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
+      newErrors.username = 'Username can only contain letters, numbers, underscore, hyphen, and dot';
+    } else if (username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters long';
+    } else if (username.length > 30) {
+      newErrors.username = 'Username must be less than 30 characters';
+    }
+
     if (!email) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Email is invalid';
 
@@ -131,9 +153,9 @@ function AddUserModal({ open, onClose, onUserAdded }) {
               fullWidth
               label="Username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={handleUsernameChange}
               error={!!errors.username}
-              helperText={errors.username}
+              helperText={errors.username || 'Only letters, numbers, underscore, hyphen, and dot allowed'}
               required
               margin="normal"
             />

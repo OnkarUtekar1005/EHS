@@ -205,6 +205,19 @@ const MainLayout = () => {
           >
             <MenuIcon />
           </IconButton>
+          <Box
+            component="img"
+            src={logoImage}
+            alt="Company Logo"
+            sx={{ 
+              width: { xs: 80, sm: 120, md: 180 }, // Smaller on mobile
+              height: { xs: 64, sm: 96, md: 144 },
+              mr: { xs: 1, sm: 2 }, // Less margin on mobile
+              cursor: 'pointer',
+              objectFit: 'contain',
+              maxHeight: { xs: '40px', sm: '56px', md: '80px' } // Much smaller on mobile
+            }}
+          />
           <Typography 
             variant="h6" 
             noWrap 
@@ -231,19 +244,6 @@ const MainLayout = () => {
           >
             Protecther
           </Typography>
-          <Box
-            component="img"
-            src={logoImage}
-            alt="Company Logo"
-            sx={{ 
-              width: { xs: 80, sm: 120, md: 180 }, // Smaller on mobile
-              height: { xs: 64, sm: 96, md: 144 },
-              mr: { xs: 1, sm: 2 }, // Less margin on mobile
-              cursor: 'pointer',
-              objectFit: 'contain',
-              maxHeight: { xs: '40px', sm: '56px', md: '80px' } // Much smaller on mobile
-            }}
-          />
           <IconButton
             size={isMobile ? "medium" : "large"}
             edge="end"

@@ -47,9 +47,20 @@ const CreateCourseModal = ({ open, onClose, onSuccess }) => {
   };
 
   const handleChange = (field) => (event) => {
+    let value = event.target.value;
+    
+    // Prevent negative values for timeLimit and passingScore
+    if (field === 'timeLimit' && value < 0) {
+      value = 0;
+    }
+    if (field === 'passingScore') {
+      if (value < 0) value = 0;
+      if (value > 100) value = 100;
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [field]: event.target.value
+      [field]: value
     }));
     // Clear error for this field
     if (errors[field]) {
@@ -67,7 +78,7 @@ const CreateCourseModal = ({ open, onClose, onSuccess }) => {
       newErrors.title = 'Title is required';
     }
     if (!formData.domainId) {
-      newErrors.domainId = 'Domain is required';
+      newErrors.domainId = 'Books is required';
     }
     if (formData.timeLimit && formData.timeLimit < 0) {
       newErrors.timeLimit = 'Time limit must be positive';
@@ -160,11 +171,11 @@ const CreateCourseModal = ({ open, onClose, onSuccess }) => {
           />
 
           <FormControl fullWidth sx={{ mb: 2 }} error={!!errors.domainId}>
-            <InputLabel required>Domain</InputLabel>
+            <InputLabel required>Books</InputLabel>
             <Select
               value={formData.domainId}
               onChange={handleChange('domainId')}
-              label="Domain"
+              label="Books"
             >
               {domains.map(domain => (
                 <MenuItem key={domain.id} value={domain.id}>
@@ -209,6 +220,9 @@ const CreateCourseModal = ({ open, onClose, onSuccess }) => {
             InputProps={{
               endAdornment: <InputAdornment position="end">minutes</InputAdornment>,
             }}
+            inputProps={{
+              min: 0
+            }}
             sx={{ mb: 2 }}
           />
 
@@ -222,6 +236,10 @@ const CreateCourseModal = ({ open, onClose, onSuccess }) => {
             helperText={errors.passingScore}
             InputProps={{
               endAdornment: <InputAdornment position="end">%</InputAdornment>,
+            }}
+            inputProps={{
+              min: 0,
+              max: 100
             }}
             sx={{ mb: 2 }}
           />

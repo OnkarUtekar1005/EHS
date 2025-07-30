@@ -341,6 +341,21 @@ const AdminLayout = () => {
           >
             <MenuIcon />
           </IconButton>
+          
+          <Box
+            component="img"
+            src={logoImage}
+            alt="Company Logo"
+            sx={{ 
+              width: { xs: 80, sm: 120 }, // Smaller on mobile
+              height: { xs: 64, sm: 96 }, 
+              mr: { xs: 1, sm: 2 },
+              cursor: 'pointer',
+              objectFit: 'contain',
+              maxHeight: { xs: '40px', sm: '56px' } // Smaller on mobile
+            }}
+          />
+          
           <Typography 
             variant="h6" 
             noWrap 
@@ -367,20 +382,6 @@ const AdminLayout = () => {
           >
             Admin Dashboard
           </Typography>
-          
-          <Box
-            component="img"
-            src={logoImage}
-            alt="Company Logo"
-            sx={{ 
-              width: { xs: 80, sm: 120 }, // Smaller on mobile
-              height: { xs: 64, sm: 96 }, 
-              mr: { xs: 1, sm: 2 },
-              cursor: 'pointer',
-              objectFit: 'contain',
-              maxHeight: { xs: '40px', sm: '56px' } // Smaller on mobile
-            }}
-          />
           
           <Tooltip title="Account">
             <IconButton

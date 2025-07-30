@@ -80,10 +80,22 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
 
   const handleQuestionChange = (index, field, value) => {
     const updatedQuestions = [...formData.data.questions];
-    updatedQuestions[index] = {
-      ...updatedQuestions[index],
-      [field]: value
-    };
+    
+    // Special handling when changing question type
+    if (field === 'type') {
+      updatedQuestions[index] = {
+        ...updatedQuestions[index],
+        type: value,
+        // Reset correctAnswer when changing type
+        correctAnswer: value === 'TRUE_FALSE' ? '' : (value === 'MCQ' ? '' : updatedQuestions[index].correctAnswer)
+      };
+    } else {
+      updatedQuestions[index] = {
+        ...updatedQuestions[index],
+        [field]: value
+      };
+    }
+    
     setFormData(prev => ({
       ...prev,
       data: {
@@ -203,8 +215,11 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
             newErrors[`answer_${index}`] = 'Correct answer is required';
           }
         }
-        if (question.type === 'TRUE_FALSE' && question.correctAnswer === undefined) {
-          newErrors[`answer_${index}`] = 'Correct answer is required';
+        if (question.type === 'TRUE_FALSE') {
+          // Check if correctAnswer is not set or is not a valid boolean string
+          if (!question.correctAnswer || (question.correctAnswer !== 'true' && question.correctAnswer !== 'false')) {
+            newErrors[`answer_${index}`] = 'Please select True or False as the correct answer';
+          }
         }
       });
     }
@@ -429,7 +444,7 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
                   <FormLabel>Correct Answer</FormLabel>
                   <RadioGroup
                     row
-                    value={String(question.correctAnswer)}
+                    value={question.correctAnswer || ''}
                     onChange={(e) => handleQuestionChange(qIndex, 'correctAnswer', e.target.value)}
                   >
                     <FormControlLabel value="true" control={<Radio />} label="True" />
