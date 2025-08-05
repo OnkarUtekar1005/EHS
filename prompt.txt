@@ -1,4 +1,4 @@
-
+Act as a A Software developer
 Context of the project : an enviornment health safety elearning application with 2 roles 
 admin : which has to make training modules, publish them for users, edit them on the go, and manage users while being able to get all the access of most of the application
 user : which has to be able to view and complete training modules and see their progress and report
@@ -11,6 +11,9 @@ also in admin modules he can add training modules, edit them, delete them, publi
 User functionality is to be able to view and complete training modules and see their progress and download there certificates.
 Understand the project first 
 Now todays task for you is that the user has reported a issue  while testing the application
-Issue : reposition the Protecther logo to appear before the title text while keeping all the original size and styling properties exactly the same on the user dashboard
+Issue :When on the user dashboard and on the reports page there is learning activity  section  with the card learning progress and there is days streak text which chnages eac time u visits the report page 
+it should actually track how many times the logged in user has logged in to the system and display it  
+refer image.png
+this seems frontend  issue  as me before changing anything
 
 first create a plan and steps to fix this and the follow the plan as a software developer and fix it 

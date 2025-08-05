@@ -30,6 +30,7 @@ import { useAuth } from '../contexts/AuthContext';
 import IncompleteAttemptWarning from '../components/assessment/IncompleteAttemptWarning';
 import CertificateViewer from '../components/certificate/CertificateViewer';
 import { assessmentService, certificateService, courseService } from '../services/api';
+import MarqueeText from '../components/common/MarqueeText';
 
 const Dashboard = () => {
   const theme = useTheme();
@@ -375,7 +376,7 @@ const Dashboard = () => {
                     <Card
                       elevation={0}
                       sx={{
-                        height: '100%',
+                        height: { xs: 'auto', sm: 380, md: 380 }, // Fixed height for consistency
                         display: 'flex',
                         flexDirection: isMobile ? 'row' : 'column',
                         borderRadius: 2,
@@ -425,17 +426,19 @@ const Dashboard = () => {
 
                       <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                         <CardContent sx={{ flexGrow: 1, p: isMobile ? 2 : 3 }}>
-                          <Typography
+                          <MarqueeText
+                            text={course.courseName || 'Completed Course'}
                             variant={isMobile ? "subtitle1" : "h6"}
                             component="h3"
                             sx={{
                               mb: 1,
                               fontWeight: 600,
-                              lineHeight: 1.3
+                              lineHeight: 1.3,
+                              container: {
+                                maxHeight: '2.6em'
+                              }
                             }}
-                          >
-                            {course.courseName || 'Completed Course'}
-                          </Typography>
+                          />
 
                           <Typography
                             variant="body2"

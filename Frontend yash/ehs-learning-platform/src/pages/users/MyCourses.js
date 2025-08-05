@@ -23,7 +23,6 @@ import {
   IconButton,
   useTheme,
   useMediaQuery,
-  Tooltip,
   Divider,
   TextField,
   InputAdornment,
@@ -44,8 +43,6 @@ import {
   Search,
   Warning,
   Schedule,
-  StarBorder,
-  Star,
   LocalFireDepartment,
   VerifiedUser,
   Engineering,
@@ -56,6 +53,8 @@ import {
 import { courseService, progressService, assessmentService } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import IncompleteAttemptWarning from '../../components/assessment/IncompleteAttemptWarning';
+import MarqueeText from '../../components/common/MarqueeText';
+import './MyCourses.css';
 
 const MyCourses = () => {
   const theme = useTheme();
@@ -182,10 +181,13 @@ const MyCourses = () => {
     // Grid View - Card Layout
     if (viewMode === 'grid') {
       return (
-        <Grid item xs={12} sm={6} md={4} key={course.id}>
-          <Card
+        <Card
+          key={course.id}
+          className="course-card"
             sx={{
-              height: { xs: 'auto', sm: 380, md: 380 }, // Fixed height for consistent cards
+              height: { xs: 'auto', sm: '420px !important', md: '420px !important' }, // Fixed height with !important
+              minHeight: { sm: '420px', md: '420px' },
+              maxHeight: { sm: '420px', md: '420px' },
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
@@ -249,63 +251,50 @@ const MyCourses = () => {
                 </Box>
               )}
 
-              {!isMobile && (
-                <Tooltip title="Add to favorites">
-                  <IconButton
-                    size="small"
-                    sx={{
-                      position: 'absolute',
-                      top: 16,
-                      left: 16,
-                      color: 'white',
-                      bgcolor: 'rgba(0,0,0,0.2)',
-                      '&:hover': { bgcolor: 'rgba(0,0,0,0.4)' }
-                    }}
-                  >
-                    <StarBorder />
-                  </IconButton>
-                </Tooltip>
-              )}
             </Box>
 
             {/* Content */}
-            <CardContent sx={{ 
+            <CardContent 
+              className="course-card-content"
+              sx={{ 
               pt: { xs: 4, sm: 6 }, 
               flexGrow: 1, 
               px: { xs: 2, sm: 3 },
               pb: { xs: 1, sm: 2 },
               display: 'flex',
               flexDirection: 'column',
-              height: { xs: 'auto', sm: 'calc(100% - 120px - 72px)' } // Account for header and button
+              height: { xs: 'auto', sm: 'calc(100% - 120px - 72px)' }, // Account for header and button
+              overflow: 'hidden'
             }}>
               {/* Title Section - Fixed height */}
               <Box 
                 textAlign="center" 
                 sx={{ 
                   mb: 2,
-                  minHeight: { xs: 'auto', sm: 80 }, // Fixed space for title area
+                  height: { xs: 'auto', sm: 100 }, // Fixed height for title area
                   display: 'flex',
                   flexDirection: 'column',
-                  justifyContent: 'flex-start'
+                  justifyContent: 'flex-start',
+                  alignItems: 'center'
                 }}
               >
-                <Typography 
-                  variant={isMobile ? "subtitle1" : "h6"} 
-                  fontWeight={600} 
-                  gutterBottom 
+                <MarqueeText
+                  text={course.title || 'Untitled Course'}
+                  variant={isMobile ? "subtitle1" : "h6"}
                   sx={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
+                    fontWeight: 600,
                     fontSize: { xs: '1rem', sm: '1.25rem' },
                     lineHeight: { xs: 1.3, sm: 1.4 },
-                    minHeight: { xs: 'auto', sm: '2.8em' } // Ensure space for 2 lines
+                    mb: 1,
+                    maxWidth: '100%',
+                    container: {
+                      maxHeight: { xs: 'auto', sm: '3.6em' },
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }
                   }}
-                >
-                  {course.title || 'Untitled Course'}
-                </Typography>
+                />
 
                 {course.domain?.name && (
                   <Typography 
@@ -313,7 +302,10 @@ const MyCourses = () => {
                     color="text.secondary" 
                     sx={{ 
                       fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      minHeight: { xs: 'auto', sm: '1.2em' }
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '90%'
                     }}
                   >
                     {course.domain.name}
@@ -321,8 +313,11 @@ const MyCourses = () => {
                 )}
               </Box>
 
-              {/* Progress Section - Flexible */}
-              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+              {/* Progress Section - Fixed position at bottom */}
+              <Box sx={{ 
+                mt: 'auto',
+                pt: 2
+              }}>
                 {progress && (
                   <Box>
                     <Box display="flex" justifyContent="space-between" mb={1} alignItems="center">
@@ -371,7 +366,13 @@ const MyCourses = () => {
             </CardContent>
 
             {/* Action Button */}
-            <CardActions sx={{ p: { xs: 2, sm: 3 }, pt: 0 }}>
+            <CardActions 
+              className="course-card-actions"
+              sx={{ 
+                p: { xs: 2, sm: 3 }, 
+                pt: 0,
+                mt: 'auto'
+              }}>
               <Button
                 variant="contained"
                 startIcon={status === 'COMPLETED' ? <CheckCircle /> : <PlayArrow />}
@@ -393,7 +394,6 @@ const MyCourses = () => {
               </Button>
             </CardActions>
           </Card>
-        </Grid>
       );
     }
 
@@ -482,23 +482,19 @@ const MyCourses = () => {
               justifyContent: 'center',
               height: { sm: '100%' }
             }}>
-              <Typography 
-                variant={isMobile ? "subtitle1" : "h6"} 
-                fontWeight={600} 
-                gutterBottom 
+              <MarqueeText
+                text={course.title || 'Untitled Course'}
+                variant={isMobile ? "subtitle1" : "h6"}
                 sx={{
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  display: '-webkit-box',
-                  WebkitLineClamp: { xs: 2, sm: 1 }, // Single line on desktop for consistency
-                  WebkitBoxOrient: 'vertical',
+                  fontWeight: 600,
                   fontSize: { xs: '1rem', sm: '1.25rem' },
                   lineHeight: { xs: 1.3, sm: 1.4 },
-                  mb: 1
+                  mb: 1,
+                  container: {
+                    maxWidth: '100%'
+                  }
                 }}
-              >
-                {course.title || 'Untitled Course'}
-              </Typography>
+              />
               
               {course.domain?.name && (
                 <Typography 
@@ -967,20 +963,26 @@ const MyCourses = () => {
         {/* Course Grid/List - Mobile Optimized */}
         {displayCourses.length > 0 ? (
           <Box sx={{ width: '100%' }}>
-            <Grid 
-              container 
-              spacing={{ xs: 2, sm: 2, md: 3 }} 
-              sx={{
-                width: '100%',
-                m: 0,
-                '& .MuiGrid-item': {
-                  pl: { xs: 2, sm: 2, md: 3 },
-                  pt: { xs: 2, sm: 2, md: 3 }
-                }
-              }}
-            >
-              {displayCourses.map(course => renderCourseCard(course))}
-            </Grid>
+            {viewMode === 'grid' ? (
+              <Box className="course-grid-container">
+                {displayCourses.map(course => renderCourseCard(course))}
+              </Box>
+            ) : (
+              <Grid 
+                container 
+                spacing={{ xs: 2, sm: 2, md: 3 }} 
+                sx={{
+                  width: '100%',
+                  m: 0,
+                  '& .MuiGrid-item': {
+                    pl: { xs: 2, sm: 2, md: 3 },
+                    pt: { xs: 2, sm: 2, md: 3 }
+                  }
+                }}
+              >
+                {displayCourses.map(course => renderCourseCard(course))}
+              </Grid>
+            )}
           </Box>
         ) : (
           <Paper

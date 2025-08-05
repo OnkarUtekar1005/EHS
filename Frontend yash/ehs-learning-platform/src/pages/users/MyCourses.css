@@ -1,0 +1,64 @@
+/* MyCourses.css - Enforce consistent card layout */
+
+/* Ensure grid items maintain proper width for 3 cards per row */
+.course-grid-container {
+  width: 100%;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+@media (min-width: 900px) {
+  .course-grid-container {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+  .course-grid-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 599px) {
+  .course-grid-container {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Ensure all cards have the same height */
+.course-card {
+  height: 420px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.course-card-content {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.course-card-actions {
+  margin-top: auto !important;
+}
+
+/* Marquee effect for long titles */
+.marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+}
+
+.marquee-container:hover .marquee-text {
+  animation: marquee 10s linear infinite;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
