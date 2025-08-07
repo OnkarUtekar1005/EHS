@@ -172,7 +172,14 @@ function EditUserModal({ open, onClose, userId, onUserUpdated }) {
                   <InputLabel>Role</InputLabel>
                   <Select
                     value={role}
-                    onChange={(e) => setRole(e.target.value)}
+                    onChange={(e) => {
+                      const newRole = e.target.value;
+                      setRole(newRole);
+                      // Clear selected domains when switching to admin role
+                      if (newRole === 'ADMIN') {
+                        setSelectedDomains([]);
+                      }
+                    }}
                     label="Role"
                   >
                     <MenuItem value="EMPLOYEE">Employee</MenuItem>
@@ -192,50 +199,64 @@ function EditUserModal({ open, onClose, userId, onUserUpdated }) {
               </Grid>
             </Grid>
             
-            <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-              Domain Assignment
-            </Typography>
-            
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2">Available Domains:</Typography>
-                <List dense sx={{ bgcolor: 'background.paper', maxHeight: 200, overflow: 'auto' }}>
-                  {availableDomains.filter(domain => !selectedDomains.includes(domain.id)).map((domain) => (
-                    <ListItem key={domain.id} button onClick={() => handleDomainToggle(domain.id)}>
-                      <Checkbox
-                        edge="start"
-                        checked={false}
-                        tabIndex={-1}
-                        disableRipple
-                      />
-                      <ListItemText primary={domain.name} />
-                    </ListItem>
-                  ))}
-                </List>
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2">Selected Domains:</Typography>
-                <List dense sx={{ bgcolor: 'background.paper', maxHeight: 200, overflow: 'auto' }}>
-                  {availableDomains.filter(domain => selectedDomains.includes(domain.id)).map((domain) => (
-                    <ListItem key={domain.id} button onClick={() => handleDomainToggle(domain.id)}>
-                      <Checkbox
-                        edge="start"
-                        checked={true}
-                        tabIndex={-1}
-                        disableRipple
-                      />
-                      <ListItemText primary={domain.name} />
-                    </ListItem>
-                  ))}
-                  {selectedDomains.length === 0 && (
-                    <ListItem>
-                      <ListItemText primary="No domains selected" />
-                    </ListItem>
-                  )}
-                </List>
-              </Grid>
-            </Grid>
+            {/* Only show domain assignment for non-admin users */}
+            {role !== 'ADMIN' ? (
+              <>
+                <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+                  Domain Assignment
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle2">Available Domains:</Typography>
+                    <List dense sx={{ bgcolor: 'background.paper', maxHeight: 200, overflow: 'auto' }}>
+                      {availableDomains.filter(domain => !selectedDomains.includes(domain.id)).map((domain) => (
+                        <ListItem key={domain.id} button onClick={() => handleDomainToggle(domain.id)}>
+                          <Checkbox
+                            edge="start"
+                            checked={false}
+                            tabIndex={-1}
+                            disableRipple
+                          />
+                          <ListItemText primary={domain.name} />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle2">Selected Domains:</Typography>
+                    <List dense sx={{ bgcolor: 'background.paper', maxHeight: 200, overflow: 'auto' }}>
+                      {availableDomains.filter(domain => selectedDomains.includes(domain.id)).map((domain) => (
+                        <ListItem key={domain.id} button onClick={() => handleDomainToggle(domain.id)}>
+                          <Checkbox
+                            edge="start"
+                            checked={true}
+                            tabIndex={-1}
+                            disableRipple
+                          />
+                          <ListItemText primary={domain.name} />
+                        </ListItem>
+                      ))}
+                      {selectedDomains.length === 0 && (
+                        <ListItem>
+                          <ListItemText primary="No domains selected" />
+                        </ListItem>
+                      )}
+                    </List>
+                  </Grid>
+                </Grid>
+              </>
+            ) : (
+              <Box sx={{ mt: 3, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
+                <Typography variant="h6" gutterBottom color="info.contrastText">
+                  Admin Access
+                </Typography>
+                <Typography variant="body2" color="info.contrastText">
+                  Admin users have global access to all domains and do not need specific domain assignments.
+                </Typography>
+              </Box>
+            )}
             
             <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
               User Activity

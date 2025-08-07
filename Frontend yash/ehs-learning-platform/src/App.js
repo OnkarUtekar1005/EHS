@@ -159,6 +159,7 @@ function AppContent() {
         {/* Root route - redirects based on user role */}
         <Route path="/" element={<RoleBasedRedirect />} />
         
+        
         {/* User routes */}
         <Route 
           path="/dashboard" 

@@ -149,7 +149,13 @@ const UserAssessment = ({ componentId, onComplete }) => {
   };
 
   const isAllQuestionsAnswered = () => {
-    return questions.every(q => answers[q.id]);
+    return questions.every(q => {
+      // If it's an MCQ with no options, consider it as "answered" to allow submission
+      if (q.type === 'MCQ' && (!q.options || q.options.length === 0)) {
+        return true;
+      }
+      return answers[q.id];
+    });
   };
 
   if (loading) {
@@ -290,35 +296,43 @@ const UserAssessment = ({ componentId, onComplete }) => {
           </Typography>
 
           {question.type === 'MCQ' && (
-            <RadioGroup
-              value={answers[question.id] || ''}
-              onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-            >
-              {question.options.map((option, index) => {
-                // Handle both object and string formats
-                const optionText = typeof option === 'object' ? option.text : option;
-                const optionValue = typeof option === 'object' ? option.text : option;
-                
-                return (
-                  <FormControlLabel
-                    key={index}
-                    value={optionValue}
-                    control={<Radio />}
-                    label={optionText}
-                    sx={{ 
-                      py: { xs: 0.75, sm: 0.5 },
-                      mx: 0,
-                      width: '100%',
-                      '& .MuiFormControlLabel-label': {
-                        fontSize: { xs: '0.875rem', sm: '1rem' },
-                        lineHeight: 1.5,
-                        wordBreak: 'break-word'
-                      }
-                    }}
-                  />
-                );
-              })}
-            </RadioGroup>
+            <>
+              {(question.options || []).length > 0 ? (
+                <RadioGroup
+                  value={answers[question.id] || ''}
+                  onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                >
+                  {question.options.map((option, index) => {
+                    // Handle both object and string formats
+                    const optionText = typeof option === 'object' ? option.text : option;
+                    const optionValue = typeof option === 'object' ? option.text : option;
+                    
+                    return (
+                      <FormControlLabel
+                        key={index}
+                        value={optionValue}
+                        control={<Radio />}
+                        label={optionText}
+                        sx={{ 
+                          py: { xs: 0.75, sm: 0.5 },
+                          mx: 0,
+                          width: '100%',
+                          '& .MuiFormControlLabel-label': {
+                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                            lineHeight: 1.5,
+                            wordBreak: 'break-word'
+                          }
+                        }}
+                      />
+                    );
+                  })}
+                </RadioGroup>
+              ) : (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  This question has no available options. Please contact your instructor or administrator.
+                </Alert>
+              )}
+            </>
           )}
 
           {question.type === 'TRUE_FALSE' && (

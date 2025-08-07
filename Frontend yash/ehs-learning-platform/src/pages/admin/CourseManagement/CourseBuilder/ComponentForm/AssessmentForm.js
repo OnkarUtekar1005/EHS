@@ -87,7 +87,9 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
         ...updatedQuestions[index],
         type: value,
         // Reset correctAnswer when changing type
-        correctAnswer: value === 'TRUE_FALSE' ? '' : (value === 'MCQ' ? '' : updatedQuestions[index].correctAnswer)
+        correctAnswer: value === 'TRUE_FALSE' ? '' : (value === 'MCQ' ? '' : updatedQuestions[index].correctAnswer),
+        // Initialize options array when switching to MCQ
+        options: value === 'MCQ' ? (updatedQuestions[index].options || ['', '', '', '']) : updatedQuestions[index].options
       };
     } else {
       updatedQuestions[index] = {
@@ -183,7 +185,7 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
   const removeOption = (questionIndex, optionIndex) => {
     const updatedQuestions = [...formData.data.questions];
     const question = updatedQuestions[questionIndex];
-    question.options = question.options.filter((_, i) => i !== optionIndex);
+    question.options = (question.options || []).filter((_, i) => i !== optionIndex);
     setFormData(prev => ({
       ...prev,
       data: {
@@ -387,7 +389,7 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
                         </Typography>
                       )}
                     </Typography>
-                    {question.options.map((option, oIndex) => {
+                    {(question.options || []).map((option, oIndex) => {
                       const optionText = typeof option === 'object' ? option.text : option;
                       const isChecked = question.correctAnswer && question.correctAnswer === optionText;
 
@@ -411,7 +413,7 @@ const AssessmentForm = ({ open, onClose, onSave, component, type }) => {
                             onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
                             placeholder={`Option ${oIndex + 1}`}
                           />
-                          {question.options.length > 2 && (
+                          {(question.options || []).length > 2 && (
                             <IconButton
                               size="small"
                               color="error"

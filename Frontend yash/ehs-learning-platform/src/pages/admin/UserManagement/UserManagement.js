@@ -251,17 +251,31 @@ useEffect(() => {
       console.warn('Please select a domain to assign');
       return;
     }
+
+    // Filter out admin users from domain assignment
+    const selectedUserData = filteredUsers.filter(user => selectedUsers.includes(user.id));
+    const adminUsers = selectedUserData.filter(user => user.role === 'ADMIN');
+    const nonAdminUsers = selectedUserData.filter(user => user.role !== 'ADMIN');
+
+    if (adminUsers.length > 0) {
+      console.warn(`Cannot assign domains to ${adminUsers.length} admin user(s). Admin users have global access.`);
+    }
+
+    if (nonAdminUsers.length === 0) {
+      console.warn('No eligible users selected. Domain assignment only applies to non-admin users.');
+      return;
+    }
   
     try {
       await userService.assignBulkDomains({
-        userIds: selectedUsers,
+        userIds: nonAdminUsers.map(user => user.id),
         domainIds: [selectedDomainId] // Pass as array with single value
       });
       
       // Refresh users to show updated domain assignments
       fetchUsers();
       setShowAssignDomainModal(false);
-      console.log('Domain assigned successfully');
+      console.log(`Domain assigned successfully to ${nonAdminUsers.length} user(s).${adminUsers.length > 0 ? ` ${adminUsers.length} admin user(s) were skipped.` : ''}`);
     } catch (error) {
       console.error('Error assigning domain:', error);
       console.error('Failed to assign domain');
@@ -906,21 +920,47 @@ const handleExportCSV = async () => {
         </button>
       </div>
       <div style={styles.modalBody}>
-        <p>Select domain to assign to {selectedUsers.length} selected user(s):</p>
-        <div style={styles.formGroup}>
-          <select 
-            style={styles.formSelect}
-            value={selectedDomainId}
-            onChange={(e) => setSelectedDomainId(e.target.value)}
-          >
-            <option value="">Select a domain</option>
-            {domains.map(domain => (
-              <option key={domain.id} value={domain.id}>
-                {domain.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {(() => {
+          const selectedUserData = filteredUsers.filter(user => selectedUsers.includes(user.id));
+          const adminUsers = selectedUserData.filter(user => user.role === 'ADMIN');
+          const nonAdminUsers = selectedUserData.filter(user => user.role !== 'ADMIN');
+          
+          return (
+            <>
+              <p>Select domain to assign to {selectedUsers.length} selected user(s):</p>
+              
+              {adminUsers.length > 0 && (
+                <div style={{ 
+                  padding: '12px', 
+                  backgroundColor: 'rgba(255, 152, 0, 0.1)', 
+                  color: '#f57c00',
+                  borderRadius: '4px',
+                  marginBottom: '16px',
+                  fontSize: '14px'
+                }}>
+                  ⚠️ <strong>Warning:</strong> {adminUsers.length} admin user(s) will be skipped. 
+                  Admin users have global access and don't need domain assignments.
+                  <br/>Only {nonAdminUsers.length} employee user(s) will receive domain assignments.
+                </div>
+              )}
+              
+              <div style={styles.formGroup}>
+                <select 
+                  style={styles.formSelect}
+                  value={selectedDomainId}
+                  onChange={(e) => setSelectedDomainId(e.target.value)}
+                >
+                  <option value="">Select a domain</option>
+                  {domains.map(domain => (
+                    <option key={domain.id} value={domain.id}>
+                      {domain.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          );
+        })()}
       </div>
       <div style={styles.modalFooter}>
         <button 

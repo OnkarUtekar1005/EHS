@@ -236,6 +236,11 @@ public class UserAssessmentService {
                     }
                     
                     cleanedQuestion.put("options", cleanedOptions);
+                } else {
+                    // If options is missing or not a List, provide empty options array
+                    // This can happen when a question was converted from TRUE_FALSE to MCQ
+                    logger.warn("MCQ question {} has no valid options, providing empty array", question.get("id"));
+                    cleanedQuestion.put("options", new ArrayList<>());
                 }
             } else if ("TRUE_FALSE".equals(question.get("type"))) {
                 cleanedQuestion.remove("correctAnswer");
@@ -329,16 +334,31 @@ public class UserAssessmentService {
                 if (optionsObj instanceof List) {
                     @SuppressWarnings("unchecked")
                     List<Map<String, Object>> options = (List<Map<String, Object>>) optionsObj;
-                    for (Map<String, Object> option : options) {
-                        if (Boolean.TRUE.equals(option.get("isCorrect"))) {
-                            correctAnswer = option.get("text");
-                            if (correctAnswer != null && correctAnswer.equals(userAnswer)) {
-                                isCorrect = true;
-                                correctAnswers++;
+                    
+                    // Check if options list is empty (malformed question)
+                    if (options.isEmpty()) {
+                        logger.warn("MCQ question {} has empty options, marking as correct to avoid penalizing user", questionId);
+                        isCorrect = true;
+                        correctAnswers++;
+                        correctAnswer = "N/A (No options available)";
+                    } else {
+                        for (Map<String, Object> option : options) {
+                            if (Boolean.TRUE.equals(option.get("isCorrect"))) {
+                                correctAnswer = option.get("text");
+                                if (correctAnswer != null && correctAnswer.equals(userAnswer)) {
+                                    isCorrect = true;
+                                    correctAnswers++;
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
+                } else {
+                    // If options is not a List (malformed question), mark as correct to avoid penalizing user
+                    logger.warn("MCQ question {} has no valid options, marking as correct to avoid penalizing user", questionId);
+                    isCorrect = true;
+                    correctAnswers++;
+                    correctAnswer = "N/A (Invalid question format)";
                 }
             } else if ("TRUE_FALSE".equals(question.get("type"))) {
                 correctAnswer = question.get("correctAnswer");

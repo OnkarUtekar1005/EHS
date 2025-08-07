@@ -1,8 +1,10 @@
 package com.ehs.elearning.repository;
 
+import com.ehs.elearning.model.Role;
 import com.ehs.elearning.model.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -16,6 +18,6 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
     Boolean existsByUsername(String username);
     Boolean existsByEmail(String email);
     
-    @Query("SELECT COUNT(u) FROM Users u WHERE u.domains IS EMPTY")
+    @Query("SELECT COUNT(u) FROM Users u WHERE SIZE(u.domains) = 0 AND u.role != 'ADMIN'")
     long countByDomainsEmpty();
 }

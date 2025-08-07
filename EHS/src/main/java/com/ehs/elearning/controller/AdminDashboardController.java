@@ -1,5 +1,6 @@
 package com.ehs.elearning.controller;
 
+import com.ehs.elearning.model.Role;
 import com.ehs.elearning.repository.CourseRepository;
 import com.ehs.elearning.repository.DomainRepository;
 import com.ehs.elearning.repository.UserRepository;
@@ -45,7 +46,7 @@ public class AdminDashboardController {
         // Get total course-user assignments (enrollments)
         long totalAssignments = userCourseProgressRepository.count();
         
-        // Get pending actions (e.g., users without domains)
+        // Get pending actions (e.g., non-admin users without domains)
         long usersWithoutDomain = userRepository.countByDomainsEmpty();
         
         // Get total courses

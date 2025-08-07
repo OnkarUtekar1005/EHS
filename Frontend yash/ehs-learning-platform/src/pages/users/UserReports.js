@@ -46,11 +46,13 @@ import {
   reportsService,
   certificateService
 } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const UserReports = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  const { currentUser } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -116,9 +118,20 @@ const UserReports = () => {
             ? Math.round(response.data.summaryMetrics.totalTimeSpentSeconds / 3600 * 10) / 10
             : 0;
           
-          // Calculate learning streak (consecutive days with activity - simplified mockup)
-          const learningStreak = response.data.summaryMetrics?.learningStreak || 
-            Math.floor(Math.random() * 10) + 1; // Fallback to random number between 1-10
+          // Calculate learning streak based on account age
+          const calculateLearningStreak = () => {
+            if (!currentUser?.createdAt) {
+              // Fallback if no creation date available
+              return 1;
+            }
+            
+            const accountCreationDate = new Date(currentUser.createdAt);
+            const today = new Date();
+            const daysDifference = Math.floor((today - accountCreationDate) / (1000 * 60 * 60 * 24));
+            return Math.max(1, daysDifference); // At least 1 day
+          };
+          
+          const learningStreak = response.data.summaryMetrics?.learningStreak || calculateLearningStreak();
           
           setStats({
             completedCourses: completedCount,
@@ -131,54 +144,36 @@ const UserReports = () => {
           });
         }
       } catch (reportError) {
+        console.error('Error fetching user reports:', reportError);
+        // Set empty data when API fails
+        setReports({
+          summaryMetrics: {
+            totalCoursesEnrolled: 0,
+            totalCoursesCompleted: 0,
+            averageAssessmentScore: 0,
+            totalTimeSpentSeconds: 0
+          },
+          courseProgressDetails: []
+        });
         
-        // Use fallback mock data for development/testing
-        const mockData = generateMockReportData();
-        setReports(mockData);
+        // Calculate streak from account creation date
+        const calculateStreak = () => {
+          if (!currentUser?.createdAt) return 1;
+          const accountCreationDate = new Date(currentUser.createdAt);
+          const today = new Date();
+          const daysDifference = Math.floor((today - accountCreationDate) / (1000 * 60 * 60 * 24));
+          return Math.max(1, daysDifference);
+        };
         
-        // Calculate pagination for mock data
-        if (mockData?.courseProgressDetails) {
-          const completedCourses = mockData.courseProgressDetails.filter(
-            course => course.status === 'COMPLETED'
-          );
-          setTotalPages(Math.ceil(completedCourses.length / itemsPerPage));
-          
-          // Calculate stats from mock data
-          const completedCount = completedCourses.length;
-          const validScores = completedCourses.filter(course => course.postAssessmentScore !== null);
-          const totalScore = validScores.reduce((acc, curr) => acc + curr.postAssessmentScore, 0);
-          const avgScore = validScores.length > 0 ? totalScore / validScores.length : 0;
-          const certCount = completedCourses.filter(course => course.certificateUrl).length;
-          
-          // Calculate improvement rate
-          const coursesWithBothScores = completedCourses.filter(
-            course => course.preAssessmentScore !== null && course.postAssessmentScore !== null
-          );
-          
-          let totalImprovement = 0;
-          coursesWithBothScores.forEach(course => {
-            totalImprovement += (course.postAssessmentScore - course.preAssessmentScore);
-          });
-          
-          const avgImprovement = coursesWithBothScores.length > 0 
-            ? totalImprovement / coursesWithBothScores.length 
-            : 0;
-          
-          // Calculate total time spent in hours
-          const totalTimeSpentHours = mockData.summaryMetrics?.totalTimeSpentSeconds 
-            ? Math.round(mockData.summaryMetrics.totalTimeSpentSeconds / 3600 * 10) / 10
-            : 9.0; // Default fallback
-          
-          setStats({
-            completedCourses: completedCount,
-            totalAssessmentScore: totalScore,
-            averageScore: avgScore,
-            certificatesEarned: certCount,
-            totalTimeSpent: totalTimeSpentHours,
-            improvementRate: avgImprovement,
-            learningStreak: 5 // Default fallback
-          });
-        }
+        setStats({
+          completedCourses: 0,
+          totalAssessmentScore: 0,
+          averageScore: 0,
+          certificatesEarned: 0,
+          totalTimeSpent: 0,
+          improvementRate: 0,
+          learningStreak: calculateStreak()
+        });
       }
       
       setLoading(false);
@@ -326,115 +321,6 @@ const UserReports = () => {
     return coursesWithImprovement.sort((a, b) => b.improvement - a.improvement);
   };
 
-  // Generate mock data for testing/development
-  const generateMockReportData = () => {
-    const mockCourses = [
-      {
-        courseId: "course-1",
-        courseTitle: "Workplace Safety Basics",
-        enrollmentDate: "2025-04-01T00:00:00",
-        progressPercentage: 100,
-        status: "COMPLETED",
-        lastAccessedDate: "2025-04-15T00:00:00",
-        preAssessmentScore: 75,
-        postAssessmentScore: 92,
-        certificateUrl: "/certificates/download/cert-123",
-        timeSpentSeconds: 7200 // 2 hours
-      },
-      {
-        courseId: "course-2",
-        courseTitle: "Fire Safety Training",
-        enrollmentDate: "2025-03-15T00:00:00",
-        progressPercentage: 100,
-        status: "COMPLETED",
-        lastAccessedDate: "2025-03-30T00:00:00",
-        preAssessmentScore: 65,
-        postAssessmentScore: 88,
-        certificateUrl: "/certificates/download/cert-456",
-        timeSpentSeconds: 5400 // 1.5 hours
-      },
-      {
-        courseId: "course-3",
-        courseTitle: "Hazardous Materials Handling",
-        enrollmentDate: "2025-04-10T00:00:00",
-        progressPercentage: 75,
-        status: "IN_PROGRESS",
-        lastAccessedDate: "2025-05-01T00:00:00",
-        preAssessmentScore: 70,
-        postAssessmentScore: null,
-        timeSpentSeconds: 3600 // 1 hour
-      },
-      {
-        courseId: "course-4",
-        courseTitle: "Ergonomics in the Workplace",
-        enrollmentDate: "2025-02-20T00:00:00",
-        progressPercentage: 100,
-        status: "COMPLETED",
-        lastAccessedDate: "2025-03-05T00:00:00",
-        preAssessmentScore: 80,
-        postAssessmentScore: 95,
-        certificateUrl: "/certificates/download/cert-789",
-        timeSpentSeconds: 6300 // 1.75 hours
-      },
-      {
-        courseId: "course-5",
-        courseTitle: "First Aid Basics",
-        enrollmentDate: "2025-01-10T00:00:00",
-        progressPercentage: 100,
-        status: "COMPLETED",
-        lastAccessedDate: "2025-01-25T00:00:00",
-        preAssessmentScore: 72,
-        postAssessmentScore: 90,
-        certificateUrl: "/certificates/download/cert-101",
-        timeSpentSeconds: 3600 // 1 hour
-      },
-      {
-        courseId: "course-6",
-        courseTitle: "Emergency Response",
-        enrollmentDate: "2025-05-01T00:00:00",
-        progressPercentage: 30,
-        status: "IN_PROGRESS",
-        lastAccessedDate: "2025-05-15T00:00:00",
-        preAssessmentScore: 68,
-        postAssessmentScore: null,
-        timeSpentSeconds: 1800 // 0.5 hours
-      },
-      {
-        courseId: "course-7",
-        courseTitle: "Workplace Harassment Prevention",
-        enrollmentDate: "2025-03-01T00:00:00",
-        progressPercentage: 100,
-        status: "COMPLETED",
-        lastAccessedDate: "2025-03-20T00:00:00",
-        preAssessmentScore: 85,
-        postAssessmentScore: 98,
-        certificateUrl: "/certificates/download/cert-202",
-        timeSpentSeconds: 5400 // 1.5 hours
-      },
-      {
-        courseId: "course-8",
-        courseTitle: "Chemical Safety Procedures",
-        enrollmentDate: "2025-02-01T00:00:00",
-        progressPercentage: 100,
-        status: "COMPLETED",
-        lastAccessedDate: "2025-02-15T00:00:00",
-        preAssessmentScore: 78,
-        postAssessmentScore: 91,
-        certificateUrl: "/certificates/download/cert-303",
-        timeSpentSeconds: 4500 // 1.25 hours
-      }
-    ];
-    
-    return {
-      summaryMetrics: {
-        totalCoursesEnrolled: 8,
-        totalCoursesCompleted: 6,
-        averageAssessmentScore: 89,
-        totalTimeSpentSeconds: 32400, // 9 hours
-      },
-      courseProgressDetails: mockCourses
-    };
-  };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return 'N/A';
