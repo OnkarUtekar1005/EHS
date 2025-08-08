@@ -37,12 +37,13 @@ import {
   ArrowForward as ArrowForwardIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import api from '../../services/api';
+import api, { userService } from '../../services/api';
 
 const AdminDashboard = () => {
   const theme = useTheme();
   const { currentUser } = useAuth();
   const [stats, setStats] = useState(null);
+  const [activeUsersCount, setActiveUsersCount] = useState(0);
   const [userProgress, setUserProgress] = useState([]);
   const [recentCourses, setRecentCourses] = useState([]);
   const [topPerformers, setTopPerformers] = useState([]);
@@ -59,12 +60,14 @@ const AdminDashboard = () => {
           statsResponse,
           progressResponse,
           coursesResponse,
-          performersResponse
+          performersResponse,
+          usersResponse
         ] = await Promise.all([
           api.get('/v2/admin/dashboard/stats'),
           api.get('/v2/admin/dashboard/recent-progress'),
           api.get('/v2/admin/dashboard/recent-courses'),
-          api.get('/v2/admin/dashboard/top-performers')
+          api.get('/v2/admin/dashboard/top-performers'),
+          userService.getAll()
         ]);
         
         setStats(statsResponse.data);
@@ -72,10 +75,22 @@ const AdminDashboard = () => {
         setRecentCourses(coursesResponse.data);
         setTopPerformers(performersResponse.data);
         
+        // Filter out admin users to get only regular users count
+        const allUsers = usersResponse.data || [];
+        const nonAdminUsers = allUsers.filter(user => 
+          user.role !== 'ADMIN' && 
+          user.role !== 'admin' && 
+          !user.isAdmin &&
+          user.role !== 'SUPER_ADMIN'
+        );
+        setActiveUsersCount(nonAdminUsers.length);
+        
         setError(null);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data. Please try again later.');
+        // Set fallback count in case of error
+        setActiveUsersCount(0);
       } finally {
         setLoading(false);
       }
@@ -219,7 +234,7 @@ const AdminDashboard = () => {
                   fontSize: { xs: '1.25rem', sm: '1.5rem' } // Smaller on mobile
                 }}
               >
-                {stats?.activeUsers || 0}
+                {activeUsersCount}
               </Typography>
               <Typography 
                 variant="body2" 

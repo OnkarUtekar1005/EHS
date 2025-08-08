@@ -95,8 +95,8 @@ const MainLayout = () => {
         <ListItem disablePadding>
           <ListItemButton
             component={Link}
-            to="/"
-            selected={location.pathname === '/'}
+            to="/dashboard"
+            selected={location.pathname === '/dashboard'}
             className="sidebar-list-item"
           >
             <ListItemIcon>
@@ -305,8 +305,8 @@ const MainLayout = () => {
           [`& .MuiDrawer-paper`]: { 
             width: drawerWidth, 
             boxSizing: 'border-box',
-            top: '64px', // Height of AppBar
-            height: 'calc(100% - 64px)',
+            top: { xs: '56px', sm: '64px' }, // Height of AppBar - responsive
+            height: { xs: 'calc(100% - 56px)', sm: 'calc(100% - 64px)' },
             backgroundColor: '#FFFFFF',
             borderRight: '1px solid rgba(0, 0, 0, 0.12)'
           },
@@ -323,7 +323,7 @@ const MainLayout = () => {
           pt: 3, // top padding
           px: { xs: 2, sm: 3 }, // horizontal padding - smaller on mobile
           width: '100%',
-          mt: '64px', // Height of AppBar
+          mt: { xs: '56px', sm: '64px' }, // Height of AppBar - responsive
           transition: theme.transitions.create(['padding', 'margin'], {
             easing: theme.transitions.easing.easeOut,
             duration: theme.transitions.duration.enteringScreen,

@@ -71,7 +71,7 @@ const MyCourses = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [switchLoading, setSwitchLoading] = useState(false);
   const [showIncompleteWarning, setShowIncompleteWarning] = useState(false);
-  const [viewMode, setViewMode] = useState(isMobile ? 'list' : 'grid');
+  const [viewMode, setViewMode] = useState('grid'); // Mobile always uses grid view
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('');
   const [sortBy, setSortBy] = useState('');
@@ -844,11 +844,11 @@ const MyCourses = () => {
               {/* Filters Row */}
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <FormControl size="small" sx={{ flex: 1 }}>
-                  <InputLabel>Domain</InputLabel>
+                  <InputLabel>Books</InputLabel>
                   <Select
                     value={selectedDomain}
                     onChange={(e) => setSelectedDomain(e.target.value)}
-                    label="Domain"
+                    label="Books"
                     sx={{ borderRadius: 2, bgcolor: theme.palette.grey[50] }}
                   >
                     <MenuItem value=""><em>All</em></MenuItem>
@@ -873,26 +873,6 @@ const MyCourses = () => {
                   </Select>
                 </FormControl>
               </Box>
-
-              {/* View Mode Toggle */}
-              <ButtonGroup variant="outlined" size="small" fullWidth>
-                <Button
-                  variant={viewMode === 'grid' ? 'contained' : 'outlined'}
-                  onClick={() => setViewMode('grid')}
-                  startIcon={<ViewModule />}
-                  sx={{ borderRadius: '8px 0 0 8px', py: 1.5 }}
-                >
-                  Grid View
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'contained' : 'outlined'}
-                  onClick={() => setViewMode('list')}
-                  startIcon={<ViewList />}
-                  sx={{ borderRadius: '0 8px 8px 0', py: 1.5 }}
-                >
-                  List View
-                </Button>
-              </ButtonGroup>
             </Box>
           ) : (
             /* Desktop Layout - Row */
@@ -955,15 +935,35 @@ const MyCourses = () => {
                     <MenuItem value="domain">By Domain</MenuItem>
                   </Select>
                 </FormControl>
+
+                {/* Desktop View Mode Toggle */}
+                <ButtonGroup variant="outlined" size="small">
+                  <Button
+                    variant={viewMode === 'grid' ? 'contained' : 'outlined'}
+                    onClick={() => setViewMode('grid')}
+                    startIcon={<ViewModule />}
+                    sx={{ borderRadius: '8px 0 0 8px', py: 1 }}
+                  >
+                    Grid
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'contained' : 'outlined'}
+                    onClick={() => setViewMode('list')}
+                    startIcon={<ViewList />}
+                    sx={{ borderRadius: '0 8px 8px 0', py: 1 }}
+                  >
+                    List
+                  </Button>
+                </ButtonGroup>
               </Box>
             </Box>
           )}
         </Paper>
 
-        {/* Course Grid/List - Mobile Optimized */}
+        {/* Course Grid/List - Mobile always uses grid */}
         {displayCourses.length > 0 ? (
           <Box sx={{ width: '100%' }}>
-            {viewMode === 'grid' ? (
+            {(isMobile || viewMode === 'grid') ? (
               <Box className="course-grid-container">
                 {displayCourses.map(course => renderCourseCard(course))}
               </Box>

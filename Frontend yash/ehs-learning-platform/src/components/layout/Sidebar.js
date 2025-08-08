@@ -59,8 +59,8 @@ const Sidebar = ({ isOpen, drawerWidth }) => {
           width: drawerWidth,
           boxSizing: 'border-box',
           borderRight: '1px solid rgba(0, 0, 0, 0.12)',
-          marginTop: '64px', // To account for the app bar height
-          height: 'calc(100% - 64px)',
+          marginTop: { xs: '56px', sm: '64px' }, // To account for the app bar height - responsive
+          height: { xs: 'calc(100% - 56px)', sm: 'calc(100% - 64px)' },
           display: 'flex',
           flexDirection: 'column',
         },
@@ -83,9 +83,9 @@ const Sidebar = ({ isOpen, drawerWidth }) => {
           <ListItem 
             button 
             component={Link} 
-            to="/" 
-            selected={selectedItem === '/'}
-            onClick={() => setSelectedItem('/')}
+            to="/dashboard" 
+            selected={selectedItem === '/dashboard'}
+            onClick={() => setSelectedItem('/dashboard')}
             sx={{
               borderRadius: { xs: 1, sm: 0 },
               mx: { xs: 1, sm: 0 },

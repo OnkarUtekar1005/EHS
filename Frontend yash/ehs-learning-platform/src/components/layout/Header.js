@@ -150,14 +150,14 @@ const Header = ({ toggleSidebar, sidebarOpen, drawerWidth }) => {
           >
             <Avatar 
               sx={{ 
-                width: 44, // Bigger avatar: 32 -> 44
-                height: 44, 
+                width: { xs: 32, sm: 44 }, // Responsive avatar size
+                height: { xs: 32, sm: 44 },
                 bgcolor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
                 border: '2px solid rgba(255, 255, 255, 0.2)',
                 fontWeight: 600,
-                fontSize: '1.1rem',
+                fontSize: { xs: '0.9rem', sm: '1.1rem' }, // Responsive font size
                 transition: 'all 0.2s ease-in-out',
                 '&:hover': {
                   boxShadow: '0 6px 12px rgba(0,0,0,0.3)',

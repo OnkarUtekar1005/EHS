@@ -35,8 +35,9 @@ import AssessmentManagement from './pages/admin/AssessmentManagement';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminProfile from './pages/admin/AdminProfile';
 
-// Auth Pages
-import Login from './pages/Login';
+// Public Pages
+import Landing from './pages/Landing';
+import LoginForm from './pages/LoginForm';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import NotFound from './pages/NotFound';
@@ -111,9 +112,9 @@ const ProtectedRoute = ({ children, requireAdmin }) => {
     return <div>Loading...</div>;
   }
   
-  // Redirect to login if not authenticated
+  // Redirect to landing if not authenticated
   if (!currentUser) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
   
   // Require admin but user is not admin
@@ -124,8 +125,8 @@ const ProtectedRoute = ({ children, requireAdmin }) => {
   return children;
 };
 
-// Role-based redirect component for root path
-const RoleBasedRedirect = () => {
+// Dashboard redirect component for authenticated users
+const DashboardRedirect = () => {
   const { currentUser, loading, isAdmin } = useAuth();
   
   // Show loading state while auth check is in progress
@@ -133,9 +134,9 @@ const RoleBasedRedirect = () => {
     return <div>Loading...</div>;
   }
   
-  // Redirect to login if not authenticated
+  // Redirect to landing if not authenticated
   if (!currentUser) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
   
   // Redirect based on user role
@@ -151,13 +152,14 @@ function AppContent() {
     <Router>
       <Routes>
         {/* Public routes */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<LoginForm />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/certificate/verify/:certificateNumber" element={<CertificateVerification />} />
         
-        {/* Root route - redirects based on user role */}
-        <Route path="/" element={<RoleBasedRedirect />} />
+        {/* Dashboard route for authenticated users */}
+        <Route path="/app" element={<DashboardRedirect />} />
         
         
         {/* User routes */}
