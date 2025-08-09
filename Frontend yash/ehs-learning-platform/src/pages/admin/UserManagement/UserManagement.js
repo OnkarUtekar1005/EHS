@@ -626,7 +626,7 @@ const handleExportCSV = async () => {
             color="textSecondary"
             sx={{ mb: 3 }}
           >
-            Manage users, assign domains, and track employee access across your organization
+            Manage users, assign books, and track employee access across your organization
           </Typography>
         </Box>
         
@@ -725,14 +725,14 @@ const handleExportCSV = async () => {
               fontWeight: '500',
               color: '#374151'
             }}>
-              Domain
+              Books
             </label>
             <select 
               style={styles.select}
               value={selectedDomain}
               onChange={(e) => setSelectedDomain(e.target.value)}
             >
-              <option value="All Domains">All Domains</option>
+              <option value="All Domains">All Books</option>
               {domains.map(domain => (
                 <option key={domain.id} value={domain.id}>
                   {domain.name}
@@ -789,7 +789,7 @@ const handleExportCSV = async () => {
               <th style={styles.tableHeader}>Username</th>
               <th style={styles.tableHeader}>Email</th>
               <th style={styles.tableHeader}>Role</th>
-              <th style={styles.tableHeader}>Domains</th>
+              <th style={styles.tableHeader}>Books</th>
               <th style={styles.tableHeader}>Actions</th>
             </tr>
           </thead>
@@ -904,14 +904,14 @@ const handleExportCSV = async () => {
               }}
               onClick={() => setShowAssignDomainModal(true)}
             >
-              ASSIGN DOMAIN
+              ASSIGN BOOKS
             </button>
 
 {showAssignDomainModal && (
   <div style={styles.modal}>
     <div style={styles.modalContent}>
       <div style={styles.modalHeader}>
-        <h3 style={{ margin: 0 }}>Assign Domains</h3>
+        <h3 style={{ margin: 0 }}>Assign Books</h3>
         <button 
           style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}
           onClick={() => setShowAssignDomainModal(false)}
@@ -927,7 +927,7 @@ const handleExportCSV = async () => {
           
           return (
             <>
-              <p>Select domain to assign to {selectedUsers.length} selected user(s):</p>
+              <p>Select books to assign to {selectedUsers.length} selected user(s):</p>
               
               {adminUsers.length > 0 && (
                 <div style={{ 
@@ -939,8 +939,8 @@ const handleExportCSV = async () => {
                   fontSize: '14px'
                 }}>
                   ⚠️ <strong>Warning:</strong> {adminUsers.length} admin user(s) will be skipped. 
-                  Admin users have global access and don't need domain assignments.
-                  <br/>Only {nonAdminUsers.length} employee user(s) will receive domain assignments.
+                  Admin users have global access and don't need book assignments.
+                  <br/>Only {nonAdminUsers.length} employee user(s) will receive book assignments.
                 </div>
               )}
               
@@ -950,7 +950,7 @@ const handleExportCSV = async () => {
                   value={selectedDomainId}
                   onChange={(e) => setSelectedDomainId(e.target.value)}
                 >
-                  <option value="">Select a domain</option>
+                  <option value="">Select a book</option>
                   {domains.map(domain => (
                     <option key={domain.id} value={domain.id}>
                       {domain.name}
@@ -974,7 +974,7 @@ const handleExportCSV = async () => {
           onClick={handleAssignDomains}
           disabled={!selectedDomainId}
         >
-          Assign Domain
+          Assign Books
         </button>
       </div>
     </div>
@@ -1036,7 +1036,7 @@ const handleExportCSV = async () => {
                   value={newUser.role}
                   onChange={(e) => setNewUser({...newUser, role: e.target.value})}
                 >
-                  <option value="USER">Employee</option>
+                  <option value="USER">User</option>
                   <option value="ADMIN">Admin</option>
                 </select>
               </div>

@@ -11,9 +11,9 @@ also in admin modules he can add training modules, edit them, delete them, publi
 User functionality is to be able to view and complete training modules and see their progress and download there certificates.
 Understand the project first 
 Now todays task for you is that the user has reported a issue  while testing the application
-Issue :When on the user dashboard and on the reports page there is learning activity  section  with the card learning progress and there is days streak text which chnages eac time u visits the report page 
-it should actually track how many times the logged in user has logged in to the system and display it  
-refer image.png
+Issue :When a user completes the course the certificate generated alignment and format are not correct we need to make the chnages such that this certificate looks proffessional . The design is the same but we need to chnage the formatting and alignment
+refer image.png for current generated  certificate
+refer image2.png for how i want it to look like
 this seems frontend  issue  as me before changing anything
 
 first create a plan and steps to fix this and the follow the plan as a software developer and fix it 

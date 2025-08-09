@@ -680,14 +680,14 @@ const MyCourses = () => {
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <FormControl size="small" sx={{ minWidth: 140 }}>
-                  <InputLabel>Domain</InputLabel>
+                  <InputLabel>Books</InputLabel>
                   <Select
                     value={selectedDomain}
                     onChange={(e) => setSelectedDomain(e.target.value)}
                     label="Domain"
                     sx={{ borderRadius: 2 }}
                   >
-                    <MenuItem value=""><em>All Domains</em></MenuItem>
+                    <MenuItem value=""><em>All Books</em></MenuItem>
                     {availableDomains.map((domain) => (
                       <MenuItem key={domain} value={domain}>{domain}</MenuItem>
                     ))}
@@ -705,7 +705,7 @@ const MyCourses = () => {
                     <MenuItem value=""><em>Default</em></MenuItem>
                     <MenuItem value="recent">Recently Published</MenuItem>
                     <MenuItem value="alphabetical">Alphabetical</MenuItem>
-                    <MenuItem value="domain">By Domain</MenuItem>
+                    <MenuItem value="domain">By Books</MenuItem>
                   </Select>
                 </FormControl>
 

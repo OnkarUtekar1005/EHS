@@ -192,11 +192,11 @@ const DomainManagement = () => {
   const getDialogTitle = () => {
     switch (dialogType) {
       case 'add':
-        return 'Add New Domain';
+        return 'Add New Books';
       case 'edit':
-        return 'Edit Domain';
+        return 'Edit Books';
       case 'delete':
-        return 'Delete Domain';
+        return 'Delete Books';
       default:
         return '';
     }
@@ -224,14 +224,14 @@ const DomainManagement = () => {
               color: theme.palette.text.primary
             }}
           >
-            Domain Management
+            Books Management
           </Typography>
           <Typography
             variant="subtitle1"
             color="textSecondary"
             sx={{ mb: 3 }}
           >
-            Organize courses and content by creating and managing learning domains
+            Organize courses and content by creating and managing learning books
           </Typography>
         </Box>
 
@@ -242,7 +242,7 @@ const DomainManagement = () => {
             startIcon={<AddIcon />}
             onClick={handleOpenAddDialog}
           >
-            Add Domain
+            Add Books
           </Button>
         </Box>
       
@@ -256,7 +256,7 @@ const DomainManagement = () => {
         <Box mb={3}>
           <TextField
             fullWidth
-            label="Search Domains"
+            label="Search Books"
             variant="outlined"
             value={searchQuery}
             onChange={handleSearch}
@@ -289,7 +289,7 @@ const DomainManagement = () => {
               ) : domains.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={3} align="center">
-                    No domains found
+                    No books found
                   </TableCell>
                 </TableRow>
               ) : (
@@ -331,14 +331,14 @@ const DomainManagement = () => {
           
           {dialogType === 'delete' ? (
             <DialogContentText>
-              Are you sure you want to delete the domain "{formData.name}"? This action cannot be undone.
+              Are you sure you want to delete the book "{formData.name}"? This action cannot be undone.
             </DialogContentText>
           ) : (
             <>
               <TextField
                 margin="dense"
                 name="name"
-                label="Domain Name"
+                label="Books Name"
                 fullWidth
                 variant="outlined"
                 value={formData.name}

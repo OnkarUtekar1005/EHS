@@ -418,7 +418,7 @@ const AssessmentManagement = () => {
           
           <Grid item xs={12} sm={6} md={6}>
             <FormControl fullWidth variant="outlined">
-              <InputLabel>Please select the domain</InputLabel>
+              <InputLabel>Please select the book</InputLabel>
               <Select
                 name="domainId"
                 value={filters.domainId}
@@ -431,7 +431,7 @@ const AssessmentManagement = () => {
                   minWidth: { xs: '100%', md: '280px' }
                 }}
               >
-                <MenuItem value="">All Domains</MenuItem>
+                <MenuItem value="">All Books</MenuItem>
                 {Array.isArray(domains) && domains.map((domain) => (
                   <MenuItem key={domain.id} value={domain.id}>
                     {domain.name || 'Untitled Domain'}
@@ -546,7 +546,7 @@ const AssessmentManagement = () => {
                       <strong>Course:</strong> {attempt.courseTitle || 'N/A'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mb: 0.5 }}>
-                      <strong>Domain:</strong> {attempt.domainName || 'N/A'}
+                      <strong>Books:</strong> {attempt.domainName || 'N/A'}
                     </Typography>
                   </Box>
                   
@@ -639,7 +639,7 @@ const AssessmentManagement = () => {
                 <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>User</TableCell>
                 <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Component</TableCell>
                 <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Course</TableCell>
-                <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Domain</TableCell>
+                <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Books</TableCell>
                 <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Attempt</TableCell>
                 <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Score</TableCell>
                 <TableCell sx={{ backgroundColor: 'grey.50', fontWeight: 600, fontSize: '0.875rem' }}>Status</TableCell>
