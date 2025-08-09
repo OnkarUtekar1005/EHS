@@ -40,6 +40,7 @@ import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import LightbulbIcon from '@mui/icons-material/Lightbulb';
 
 // Constants
 const DRAWER_WIDTH = 240;
@@ -69,7 +70,8 @@ const AdminLayout = () => {
     { path: '/admin/domains', icon: <CategoryIcon />, label: 'Books' },
     { path: '/admin/courses', icon: <BookIcon />, label: 'Chapter/Modules' },
     { path: '/admin/materials', icon: <CloudUploadIcon />, label: 'Materials' },
-    { path: '/admin/assessments', icon: <AssessmentIcon />, label: 'Assessments' }
+    { path: '/admin/assessments', icon: <AssessmentIcon />, label: 'Assessments' },
+    { path: '/admin/think', icon: <LightbulbIcon />, label: 'Think' }
   ], []);
 
   const quickActions = useMemo(() => [

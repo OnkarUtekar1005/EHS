@@ -4,6 +4,7 @@ import {
   Drawer,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   Divider,
@@ -18,7 +19,8 @@ import {
   Dashboard as DashboardIcon,
   Person as ProfileIcon,
   School as CourseIcon,
-  Assessment as ReportsIcon
+  Assessment as ReportsIcon,
+  Lightbulb as ThinkIcon
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -80,135 +82,173 @@ const Sidebar = ({ isOpen, drawerWidth }) => {
         
         <List sx={{ flexGrow: 1 }}>
           {/* Dashboard */}
-          <ListItem 
-            button 
-            component={Link} 
-            to="/dashboard" 
-            selected={selectedItem === '/dashboard'}
-            onClick={() => setSelectedItem('/dashboard')}
-            sx={{
-              borderRadius: { xs: 1, sm: 0 },
-              mx: { xs: 1, sm: 0 },
-              mb: { xs: 0.5, sm: 0 },
-              '&.Mui-selected': {
-                backgroundColor: 'rgba(25, 118, 210, 0.15)',
-                color: '#1565c0',
-                borderLeft: { xs: 'none', sm: '4px solid' },
-                borderLeftColor: { sm: '#1565c0' },
-                borderRadius: { xs: 1, sm: '0 8px 8px 0' },
-                '& .MuiListItemIcon-root': {
-                  color: '#1565c0'
-                },
-                '& .MuiListItemText-primary': {
-                  fontWeight: 600,
-                  color: '#1565c0'
+          <ListItem disablePadding>
+            <ListItemButton 
+              component={Link} 
+              to="/dashboard" 
+              selected={selectedItem === '/dashboard'}
+              onClick={() => setSelectedItem('/dashboard')}
+              sx={{
+                borderRadius: { xs: 1, sm: 0 },
+                mx: { xs: 1, sm: 0 },
+                mb: { xs: 0.5, sm: 0 },
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.15)',
+                  color: '#1565c0',
+                  borderLeft: { xs: 'none', sm: '4px solid' },
+                  borderLeftColor: { sm: '#1565c0' },
+                  borderRadius: { xs: 1, sm: '0 8px 8px 0' },
+                  '& .MuiListItemIcon-root': {
+                    color: '#1565c0'
+                  },
+                  '& .MuiListItemText-primary': {
+                    fontWeight: 600,
+                    color: '#1565c0'
+                  }
                 }
-              }
-            }}
-          >
-            <ListItemIcon>
-              <DashboardIcon />
-            </ListItemIcon>
-            <ListItemText primary="Dashboard" />
+              }}
+            >
+              <ListItemIcon>
+                <DashboardIcon />
+              </ListItemIcon>
+              <ListItemText primary="Dashboard" />
+            </ListItemButton>
           </ListItem>
           
           {/* My Courses */}
-          <ListItem 
-            button 
-            component={Link} 
-            to="/my-courses" 
-            selected={selectedItem === '/my-courses'}
-            onClick={() => setSelectedItem('/my-courses')}
-            sx={{
-              borderRadius: { xs: 1, sm: 0 },
-              mx: { xs: 1, sm: 0 },
-              mb: { xs: 0.5, sm: 0 },
-              '&.Mui-selected': {
-                backgroundColor: 'rgba(25, 118, 210, 0.15)',
-                color: '#1565c0',
-                borderLeft: { xs: 'none', sm: '4px solid' },
-                borderLeftColor: { sm: '#1565c0' },
-                borderRadius: { xs: 1, sm: '0 8px 8px 0' },
-                '& .MuiListItemIcon-root': {
-                  color: '#1565c0'
-                },
-                '& .MuiListItemText-primary': {
-                  fontWeight: 600,
-                  color: '#1565c0'
+          <ListItem disablePadding>
+            <ListItemButton 
+              component={Link} 
+              to="/my-courses" 
+              selected={selectedItem === '/my-courses'}
+              onClick={() => setSelectedItem('/my-courses')}
+              sx={{
+                borderRadius: { xs: 1, sm: 0 },
+                mx: { xs: 1, sm: 0 },
+                mb: { xs: 0.5, sm: 0 },
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.15)',
+                  color: '#1565c0',
+                  borderLeft: { xs: 'none', sm: '4px solid' },
+                  borderLeftColor: { sm: '#1565c0' },
+                  borderRadius: { xs: 1, sm: '0 8px 8px 0' },
+                  '& .MuiListItemIcon-root': {
+                    color: '#1565c0'
+                  },
+                  '& .MuiListItemText-primary': {
+                    fontWeight: 600,
+                    color: '#1565c0'
+                  }
                 }
-              }
-            }}
-          >
-            <ListItemIcon>
-              <CourseIcon />
-            </ListItemIcon>
-            <ListItemText primary="My Courses" />
+              }}
+            >
+              <ListItemIcon>
+                <CourseIcon />
+              </ListItemIcon>
+              <ListItemText primary="My Courses" />
+            </ListItemButton>
           </ListItem>
           
           {/* Reports */}
-          <ListItem
-            button
-            component={Link}
-            to="/reports"
-            selected={selectedItem === '/reports'}
-            onClick={() => setSelectedItem('/reports')}
-            sx={{
-              borderRadius: { xs: 1, sm: 0 },
-              mx: { xs: 1, sm: 0 },
-              mb: { xs: 0.5, sm: 0 },
-              '&.Mui-selected': {
-                backgroundColor: 'rgba(25, 118, 210, 0.15)',
-                color: '#1565c0',
-                borderLeft: { xs: 'none', sm: '4px solid' },
-                borderLeftColor: { sm: '#1565c0' },
-                borderRadius: { xs: 1, sm: '0 8px 8px 0' },
-                '& .MuiListItemIcon-root': {
-                  color: '#1565c0'
-                },
-                '& .MuiListItemText-primary': {
-                  fontWeight: 600,
-                  color: '#1565c0'
+          <ListItem disablePadding>
+            <ListItemButton
+              component={Link}
+              to="/reports"
+              selected={selectedItem === '/reports'}
+              onClick={() => setSelectedItem('/reports')}
+              sx={{
+                borderRadius: { xs: 1, sm: 0 },
+                mx: { xs: 1, sm: 0 },
+                mb: { xs: 0.5, sm: 0 },
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.15)',
+                  color: '#1565c0',
+                  borderLeft: { xs: 'none', sm: '4px solid' },
+                  borderLeftColor: { sm: '#1565c0' },
+                  borderRadius: { xs: 1, sm: '0 8px 8px 0' },
+                  '& .MuiListItemIcon-root': {
+                    color: '#1565c0'
+                  },
+                  '& .MuiListItemText-primary': {
+                    fontWeight: 600,
+                    color: '#1565c0'
+                  }
                 }
-              }
-            }}
-          >
-            <ListItemIcon>
-              <ReportsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Reports" />
+              }}
+            >
+              <ListItemIcon>
+                <ReportsIcon />
+              </ListItemIcon>
+              <ListItemText primary="Reports" />
+            </ListItemButton>
+          </ListItem>
+
+          {/* Think */}
+          <ListItem disablePadding>
+            <ListItemButton
+              component={Link}
+              to="/think"
+              selected={selectedItem === '/think'}
+              onClick={() => setSelectedItem('/think')}
+              sx={{
+                borderRadius: { xs: 1, sm: 0 },
+                mx: { xs: 1, sm: 0 },
+                mb: { xs: 0.5, sm: 0 },
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.15)',
+                  color: '#1565c0',
+                  borderLeft: { xs: 'none', sm: '4px solid' },
+                  borderLeftColor: { sm: '#1565c0' },
+                  borderRadius: { xs: 1, sm: '0 8px 8px 0' },
+                  '& .MuiListItemIcon-root': {
+                    color: '#1565c0'
+                  },
+                  '& .MuiListItemText-primary': {
+                    fontWeight: 600,
+                    color: '#1565c0'
+                  }
+                }
+              }}
+            >
+              <ListItemIcon>
+                <ThinkIcon />
+              </ListItemIcon>
+              <ListItemText primary="Think" />
+            </ListItemButton>
           </ListItem>
 
           {/* Profile */}
-          <ListItem
-            button
-            component={Link}
-            to="/profile"
-            selected={selectedItem === '/profile'}
-            onClick={() => setSelectedItem('/profile')}
-            sx={{
-              borderRadius: { xs: 1, sm: 0 },
-              mx: { xs: 1, sm: 0 },
-              mb: { xs: 0.5, sm: 0 },
-              '&.Mui-selected': {
-                backgroundColor: 'rgba(25, 118, 210, 0.15)',
-                color: '#1565c0',
-                borderLeft: { xs: 'none', sm: '4px solid' },
-                borderLeftColor: { sm: '#1565c0' },
-                borderRadius: { xs: 1, sm: '0 8px 8px 0' },
-                '& .MuiListItemIcon-root': {
-                  color: '#1565c0'
-                },
-                '& .MuiListItemText-primary': {
-                  fontWeight: 600,
-                  color: '#1565c0'
+          <ListItem disablePadding>
+            <ListItemButton
+              component={Link}
+              to="/profile"
+              selected={selectedItem === '/profile'}
+              onClick={() => setSelectedItem('/profile')}
+              sx={{
+                borderRadius: { xs: 1, sm: 0 },
+                mx: { xs: 1, sm: 0 },
+                mb: { xs: 0.5, sm: 0 },
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.15)',
+                  color: '#1565c0',
+                  borderLeft: { xs: 'none', sm: '4px solid' },
+                  borderLeftColor: { sm: '#1565c0' },
+                  borderRadius: { xs: 1, sm: '0 8px 8px 0' },
+                  '& .MuiListItemIcon-root': {
+                    color: '#1565c0'
+                  },
+                  '& .MuiListItemText-primary': {
+                    fontWeight: 600,
+                    color: '#1565c0'
+                  }
                 }
-              }
-            }}
-          >
-            <ListItemIcon>
-              <ProfileIcon />
-            </ListItemIcon>
-            <ListItemText primary="Profile" />
+              }}
+            >
+              <ListItemIcon>
+                <ProfileIcon />
+              </ListItemIcon>
+              <ListItemText primary="Profile" />
+            </ListItemButton>
           </ListItem>
         </List>
         

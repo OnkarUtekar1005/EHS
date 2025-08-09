@@ -32,6 +32,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import logoImage from '../../assets/logo-image.jpg';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import SchoolIcon from '@mui/icons-material/School';
+import LightbulbIcon from '@mui/icons-material/Lightbulb';
 
 // Drawer width
 const drawerWidth = 240;
@@ -131,6 +132,20 @@ const MainLayout = () => {
               <AssessmentIcon />
             </ListItemIcon>
             <ListItemText primary="Reports" />
+          </ListItemButton>
+        </ListItem>
+        
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to="/think"
+            selected={location.pathname === '/think'}
+            className="sidebar-list-item"
+          >
+            <ListItemIcon>
+              <LightbulbIcon />
+            </ListItemIcon>
+            <ListItemText primary="Think" />
           </ListItemButton>
         </ListItem>
       </List>

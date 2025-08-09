@@ -15,10 +15,12 @@ import {
   HealthAndSafety as FirstAidIcon,
   Computer as CyberIcon,
   Group as CommunityIcon,
-  Shield as ShieldIcon
+  Shield as ShieldIcon,
+  Lightbulb as LightbulbIcon
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import { domainService } from '../services/api';
+import ThinkForm from '../components/think/ThinkForm';
 
 const Landing = () => {
   const [stats, setStats] = useState({
@@ -420,6 +422,41 @@ const Landing = () => {
               </div>
             </Paper>
           </div>
+        </Container>
+      </div>
+
+      {/* Think Section - Feedback/Complaints/Ideas */}
+      <div style={{ backgroundColor: 'white', padding: '96px 0' }}>
+        <Container maxWidth="lg">
+          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+              <LightbulbIcon style={{ fontSize: '64px', color: '#1976d2' }} />
+            </div>
+            <Typography
+              variant="h3"
+              component="h2"
+              style={{
+                fontWeight: 700,
+                marginBottom: '24px',
+                color: '#333'
+              }}
+            >
+              Share Your Thoughts
+            </Typography>
+            <Typography
+              variant="h6"
+              style={{ 
+                fontWeight: 400, 
+                maxWidth: '600px', 
+                margin: '0 auto',
+                color: '#666'
+              }}
+            >
+              We value your feedback! Share your ideas, suggestions, or concerns to help us improve our platform.
+            </Typography>
+          </div>
+          
+          <ThinkForm isPublic={true} isAuthenticated={false} />
         </Container>
       </div>
 
