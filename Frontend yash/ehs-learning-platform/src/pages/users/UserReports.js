@@ -443,144 +443,184 @@ const UserReports = () => {
           </Typography>
         </Box>
 
-        {/* Stats Cards */}
-        <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: 4 }}>
+        {/* Stats Cards - Aligned like Dashboard */}
+        <Box
+          sx={{
+            mb: 4,
+            display: { xs: 'flex', sm: 'flex', md: 'flex' },
+            flexDirection: { xs: 'column', sm: 'row' },
+            flexWrap: { xs: 'nowrap', sm: 'wrap', md: 'nowrap' },
+            gap: { xs: 2, sm: 2, md: 3 }
+          }}
+        >
           {/* Completed Courses Card */}
-          <Grid item xs={6} sm={6} md={4}>
+          <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
             <Paper
               elevation={0}
               sx={{
-                p: isMobile ? 2 : 3,
+                p: { xs: 2, sm: 3 },
                 borderRadius: 2,
                 boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                minHeight: { xs: 120, sm: 140 },
+                transition: 'all 0.25s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.12)'
+                }
               }}
             >
               <Avatar
                 sx={{
                   bgcolor: theme.palette.success.light,
-                  width: isMobile ? 40 : 56,
-                  height: isMobile ? 40 : 56,
-                  mb: isMobile ? 1 : 2
+                  width: { xs: 40, sm: 56 },
+                  height: { xs: 40, sm: 56 },
+                  mb: { xs: 1, sm: 2 }
                 }}
               >
-                <CheckCircle fontSize={isMobile ? "medium" : "large"} sx={{ color: theme.palette.success.main }} />
+                <CheckCircle
+                  fontSize={isMobile ? "medium" : "large"} 
+                  sx={{ color: theme.palette.success.main }} 
+                />
               </Avatar>
-              <Typography variant={isMobile ? "h6" : "h5"} component="div" align="center" sx={{ fontWeight: 600 }}>
+              <Typography 
+                variant="h5" 
+                component="div" 
+                align="center" 
+                sx={{ 
+                  fontWeight: 600,
+                  fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                }}
+              >
                 {stats.completedCourses}
               </Typography>
-              <Typography variant={isMobile ? "body2" : "body1"} color="textSecondary" align="center">
+              <Typography 
+                variant="body2" 
+                color="textSecondary" 
+                align="center"
+                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+              >
                 Completed Courses
               </Typography>
             </Paper>
-          </Grid>
+          </Box>
           
           {/* Average Score Card */}
-          <Grid item xs={6} sm={6} md={4}>
+          <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
             <Paper
               elevation={0}
               sx={{
-                p: isMobile ? 2 : 3,
+                p: { xs: 2, sm: 3 },
                 borderRadius: 2,
                 boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                minHeight: { xs: 120, sm: 140 },
+                transition: 'all 0.25s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.12)'
+                }
               }}
             >
               <Avatar
                 sx={{
                   bgcolor: theme.palette.primary.light,
-                  width: isMobile ? 40 : 56,
-                  height: isMobile ? 40 : 56,
-                  mb: isMobile ? 1 : 2
+                  width: { xs: 40, sm: 56 },
+                  height: { xs: 40, sm: 56 },
+                  mb: { xs: 1, sm: 2 }
                 }}
               >
-                <StarIcon fontSize={isMobile ? "medium" : "large"} sx={{ color: theme.palette.primary.main }} />
+                <StarIcon 
+                  fontSize={isMobile ? "medium" : "large"} 
+                  sx={{ color: theme.palette.primary.main }} 
+                />
               </Avatar>
-              <Typography variant={isMobile ? "h6" : "h5"} component="div" align="center" sx={{ fontWeight: 600 }}>
+              <Typography 
+                variant="h5" 
+                component="div" 
+                align="center" 
+                sx={{ 
+                  fontWeight: 600,
+                  fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                }}
+              >
                 {Math.round(stats.averageScore)}%
               </Typography>
-              <Typography variant={isMobile ? "body2" : "body1"} color="textSecondary" align="center">
+              <Typography 
+                variant="body2" 
+                color="textSecondary" 
+                align="center"
+                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+              >
                 Average Score
               </Typography>
             </Paper>
-          </Grid>
+          </Box>
           
-          {/* Learning Time Card */}
-          <Grid item xs={6} sm={6} md={4}>
+          {/* Learning Streak Card */}
+          <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
             <Paper
               elevation={0}
               sx={{
-                p: isMobile ? 2 : 3,
+                p: { xs: 2, sm: 3 },
                 borderRadius: 2,
                 boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                minHeight: { xs: 120, sm: 140 },
+                transition: 'all 0.25s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.12)'
+                }
               }}
             >
               <Avatar
                 sx={{
-                  bgcolor: theme.palette.info.light,
-                  width: isMobile ? 40 : 56,
-                  height: isMobile ? 40 : 56,
-                  mb: isMobile ? 1 : 2
+                  bgcolor: theme.palette.warning.light,
+                  width: { xs: 40, sm: 56 },
+                  height: { xs: 40, sm: 56 },
+                  mb: { xs: 1, sm: 2 }
                 }}
               >
-                <TimeIcon fontSize={isMobile ? "medium" : "large"} sx={{ color: theme.palette.info.main }} />
+                <TrophyIcon 
+                  fontSize={isMobile ? "medium" : "large"} 
+                  sx={{ color: theme.palette.warning.main }} 
+                />
               </Avatar>
-              <Typography variant={isMobile ? "h6" : "h5"} component="div" align="center" sx={{ fontWeight: 600 }}>
-                {stats.totalTimeSpent}
-              </Typography>
-              <Typography variant={isMobile ? "body2" : "body1"} color="textSecondary" align="center">
-                Hours Learning
-              </Typography>
-            </Paper>
-          </Grid>
-          
-          {/* Improvement Rate Card */}
-          <Grid item xs={6} sm={6} md={4}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: isMobile ? 2 : 3,
-                borderRadius: 2,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Avatar
-                sx={{
-                  bgcolor: theme.palette.secondary.light,
-                  width: isMobile ? 40 : 56,
-                  height: isMobile ? 40 : 56,
-                  mb: isMobile ? 1 : 2
+              <Typography 
+                variant="h5" 
+                component="div" 
+                align="center" 
+                sx={{ 
+                  fontWeight: 600,
+                  fontSize: { xs: '1.25rem', sm: '1.5rem' }
                 }}
               >
-                <TrendingUpIcon fontSize={isMobile ? "medium" : "large"} sx={{ color: theme.palette.secondary.main }} />
-              </Avatar>
-              <Typography variant={isMobile ? "h6" : "h5"} component="div" align="center" sx={{ fontWeight: 600 }}>
-                {stats.improvementRate > 0 ? '+' : ''}{Math.round(stats.improvementRate)}%
+                {stats.learningStreak}
               </Typography>
-              <Typography variant={isMobile ? "body2" : "body1"} color="textSecondary" align="center">
-                Avg. Improvement
+              <Typography 
+                variant="body2" 
+                color="textSecondary" 
+                align="center"
+                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+              >
+                Day Streak
               </Typography>
             </Paper>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
 
         {/* Performance Analysis */}
         <Box sx={{ mb: 4 }}>
@@ -612,7 +652,7 @@ const UserReports = () => {
               overflow: 'hidden'
             }}
           >
-            <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: '1px solid', borderColor: 'divider' }}>
               <Tabs 
                 value={activeTab} 
                 onChange={handleTabChange}
@@ -623,33 +663,39 @@ const UserReports = () => {
                   '& .MuiTab-root': {
                     textTransform: 'none',
                     fontWeight: 500,
-                    fontSize: { xs: '0.875rem', sm: '1rem' },
-                    minHeight: { xs: 48, sm: 56 },
-                    px: { xs: 1, sm: 2 }
+                    fontSize: { xs: '0.75rem', sm: '1rem' },
+                    minHeight: { xs: 44, sm: 56 },
+                    px: { xs: 0.5, sm: 2 },
+                    minWidth: { xs: 'auto', sm: 160 }
+                  },
+                  '& .MuiTabs-scrollButtons': {
+                    '&.Mui-disabled': {
+                      opacity: 0.3
+                    }
                   }
                 }}
               >
                 <Tab 
                   icon={<CheckCircle fontSize={isMobile ? "small" : "medium"} />} 
-                  label={isMobile ? "Completed" : "Completed Courses"} 
+                  label={isMobile ? "Done" : "Completed Courses"} 
                   iconPosition="start"
-                  sx={{ mr: { xs: 0, sm: 2 } }}
+                  sx={{ mr: { xs: 0, sm: 1 } }}
                 />
                 <Tab 
                   icon={<AssessmentIcon fontSize={isMobile ? "small" : "medium"} />} 
-                  label={isMobile ? "Assessment" : "Assessment Performance"} 
+                  label={isMobile ? "Score" : "Assessment Performance"} 
                   iconPosition="start"
-                  sx={{ mr: { xs: 0, sm: 2 } }}
+                  sx={{ mr: { xs: 0, sm: 1 } }}
                 />
                 <Tab 
                   icon={<TrendingUpIcon fontSize={isMobile ? "small" : "medium"} />} 
-                  label={isMobile ? "Improvement" : "Skill Improvement"} 
+                  label={isMobile ? "Growth" : "Skill Improvement"} 
                   iconPosition="start"
                 />
               </Tabs>
             </Box>
             
-            <Box sx={{ p: 3 }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               {/* Completed Courses Tab */}
               {activeTab === 0 && (
                 <Box>
@@ -657,19 +703,21 @@ const UserReports = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
-                    placeholder="Search completed courses..."
+                    placeholder={isMobile ? "Search courses..." : "Search completed courses..."}
                     value={searchTerm}
                     onChange={handleSearchChange}
-                    sx={{ mb: 3 }}
+                    size={isMobile ? "small" : "medium"}
+                    sx={{ mb: { xs: 2, sm: 3 } }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Search />
+                          <Search fontSize={isMobile ? "small" : "medium"} />
                         </InputAdornment>
                       ),
                       sx: {
                         borderRadius: 2,
                         backgroundColor: theme.palette.background.default,
+                        fontSize: { xs: '0.875rem', sm: '1rem' },
                         '&.Mui-focused': {
                           backgroundColor: '#fff'
                         }
@@ -678,17 +726,18 @@ const UserReports = () => {
                   />
 
                   {/* List of completed courses */}
-                  <Box sx={{ mt: 2, width: '100%' }}>
+                  <Box sx={{ mt: { xs: 1, sm: 2 }, width: '100%' }}>
                     {getCurrentCourses().length > 0 ? (
                       getCurrentCourses().map((course, index) => (
                         <React.Fragment key={course.courseId}>
-                          {index > 0 && <Divider sx={{ my: 2 }} />}
+                          {index > 0 && <Divider sx={{ my: { xs: 1.5, sm: 2 } }} />}
                           <Box
                             sx={{
                               display: 'flex',
                               flexDirection: { xs: 'column', sm: 'row' },
                               alignItems: { xs: 'flex-start', sm: 'center' },
-                              width: '100%'
+                              width: '100%',
+                              gap: { xs: 1.5, sm: 0 }
                             }}
                           >
                             <Box 
@@ -703,62 +752,98 @@ const UserReports = () => {
                                 sx={{ 
                                   bgcolor: theme.palette.primary.light, 
                                   borderRadius: '50%',
-                                  width: 40, 
-                                  height: 40,
+                                  width: { xs: 36, sm: 40 }, 
+                                  height: { xs: 36, sm: 40 },
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  mr: 2,
+                                  mr: { xs: 1.5, sm: 2 },
                                   flexShrink: 0,
                                   mt: 0.5
                                 }}
                               >
-                                <School sx={{ color: theme.palette.primary.main }} />
+                                <School sx={{ 
+                                  color: theme.palette.primary.main,
+                                  fontSize: { xs: 18, sm: 24 }
+                                }} />
                               </Box>
                               
-                              <Box>
-                                <Typography variant="subtitle1" fontWeight="medium">
+                              <Box sx={{ minWidth: 0, flex: 1 }}>
+                                <Typography 
+                                  variant={isMobile ? "body1" : "subtitle1"} 
+                                  fontWeight="medium"
+                                  sx={{
+                                    fontSize: { xs: '0.875rem', sm: '1rem' },
+                                    lineHeight: 1.3
+                                  }}
+                                >
                                   {course.courseTitle}
                                 </Typography>
                                 
-                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mt: { xs: 0.5, sm: 0.5 } }}>
                                   <DateRange 
                                     fontSize="small" 
                                     sx={{ 
                                       mr: 0.5, 
                                       color: 'text.secondary', 
-                                      fontSize: 14 
+                                      fontSize: { xs: 12, sm: 14 }
                                     }} 
                                   />
-                                  <Typography variant="body2" color="textSecondary">
-                                    Completed: {formatDate(course.lastAccessedDate)}
+                                  <Typography 
+                                    variant="body2" 
+                                    color="textSecondary"
+                                    sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                                  >
+                                    {isMobile ? formatDate(course.lastAccessedDate) : `Completed: ${formatDate(course.lastAccessedDate)}`}
                                   </Typography>
                                 </Box>
                                 
                                 {course.postAssessmentScore !== null && (
-                                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                                    <Typography variant="body2" sx={{ mr: 1 }}>
+                                  <Box sx={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    mt: { xs: 0.5, sm: 1 },
+                                    flexWrap: { xs: 'wrap', sm: 'nowrap' }
+                                  }}>
+                                    <Typography 
+                                      variant="body2" 
+                                      sx={{ 
+                                        mr: 1,
+                                        fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                      }}
+                                    >
                                       Score:
                                     </Typography>
                                     <LinearProgress 
                                       variant="determinate" 
                                       value={course.postAssessmentScore} 
                                       sx={{ 
-                                        width: '100px', 
-                                        height: 8, 
+                                        width: { xs: '80px', sm: '100px' }, 
+                                        height: { xs: 6, sm: 8 }, 
                                         borderRadius: 4,
                                         mr: 1
                                       }} 
                                     />
-                                    <Typography variant="body2" fontWeight="medium">
+                                    <Typography 
+                                      variant="body2" 
+                                      fontWeight="medium"
+                                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                                    >
                                       {course.postAssessmentScore}%
                                     </Typography>
                                   </Box>
                                 )}
                                 
                                 {course.timeSpentSeconds && (
-                                  <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
-                                    Time spent: {formatTimeSpent(course.timeSpentSeconds)}
+                                  <Typography 
+                                    variant="body2" 
+                                    color="textSecondary" 
+                                    sx={{ 
+                                      mt: 0.5,
+                                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                    }}
+                                  >
+                                    {isMobile ? formatTimeSpent(course.timeSpentSeconds) : `Time spent: ${formatTimeSpent(course.timeSpentSeconds)}`}
                                   </Typography>
                                 )}
                               </Box>
@@ -766,9 +851,9 @@ const UserReports = () => {
                             
                             <Box
                               sx={{
-                                mt: { xs: 2, sm: 0 },
+                                mt: { xs: 1, sm: 0 },
                                 ml: { xs: 0, sm: 2 },
-                                width: { xs: '100%', sm: '230px' },
+                                width: { xs: '100%', sm: '200px' },
                                 flexShrink: 0
                               }}
                             >
@@ -776,22 +861,21 @@ const UserReports = () => {
                                 variant="contained"
                                 fullWidth
                                 size={isMobile ? "small" : "medium"}
-                                startIcon={<Download />}
+                                startIcon={<Download fontSize={isMobile ? "small" : "medium"} />}
                                 onClick={() => course.certificateUrl ? 
                                   handleDownloadCertificate(course.certificateUrl) : 
                                   handleGenerateCertificate(course.courseId)
                                 }
                                 color={course.certificateUrl ? "primary" : "secondary"}
                                 sx={{
-                                  borderRadius: 6,
-                                  py: 1,
+                                  borderRadius: { xs: 2, sm: 6 },
+                                  py: { xs: 0.75, sm: 1 },
                                   textTransform: 'none',
-                                  fontWeight: 600
+                                  fontWeight: 600,
+                                  fontSize: { xs: '0.75rem', sm: '0.875rem' }
                                 }}
                               >
-                                {isMobile
-                                  ? (course.certificateUrl ? "Download" : "Generate")
-                                  : (course.certificateUrl ? "Download Certificate" : "Generate Certificate")}
+                                {course.certificateUrl ? "Download" : "Generate"}
                               </Button>
                             </Box>
                           </Box>
@@ -1186,12 +1270,8 @@ const UserReports = () => {
                 </Box>
                 
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  <Typography variant="body1" paragraph>
-                    You've invested {stats.totalTimeSpent} hours in your learning journey.
-                  </Typography>
-                  
                   {stats.learningStreak > 0 && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Chip 
                         label={`${stats.learningStreak} day streak`}
                         color="primary"

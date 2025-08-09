@@ -19,7 +19,6 @@ import {
   Tabs,
   Avatar,
   Paper,
-  ButtonGroup,
   IconButton,
   useTheme,
   useMediaQuery,
@@ -39,7 +38,6 @@ import {
   Domain as DomainIcon,
   FilterList,
   ViewModule,
-  ViewList,
   Search,
   Warning,
   Schedule,
@@ -71,7 +69,7 @@ const MyCourses = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [switchLoading, setSwitchLoading] = useState(false);
   const [showIncompleteWarning, setShowIncompleteWarning] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // Mobile always uses grid view
+  // Removed viewMode - only grid view is available now
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('');
   const [sortBy, setSortBy] = useState('');
@@ -178,310 +176,105 @@ const MyCourses = () => {
     const progress = userProgress[course.id];
     const status = getCourseStatus(course);
 
-    // Grid View - Card Layout
-    if (viewMode === 'grid') {
-      return (
-        <Card
-          key={course.id}
-          className="course-card"
-            sx={{
-              height: { xs: 'auto', sm: '420px !important', md: '420px !important' }, // Fixed height with !important
-              minHeight: { sm: '420px', md: '420px' },
-              maxHeight: { sm: '420px', md: '420px' },
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              borderRadius: { xs: 2, sm: 3 },
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-              transition: 'all 0.25s ease-in-out',
-              position: 'relative',
-              cursor: 'pointer',
-              '&:hover': {
-                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                transform: isMobile ? 'none' : 'translateY(-4px)'
-              }
-            }}
-            onClick={() => handleStartCourse(course.id)}
-          >
-            {/* Header with Icon */}
-            <Box
-              sx={{
-                height: { xs: 100, sm: 120 },
-                position: 'relative',
-                background: `linear-gradient(135deg, ${theme.palette.primary.light}20, ${theme.palette.primary.main}10)`,
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'center',
-                p: { xs: 1.5, sm: 2 }
-              }}
-            >
-              <Avatar
-                sx={{
-                  width: { xs: 60, sm: 80 },
-                  height: { xs: 60, sm: 80 },
-                  bgcolor: 'white',
-                  color: theme.palette.primary.main,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  position: 'absolute',
-                  bottom: { xs: -30, sm: -40 },
-                  border: { xs: '3px solid white', sm: '4px solid white' }
-                }}
-              >
-                {getCourseIcon(course)}
-              </Avatar>
-
-              {/* Status Badge */}
-              {status === 'COMPLETED' && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: { xs: 8, sm: 16 },
-                    right: { xs: 8, sm: 16 },
-                    bgcolor: theme.palette.success.main,
-                    color: 'white',
-                    borderRadius: '50%',
-                    width: { xs: 24, sm: 32 },
-                    height: { xs: 24, sm: 32 },
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <CheckCircle fontSize={isMobile ? 'small' : 'medium'} />
-                </Box>
-              )}
-
-            </Box>
-
-            {/* Content */}
-            <CardContent 
-              className="course-card-content"
-              sx={{ 
-              pt: { xs: 4, sm: 6 }, 
-              flexGrow: 1, 
-              px: { xs: 2, sm: 3 },
-              pb: { xs: 1, sm: 2 },
-              display: 'flex',
-              flexDirection: 'column',
-              height: { xs: 'auto', sm: 'calc(100% - 120px - 72px)' }, // Account for header and button
-              overflow: 'hidden'
-            }}>
-              {/* Title Section - Fixed height */}
-              <Box 
-                textAlign="center" 
-                sx={{ 
-                  mb: 2,
-                  height: { xs: 'auto', sm: 100 }, // Fixed height for title area
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-start',
-                  alignItems: 'center'
-                }}
-              >
-                <MarqueeText
-                  text={course.title || 'Untitled Course'}
-                  variant={isMobile ? "subtitle1" : "h6"}
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: { xs: '1rem', sm: '1.25rem' },
-                    lineHeight: { xs: 1.3, sm: 1.4 },
-                    mb: 1,
-                    maxWidth: '100%',
-                    container: {
-                      maxHeight: { xs: 'auto', sm: '3.6em' },
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }
-                  }}
-                />
-
-                {course.domain?.name && (
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary" 
-                    sx={{ 
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      maxWidth: '90%'
-                    }}
-                  >
-                    {course.domain.name}
-                  </Typography>
-                )}
-              </Box>
-
-              {/* Progress Section - Fixed position at bottom */}
-              <Box sx={{ 
-                mt: 'auto',
-                pt: 2
-              }}>
-                {progress && (
-                  <Box>
-                    <Box display="flex" justifyContent="space-between" mb={1} alignItems="center">
-                      <Typography 
-                        variant="body2" 
-                        color="text.secondary"
-                        sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-                      >
-                        Progress
-                      </Typography>
-                      <Typography 
-                        variant="body2" 
-                        fontWeight="bold" 
-                        color="primary.main"
-                        sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-                      >
-                        {Math.round(progress.overallProgress || 0)}%
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={progress.overallProgress || 0}
-                      sx={{
-                        height: { xs: 4, sm: 6 },
-                        borderRadius: 3,
-                        bgcolor: alpha(theme.palette.primary.main, 0.1)
-                      }}
-                    />
-                    {progress.completedComponents > 0 && (
-                      <Typography 
-                        variant="caption" 
-                        color="text.secondary" 
-                        sx={{ 
-                          mt: 0.5, 
-                          display: 'block', 
-                          textAlign: 'right',
-                          fontSize: { xs: '0.7rem', sm: '0.75rem' }
-                        }}
-                      >
-                        {progress.completedComponents} of {course.componentCount} completed
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-              </Box>
-            </CardContent>
-
-            {/* Action Button */}
-            <CardActions 
-              className="course-card-actions"
-              sx={{ 
-                p: { xs: 2, sm: 3 }, 
-                pt: 0,
-                mt: 'auto'
-              }}>
-              <Button
-                variant="contained"
-                startIcon={status === 'COMPLETED' ? <CheckCircle /> : <PlayArrow />}
-                fullWidth
-                size={isMobile ? "medium" : "large"}
-                sx={{
-                  borderRadius: { xs: 2, sm: 6 },
-                  py: { xs: 1, sm: 1.5 },
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  bgcolor: status === 'COMPLETED' ? theme.palette.success.main : theme.palette.primary.main,
-                  '&:hover': {
-                    bgcolor: status === 'COMPLETED' ? theme.palette.success.dark : theme.palette.primary.dark
-                  }
-                }}
-              >
-                {status === 'NOT_ENROLLED' ? 'Enroll' :
-                 status === 'COMPLETED' ? 'Review' :
-                 status === 'IN_PROGRESS' ? 'Continue' : 'Start'}
-              </Button>
-            </CardActions>
-          </Card>
-      );
-    }
-
-    // List View - Horizontal Layout
+    // Grid View - Card Layout (only view available)
     return (
-      <Grid item key={course.id} xs={12}>
-        <Card
+      <Card
+        key={course.id}
+        className="course-card"
           sx={{
+            height: { xs: 'auto', sm: '420px !important', md: '420px !important' }, // Fixed height with !important
+            minHeight: { sm: '420px', md: '420px' },
+            maxHeight: { sm: '420px', md: '420px' },
             display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            borderRadius: { xs: 2, sm: 3 },
+            flexDirection: 'column',
             overflow: 'hidden',
+            borderRadius: { xs: 2, sm: 3 },
             boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
             transition: 'all 0.25s ease-in-out',
-            width: '100%',
-            height: { xs: 'auto', sm: 150 }, // Fixed height for consistent list items
+            position: 'relative',
             cursor: 'pointer',
             '&:hover': {
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              transform: isMobile ? 'none' : 'translateY(-2px)'
+              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+              transform: isMobile ? 'none' : 'translateY(-4px)'
             }
           }}
           onClick={() => handleStartCourse(course.id)}
         >
-          {/* Icon Section */}
+          {/* Header with Icon */}
           <Box
             sx={{
-              width: { xs: '100%', sm: 180 },
-              height: { xs: 80, sm: 150 }, // Match card height
+              height: { xs: 100, sm: 120 },
+              position: 'relative',
               background: `linear-gradient(135deg, ${theme.palette.primary.light}20, ${theme.palette.primary.main}10)`,
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-end',
               justifyContent: 'center',
-              position: 'relative',
-              flexShrink: 0
+              p: { xs: 1.5, sm: 2 }
             }}
           >
             <Avatar
               sx={{
-                width: { xs: 50, sm: 70 },
-                height: { xs: 50, sm: 70 },
+                width: { xs: 60, sm: 80 },
+                height: { xs: 60, sm: 80 },
                 bgcolor: 'white',
                 color: theme.palette.primary.main,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                position: 'absolute',
+                bottom: { xs: -30, sm: -40 },
+                border: { xs: '3px solid white', sm: '4px solid white' }
               }}
             >
               {getCourseIcon(course)}
             </Avatar>
 
+            {/* Status Badge */}
             {status === 'COMPLETED' && (
               <Box
                 sx={{
                   position: 'absolute',
-                  top: { xs: 4, sm: 8 },
-                  right: { xs: 4, sm: 8 },
+                  top: { xs: 8, sm: 16 },
+                  right: { xs: 8, sm: 16 },
                   bgcolor: theme.palette.success.main,
                   color: 'white',
                   borderRadius: '50%',
-                  width: { xs: 20, sm: 24 },
-                  height: { xs: 20, sm: 24 },
+                  width: { xs: 24, sm: 32 },
+                  height: { xs: 24, sm: 32 },
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}
               >
-                <CheckCircle fontSize="small" />
+                <CheckCircle fontSize={isMobile ? 'small' : 'medium'} />
               </Box>
             )}
+
           </Box>
 
-          {/* Content Section */}
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: { xs: 'column', sm: 'row' }, 
-            flexGrow: 1,
-            width: { xs: '100%', sm: 'auto' },
-            alignItems: { sm: 'center' }
+          {/* Content */}
+          <CardContent 
+            className="course-card-content"
+            sx={{ 
+            pt: { xs: 4, sm: 6 }, 
+            flexGrow: 1, 
+            px: { xs: 2, sm: 3 },
+            pb: { xs: 1, sm: 2 },
+            display: 'flex',
+            flexDirection: 'column',
+            height: { xs: 'auto', sm: 'calc(100% - 120px - 72px)' }, // Account for header and button
+            overflow: 'hidden'
           }}>
-            {/* Title and Info */}
-            <Box sx={{ 
-              flexGrow: 1,
-              p: { xs: 2, sm: 3 },
-              minWidth: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              height: { sm: '100%' }
-            }}>
+            {/* Title Section - Fixed height */}
+            <Box 
+              textAlign="center" 
+              sx={{ 
+                mb: 2,
+                height: { xs: 'auto', sm: 100 }, // Fixed height for title area
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                alignItems: 'center'
+              }}
+            >
               <MarqueeText
                 text={course.title || 'Untitled Course'}
                 variant={isMobile ? "subtitle1" : "h6"}
@@ -490,36 +283,54 @@ const MyCourses = () => {
                   fontSize: { xs: '1rem', sm: '1.25rem' },
                   lineHeight: { xs: 1.3, sm: 1.4 },
                   mb: 1,
+                  maxWidth: '100%',
                   container: {
-                    maxWidth: '100%'
+                    maxHeight: { xs: 'auto', sm: '3.6em' },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }
                 }}
               />
-              
+
               {course.domain?.name && (
                 <Typography 
                   variant="body2" 
                   color="text.secondary" 
                   sx={{ 
                     fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                    mb: { xs: 1, sm: 0 },
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    maxWidth: '90%'
                   }}
                 >
                   {course.domain.name}
                 </Typography>
               )}
+            </Box>
 
-              {/* Progress - Mobile only shows here */}
-              {progress && isMobile && (
-                <Box sx={{ mt: 2 }}>
-                  <Box display="flex" justifyContent="space-between" mb={0.5}>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+            {/* Progress Section - Fixed position at bottom */}
+            <Box sx={{ 
+              mt: 'auto',
+              pt: 2
+            }}>
+              {progress && (
+                <Box>
+                  <Box display="flex" justifyContent="space-between" mb={1} alignItems="center">
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+                    >
                       Progress
                     </Typography>
-                    <Typography variant="body2" fontWeight="bold" color="primary.main" sx={{ fontSize: '0.8rem' }}>
+                    <Typography 
+                      variant="body2" 
+                      fontWeight="bold" 
+                      color="primary.main"
+                      sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+                    >
                       {Math.round(progress.overallProgress || 0)}%
                     </Typography>
                   </Box>
@@ -527,97 +338,59 @@ const MyCourses = () => {
                     variant="determinate"
                     value={progress.overallProgress || 0}
                     sx={{
-                      height: 4,
+                      height: { xs: 4, sm: 6 },
                       borderRadius: 3,
                       bgcolor: alpha(theme.palette.primary.main, 0.1)
                     }}
                   />
+                  {progress.completedComponents > 0 && (
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary" 
+                      sx={{ 
+                        mt: 0.5, 
+                        display: 'block', 
+                        textAlign: 'right',
+                        fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                      }}
+                    >
+                      {progress.completedComponents} of {course.componentCount} completed
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Box>
+          </CardContent>
 
-            {/* Progress and Button - Desktop */}
-            {!isMobile && (
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center',
-                gap: 3,
-                pr: 3,
-                minWidth: 300
-              }}>
-                {/* Progress */}
-                {progress && (
-                  <Box sx={{ flexGrow: 1, minWidth: 150 }}>
-                    <Box display="flex" justifyContent="space-between" mb={0.5}>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-                        Progress
-                      </Typography>
-                      <Typography variant="body2" fontWeight="bold" color="primary.main" sx={{ fontSize: '0.875rem' }}>
-                        {Math.round(progress.overallProgress || 0)}%
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={progress.overallProgress || 0}
-                      sx={{
-                        height: 6,
-                        borderRadius: 3,
-                        bgcolor: alpha(theme.palette.primary.main, 0.1)
-                      }}
-                    />
-                  </Box>
-                )}
-
-                {/* Action Button */}
-                <Button
-                  variant="contained"
-                  startIcon={status === 'COMPLETED' ? <CheckCircle /> : <PlayArrow />}
-                  size="large"
-                  sx={{
-                    borderRadius: 6,
-                    whiteSpace: 'nowrap',
-                    minWidth: 120,
-                    fontSize: '1rem',
-                    bgcolor: status === 'COMPLETED' ? theme.palette.success.main : theme.palette.primary.main,
-                    '&:hover': {
-                      bgcolor: status === 'COMPLETED' ? theme.palette.success.dark : theme.palette.primary.dark
-                    }
-                  }}
-                >
-                  {status === 'NOT_ENROLLED' ? 'Enroll' :
-                   status === 'COMPLETED' ? 'Review' :
-                   status === 'IN_PROGRESS' ? 'Continue' : 'Start'}
-                </Button>
-              </Box>
-            )}
-
-            {/* Mobile Action Button */}
-            {isMobile && (
-              <Box sx={{ p: 2, pt: 0 }}>
-                <Button
-                  variant="contained"
-                  startIcon={status === 'COMPLETED' ? <CheckCircle /> : <PlayArrow />}
-                  fullWidth
-                  size="medium"
-                  sx={{
-                    borderRadius: 2,
-                    py: 1,
-                    fontSize: '0.875rem',
-                    bgcolor: status === 'COMPLETED' ? theme.palette.success.main : theme.palette.primary.main,
-                    '&:hover': {
-                      bgcolor: status === 'COMPLETED' ? theme.palette.success.dark : theme.palette.primary.dark
-                    }
-                  }}
-                >
-                  {status === 'NOT_ENROLLED' ? 'Enroll' :
-                   status === 'COMPLETED' ? 'Review' :
-                   status === 'IN_PROGRESS' ? 'Continue' : 'Start'}
-                </Button>
-              </Box>
-            )}
-          </Box>
+          {/* Action Button */}
+          <CardActions 
+            className="course-card-actions"
+            sx={{ 
+              p: { xs: 2, sm: 3 }, 
+              pt: 0,
+              mt: 'auto'
+            }}>
+            <Button
+              variant="contained"
+              startIcon={status === 'COMPLETED' ? <CheckCircle /> : <PlayArrow />}
+              fullWidth
+              size={isMobile ? "medium" : "large"}
+              sx={{
+                borderRadius: { xs: 2, sm: 6 },
+                py: { xs: 1, sm: 1.5 },
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                bgcolor: status === 'COMPLETED' ? theme.palette.success.main : theme.palette.primary.main,
+                '&:hover': {
+                  bgcolor: status === 'COMPLETED' ? theme.palette.success.dark : theme.palette.primary.dark
+                }
+              }}
+            >
+              {status === 'NOT_ENROLLED' ? 'Enroll' :
+               status === 'COMPLETED' ? 'Review' :
+               status === 'IN_PROGRESS' ? 'Continue' : 'Start'}
+            </Button>
+          </CardActions>
         </Card>
-      </Grid>
     );
   };
 
@@ -936,53 +709,17 @@ const MyCourses = () => {
                   </Select>
                 </FormControl>
 
-                {/* Desktop View Mode Toggle */}
-                <ButtonGroup variant="outlined" size="small">
-                  <Button
-                    variant={viewMode === 'grid' ? 'contained' : 'outlined'}
-                    onClick={() => setViewMode('grid')}
-                    startIcon={<ViewModule />}
-                    sx={{ borderRadius: '8px 0 0 8px', py: 1 }}
-                  >
-                    Grid
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'contained' : 'outlined'}
-                    onClick={() => setViewMode('list')}
-                    startIcon={<ViewList />}
-                    sx={{ borderRadius: '0 8px 8px 0', py: 1 }}
-                  >
-                    List
-                  </Button>
-                </ButtonGroup>
               </Box>
             </Box>
           )}
         </Paper>
 
-        {/* Course Grid/List - Mobile always uses grid */}
+        {/* Course Grid - Always grid view */}
         {displayCourses.length > 0 ? (
           <Box sx={{ width: '100%' }}>
-            {(isMobile || viewMode === 'grid') ? (
-              <Box className="course-grid-container">
-                {displayCourses.map(course => renderCourseCard(course))}
-              </Box>
-            ) : (
-              <Grid 
-                container 
-                spacing={{ xs: 2, sm: 2, md: 3 }} 
-                sx={{
-                  width: '100%',
-                  m: 0,
-                  '& .MuiGrid-item': {
-                    pl: { xs: 2, sm: 2, md: 3 },
-                    pt: { xs: 2, sm: 2, md: 3 }
-                  }
-                }}
-              >
-                {displayCourses.map(course => renderCourseCard(course))}
-              </Grid>
-            )}
+            <Box className="course-grid-container">
+              {displayCourses.map(course => renderCourseCard(course))}
+            </Box>
           </Box>
         ) : (
           <Paper

@@ -24,12 +24,13 @@ import {
   CheckCircle as CheckCircleIcon,
   DateRange as DateRangeIcon,
   Timer as TimerIcon,
-  Assessment as AssessmentIcon
+  Assessment as AssessmentIcon,
+  Domain as DomainIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import IncompleteAttemptWarning from '../components/assessment/IncompleteAttemptWarning';
 import CertificateViewer from '../components/certificate/CertificateViewer';
-import { assessmentService, certificateService, courseService } from '../services/api';
+import { assessmentService, certificateService, courseService, progressService } from '../services/api';
 import MarqueeText from '../components/common/MarqueeText';
 
 const Dashboard = () => {
@@ -63,56 +64,91 @@ const Dashboard = () => {
     }
   };
 
-  // Load courses in the same way MyCourses does - only published courses will be included
+  // Load courses using the same logic as MyCourses
   const loadCourses = async () => {
     try {
       setLoading(true);
 
-      // Use the same endpoint as MyCourses to get ONLY published courses
-      const coursesResponse = await courseService.getUserCourses({
-        showAll: true,
-        limit: 3 // Only get 3 courses for the dashboard as per requirement
-      });
+      // Get user courses and their progress - limit to 6 for dashboard display
+      const [coursesResponse, progressResponse] = await Promise.all([
+        courseService.getUserCourses({ showAll: true, limit: 6 }),
+        progressService.getUserCourseProgress().catch(() => ({ data: { progresses: [] } }))
+      ]);
 
       const publishedCourses = coursesResponse.data.courses || [];
+      
+      // Build progress map like MyCourses does
+      const progressMap = {};
+      if (progressResponse.data.progresses && Array.isArray(progressResponse.data.progresses)) {
+        progressResponse.data.progresses.forEach(p => {
+          progressMap[p.courseId] = p;
+        });
+      }
 
-      // Find which of these published courses have been completed by the user and have certificates
+      // Helper function to get course status (same as MyCourses)
+      const getCourseStatus = (course) => {
+        const progress = progressMap[course.id];
+        if (!progress) return 'NOT_ENROLLED';
+        if (progress.status === 'COMPLETED') return 'COMPLETED';
+        if (progress.overallProgress > 0) return 'IN_PROGRESS';
+        return 'ENROLLED';
+      };
+
+      // Find completed courses using the same logic as MyCourses
+      const completedCourses = publishedCourses.filter(course => 
+        getCourseStatus(course) === 'COMPLETED'
+      );
+
+      console.log('Completed courses found:', completedCourses);
+
+      // Get certificate info for completed courses
       const coursesWithCertificates = await Promise.all(
-        publishedCourses.map(async (course) => {
+        completedCourses.map(async (course) => {
           try {
-            // Check if the course has a certificate
             const certResponse = await certificateService.getUserCourseCertificate(course.id);
+            const progress = progressMap[course.id];
 
-            // Only include courses that have been completed and have a certificate or can have one generated
-            if (certResponse.data.exists || course.status === 'COMPLETED') {
-              return {
-                courseId: course.id,
-                courseName: course.title,
-                hasCertificate: certResponse.data.exists,
-                certificateId: certResponse.data.exists ? certResponse.data.certificateId : null,
-                completedAt: certResponse.data.issuedDate || course.completedAt, // Use certificate issue date or course completion date
-                domain: course.domain?.name || 'EHS Training'
-              };
-            }
-            return null;
+            return {
+              courseId: course.id,
+              courseName: course.title,
+              hasCertificate: certResponse.data.exists,
+              certificateId: certResponse.data.exists ? certResponse.data.certificateId : null,
+              completedAt: certResponse.data.issuedDate || progress?.completedAt,
+              domain: course.domain?.name || 'EHS Training',
+              progress: progress
+            };
           } catch (error) {
-            return null;
+            console.warn(`Certificate check failed for course ${course.title}:`, error);
+            const progress = progressMap[course.id];
+            return {
+              courseId: course.id,
+              courseName: course.title,
+              hasCertificate: false,
+              certificateId: null,
+              completedAt: progress?.completedAt,
+              domain: course.domain?.name || 'EHS Training',
+              progress: progress
+            };
           }
         })
       );
 
-      // Filter out null values (courses without certificates or not completed)
-      const validCourses = coursesWithCertificates.filter(course => course !== null);
+      setCompletedCourses(coursesWithCertificates);
 
-      setCompletedCourses(validCourses);
-
-      // Update statistics
-      setStats({
-        completedCount: validCourses.length,
-        inProgressCount: publishedCourses.filter(course => course.status === 'IN_PROGRESS').length,
-        certificatesCount: validCourses.filter(course => course.hasCertificate).length
+      // Calculate stats
+      const inProgressCourses = publishedCourses.filter(course => {
+        const status = getCourseStatus(course);
+        return status === 'IN_PROGRESS' || status === 'ENROLLED';
       });
+
+      setStats({
+        completedCount: completedCourses.length,
+        inProgressCount: inProgressCourses.length,
+        certificatesCount: coursesWithCertificates.filter(course => course.hasCertificate).length
+      });
+
     } catch (error) {
+      console.error('Failed to load courses:', error);
       setError('Failed to load your completed courses');
     } finally {
       setLoading(false);
@@ -218,105 +254,184 @@ const Dashboard = () => {
             </Typography>
           </Box>
 
-          {/* Stats Cards */}
-          <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: 4 }}>
-            <Grid item xs={6} sm={6} md={4}>
+          {/* Stats Cards - Aligned like Admin Dashboard */}
+          <Box
+            sx={{
+              mb: 4,
+              display: { xs: 'flex', sm: 'flex', md: 'flex' },
+              flexDirection: { xs: 'column', sm: 'row' },
+              flexWrap: { xs: 'nowrap', sm: 'wrap', md: 'nowrap' },
+              gap: { xs: 2, sm: 2, md: 3 }
+            }}
+          >
+            {/* Completed Courses Card */}
+            <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
               <Paper
                 elevation={0}
                 sx={{
-                  p: isMobile ? 2 : 3,
+                  p: { xs: 2, sm: 3 },
                   borderRadius: 2,
                   boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  minHeight: { xs: 120, sm: 140 },
+                  transition: 'all 0.25s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.12)'
+                  }
                 }}
               >
                 <Avatar
                   sx={{
                     bgcolor: theme.palette.success.light,
-                    width: isMobile ? 40 : 56,
-                    height: isMobile ? 40 : 56,
-                    mb: isMobile ? 1 : 2
+                    width: { xs: 40, sm: 56 },
+                    height: { xs: 40, sm: 56 },
+                    mb: { xs: 1, sm: 2 }
                   }}
                 >
-                  <CheckCircleIcon fontSize={isMobile ? "medium" : "large"} sx={{ color: theme.palette.success.main }} />
+                  <CheckCircleIcon 
+                    fontSize={isMobile ? "medium" : "large"} 
+                    sx={{ color: theme.palette.success.main }} 
+                  />
                 </Avatar>
-                <Typography variant={isMobile ? "h6" : "h5"} component="div" align="center" sx={{ fontWeight: 600 }}>
+                <Typography 
+                  variant="h5" 
+                  component="div" 
+                  align="center" 
+                  sx={{ 
+                    fontWeight: 600,
+                    fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                  }}
+                >
                   {stats.completedCount}
                 </Typography>
-                <Typography variant={isMobile ? "body2" : "body1"} color="textSecondary" align="center">
-                  Completed
+                <Typography 
+                  variant="body2" 
+                  color="textSecondary" 
+                  align="center"
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                >
+                  Completed Courses
                 </Typography>
               </Paper>
-            </Grid>
-            <Grid item xs={6} sm={6} md={4}>
+            </Box>
+            
+            {/* In Progress Courses Card */}
+            <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
               <Paper
                 elevation={0}
                 sx={{
-                  p: isMobile ? 2 : 3,
+                  p: { xs: 2, sm: 3 },
                   borderRadius: 2,
                   boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  minHeight: { xs: 120, sm: 140 },
+                  transition: 'all 0.25s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.12)'
+                  }
                 }}
               >
                 <Avatar
                   sx={{
-                    bgcolor: theme.palette.primary.light,
-                    width: isMobile ? 40 : 56,
-                    height: isMobile ? 40 : 56,
-                    mb: isMobile ? 1 : 2
+                    bgcolor: theme.palette.info.light,
+                    width: { xs: 40, sm: 56 },
+                    height: { xs: 40, sm: 56 },
+                    mb: { xs: 1, sm: 2 }
                   }}
                 >
-                  <TimerIcon fontSize={isMobile ? "medium" : "large"} sx={{ color: theme.palette.primary.main }} />
+                  <TimerIcon 
+                    fontSize={isMobile ? "medium" : "large"} 
+                    sx={{ color: theme.palette.info.main }} 
+                  />
                 </Avatar>
-                <Typography variant={isMobile ? "h6" : "h5"} component="div" align="center" sx={{ fontWeight: 600 }}>
+                <Typography 
+                  variant="h5" 
+                  component="div" 
+                  align="center" 
+                  sx={{ 
+                    fontWeight: 600,
+                    fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                  }}
+                >
                   {stats.inProgressCount}
                 </Typography>
-                <Typography variant={isMobile ? "body2" : "body1"} color="textSecondary" align="center">
+                <Typography 
+                  variant="body2" 
+                  color="textSecondary" 
+                  align="center"
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                >
                   In Progress
                 </Typography>
               </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            </Box>
+            
+            {/* Certificates Earned Card */}
+            <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
               <Paper
                 elevation={0}
                 sx={{
-                  p: isMobile ? 2 : 3,
+                  p: { xs: 2, sm: 3 },
                   borderRadius: 2,
                   boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  minHeight: { xs: 120, sm: 140 },
+                  transition: 'all 0.25s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.12)'
+                  }
                 }}
               >
                 <Avatar
                   sx={{
-                    bgcolor: theme.palette.secondary.light,
-                    width: isMobile ? 40 : 56,
-                    height: isMobile ? 40 : 56,
-                    mb: isMobile ? 1 : 2
+                    bgcolor: theme.palette.warning.light,
+                    width: { xs: 40, sm: 56 },
+                    height: { xs: 40, sm: 56 },
+                    mb: { xs: 1, sm: 2 }
                   }}
                 >
-                  <AssessmentIcon fontSize={isMobile ? "medium" : "large"} sx={{ color: theme.palette.secondary.main }} />
+                  <AssessmentIcon 
+                    fontSize={isMobile ? "medium" : "large"} 
+                    sx={{ color: theme.palette.warning.main }} 
+                  />
                 </Avatar>
-                <Typography variant={isMobile ? "h6" : "h5"} component="div" align="center" sx={{ fontWeight: 600 }}>
+                <Typography 
+                  variant="h5" 
+                  component="div" 
+                  align="center" 
+                  sx={{ 
+                    fontWeight: 600,
+                    fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                  }}
+                >
                   {stats.certificatesCount}
                 </Typography>
-                <Typography variant={isMobile ? "body2" : "body1"} color="textSecondary" align="center">
-                  Certificates
+                <Typography 
+                  variant="body2" 
+                  color="textSecondary" 
+                  align="center"
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                >
+                  Certificates Earned
                 </Typography>
               </Paper>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
 
           {/* Main Content */}
           <Box sx={{ mb: 4 }}>
@@ -365,157 +480,186 @@ const Dashboard = () => {
                 </Typography>
               </Alert>
             ) : (
-              <Grid container spacing={3}>
-                {completedCourses.map((course) => (
-                  <Grid
-                    item
-                    xs={12}
-                    sm={isMobile ? 12 : isTablet ? 6 : 4}
+              <Box 
+                sx={{ 
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr', // Mobile: 1 column
+                    sm: 'repeat(2, 1fr)', // Tablet: 2 columns  
+                    md: 'repeat(3, 1fr)' // Desktop: 3 columns max
+                  },
+                  gap: { xs: 2, sm: 2, md: 3 }, // Match stats cards gap
+                  width: '100%' // Remove center alignment, align with stats cards
+                }}
+              >
+                {completedCourses.slice(0, 6).map((course) => ( // Limit to 6 courses max
+                  <Card
                     key={course.courseId}
+                    elevation={0}
+                    sx={{
+                      height: { xs: 320, sm: 360, md: 380 }, // Fixed consistent height
+                      display: 'flex',
+                      flexDirection: 'column',
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                      transition: 'all 0.3s ease-in-out',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        transform: 'translateY(-6px)',
+                        boxShadow: '0 12px 32px rgba(0,0,0,0.15)'
+                      }
+                    }}
                   >
-                    <Card
-                      elevation={0}
+                    {/* Header Section with Icon and Badge */}
+                    <Box
                       sx={{
-                        height: { xs: 'auto', sm: 380, md: 380 }, // Fixed height for consistency
+                        height: 120,
+                        position: 'relative',
+                        background: `linear-gradient(135deg, ${theme.palette.primary.light}40, ${theme.palette.primary.main}20)`,
                         display: 'flex',
-                        flexDirection: isMobile ? 'row' : 'column',
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                        transition: 'all 0.25s ease-in-out',
-                        '&:hover': {
-                          transform: 'translateY(-4px)',
-                          boxShadow: '0 8px 16px rgba(0,0,0,0.12)'
-                        }
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderBottom: `2px solid ${theme.palette.primary.main}20`
                       }}
                     >
-                      <Box
+                      <Avatar
                         sx={{
-                          p: 0,
-                          position: 'relative',
-                          width: isMobile ? '120px' : '100%',
-                          height: isMobile ? 'auto' : 140,
-                          backgroundColor: theme.palette.primary.light,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0
+                          width: 70,
+                          height: 70,
+                          bgcolor: 'white',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          border: `3px solid ${theme.palette.primary.main}30`
                         }}
                       >
-                        <SchoolIcon sx={{ fontSize: isMobile ? 40 : 60, color: theme.palette.primary.main }} />
-                        {course.hasCertificate && (
+                        <SchoolIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />
+                      </Avatar>
+                      
+                      {/* Certificate Badge */}
+                      {course.hasCertificate && (
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: 12,
+                            right: 12,
+                            bgcolor: theme.palette.success.main,
+                            color: 'white',
+                            borderRadius: '12px',
+                            px: 1.5,
+                            py: 0.5,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                          }}
+                        >
+                          <CheckCircleIcon fontSize="small" />
+                          Certified
+                        </Box>
+                      )}
+
+                      {/* Status Badge */}
+                      <Chip
+                        label="Completed"
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          bottom: -12,
+                          bgcolor: theme.palette.success.main,
+                          color: 'white',
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          height: 24
+                        }}
+                      />
+                    </Box>
+
+                    {/* Content Section */}
+                    <CardContent sx={{ flexGrow: 1, p: 3, display: 'flex', flexDirection: 'column' }}>
+                      <Box sx={{ flexGrow: 1 }}>
+                        <MarqueeText
+                          text={course.courseName || 'Completed Course'}
+                          variant="h6"
+                          component="h3"
+                          sx={{
+                            mb: 1.5,
+                            fontWeight: 700,
+                            lineHeight: 1.3,
+                            color: theme.palette.text.primary,
+                            container: {
+                              maxHeight: '3em'
+                            }
+                          }}
+                        />
+
+                        <Typography
+                          variant="body2"
+                          color="textSecondary"
+                          sx={{ 
+                            mb: 2,
+                            fontWeight: 500,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
+                          }}
+                        >
+                          <DomainIcon fontSize="small" />
+                          {course.domain}
+                        </Typography>
+
+                        {course.completedAt && (
                           <Box
                             sx={{
-                              position: 'absolute',
-                              top: 16,
-                              right: 16,
-                              bgcolor: theme.palette.success.main,
-                              color: 'white',
-                              borderRadius: '50%',
-                              width: isMobile ? 24 : 32,
-                              height: isMobile ? 24 : 32,
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'center'
+                              mb: 2
                             }}
                           >
-                            <CheckCircleIcon fontSize={isMobile ? "small" : "medium"} />
+                            <DateRangeIcon
+                              fontSize="small"
+                              sx={{ mr: 1, color: 'text.secondary' }}
+                            />
+                            <Typography variant="caption" color="textSecondary">
+                              Completed: {new Date(course.completedAt).toLocaleDateString()}
+                            </Typography>
                           </Box>
                         )}
                       </Box>
 
-                      <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                        <CardContent sx={{ flexGrow: 1, p: isMobile ? 2 : 3 }}>
-                          <MarqueeText
-                            text={course.courseName || 'Completed Course'}
-                            variant={isMobile ? "subtitle1" : "h6"}
-                            component="h3"
-                            sx={{
-                              mb: 1,
-                              fontWeight: 600,
-                              lineHeight: 1.3,
-                              container: {
-                                maxHeight: '2.6em'
-                              }
-                            }}
-                          />
-
-                          <Typography
-                            variant="body2"
-                            color="textSecondary"
-                            sx={{ mb: isMobile ? 1 : 2 }}
-                          >
-                            {course.domain}
-                          </Typography>
-
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              mb: 1
-                            }}
-                          >
-                            <CheckCircleIcon
-                              color="success"
-                              fontSize="small"
-                              sx={{ mr: 1 }}
-                            />
-                            <Typography variant="body2">
-                              Completed
-                            </Typography>
-                          </Box>
-
-                          {course.completedAt && !isMobile && (
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center'
-                              }}
-                            >
-                              <DateRangeIcon
-                                fontSize="small"
-                                sx={{
-                                  mr: 1,
-                                  color: 'text.secondary',
-                                  fontSize: 16
-                                }}
-                              />
-                              <Typography
-                                variant="body2"
-                                color="textSecondary"
-                              >
-                                Completed on: {new Date(course.completedAt).toLocaleDateString()}
-                              </Typography>
-                            </Box>
-                          )}
-                        </CardContent>
-
-                        <CardActions sx={{ p: isMobile ? 2 : 3, pt: 0 }}>
-                          <Button
-                            variant="contained"
-                            fullWidth
-                            size={isMobile ? "small" : "medium"}
-                            startIcon={<DownloadIcon />}
-                            onClick={() => course.hasCertificate ?
-                              handleDownloadCertificate(course.certificateId) :
-                              handleGenerateCertificate(course.courseId)
-                            }
-                            color={course.hasCertificate ? "primary" : "secondary"}
-                            sx={{
-                              borderRadius: 6,
-                              py: isMobile ? 0.8 : 1.2,
-                              textTransform: 'none',
-                              fontWeight: 600
-                            }}
-                          >
-                            {course.hasCertificate ? (isMobile ? "Download" : "Download Certificate") : (isMobile ? "Generate" : "Generate Certificate")}
-                          </Button>
-                        </CardActions>
-                      </Box>
-                    </Card>
-                  </Grid>
+                      {/* Action Button */}
+                      <Button
+                        variant="contained"
+                        fullWidth
+                        size="large"
+                        startIcon={<DownloadIcon />}
+                        onClick={() => course.hasCertificate ?
+                          handleDownloadCertificate(course.certificateId) :
+                          handleGenerateCertificate(course.courseId)
+                        }
+                        sx={{
+                          borderRadius: 3,
+                          py: 1.5,
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          fontSize: '0.9rem',
+                          background: course.hasCertificate ? 
+                            'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)' :
+                            'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
+                          '&:hover': {
+                            background: course.hasCertificate ?
+                              'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)' :
+                              'linear-gradient(135deg, #f57c00 0%, #ef6c00 100%)',
+                          }
+                        }}
+                      >
+                        {course.hasCertificate ? "Download Certificate" : "Generate Certificate"}
+                      </Button>
+                    </CardContent>
+                  </Card>
                 ))}
-              </Grid>
+              </Box>
             )}
           </Box>
 

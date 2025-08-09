@@ -315,36 +315,39 @@ const MainLayout = () => {
         {drawer}
       </Drawer>
       
-      {/* Main content - Responsive container with dynamic maxWidth */}
+      {/* Main content - True viewport centering */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          pt: 3, // top padding
-          px: { xs: 2, sm: 3 }, // horizontal padding - smaller on mobile
-          width: '100%',
+          pt: 3,
           mt: { xs: '56px', sm: '64px' }, // Height of AppBar - responsive
-          transition: theme.transitions.create(['padding', 'margin'], {
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          // Desktop centering: always offset to compensate for persistent drawer space
+          transform: {
+            xs: 'none', // Mobile: no transform needed  
+            sm: `translateX(-${drawerWidth / 2}px)` // Always shift left by half drawer width
+          },
+          transition: theme.transitions.create(['transform'], {
             easing: theme.transitions.easing.easeOut,
             duration: theme.transitions.duration.enteringScreen,
           }),
-          display: 'flex',
-          justifyContent: 'center', // Center content horizontally
+          minHeight: 'calc(100vh - 64px)',
         }}
       >
-        {/* Responsive container - adjusts max-width based on sidebar state */}
+        {/* Content container with consistent max-width */}
         <Container 
           sx={{ 
             maxWidth: {
               xs: '100%',
-              sm: open ? 'md' : 'lg', // Narrower when sidebar is open, wider when closed
-              md: open ? 'lg' : 'xl',
+              sm: 'lg',   // Consistent max-width regardless of sidebar state
+              md: 'xl',
+              lg: '1400px'
             },
-            px: 0, // Remove default horizontal padding from container
-            transition: theme.transitions.create('max-width', {
-              easing: theme.transitions.easing.easeOut,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
+            px: { xs: 2, sm: 3 }, // Horizontal padding
+            width: '100%',
           }}
         >
           <Outlet />

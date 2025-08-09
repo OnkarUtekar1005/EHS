@@ -750,7 +750,7 @@ const CourseView = () => {
                         justifyContent: 'space-between',
                         fontWeight: 500,
                       }}>
-                        <span>Components completed:</span>
+                        <span>Components completed:   </span>
                         <Box component="span" fontWeight="bold">
                           {courseProgress?.completedComponents || 0} of {course?.components?.length || 0}
                         </Box>
@@ -767,7 +767,7 @@ const CourseView = () => {
                         justifyContent: 'space-between',
                         fontWeight: 500,
                       }}>
-                        <span>Available to start:</span>
+                        <span>Available Sections:</span>
                         <Box component="span" fontWeight="bold">{getAvailableComponentsCount()}</Box>
                       </Typography>
                     </Box>
