@@ -25,6 +25,7 @@ import MaterialView from './pages/users/MaterialView';
 import AssessmentView from './pages/users/AssessmentView';
 import UserReports from './pages/users/UserReports';
 import Think from './pages/users/Think';
+import Announcements from './pages/users/Announcements';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -36,6 +37,7 @@ import AssessmentManagement from './pages/admin/AssessmentManagement';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminProfile from './pages/admin/AdminProfile';
 import AdminThink from './pages/admin/AdminThink';
+import AdminAnnouncements from './pages/admin/AdminAnnouncements';
 
 // Public Pages
 import Landing from './pages/Landing';
@@ -186,6 +188,7 @@ function AppContent() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/my-courses" element={<MyCourses />} />
           <Route path="/reports" element={<UserReports />} />
+          <Route path="/announcements" element={<Announcements />} />
           <Route path="/think" element={<Think />} />
           <Route path="/courses/:courseId" element={<CourseDetail />} />
           <Route path="/course/:courseId" element={<CourseView />} />
@@ -210,6 +213,7 @@ function AppContent() {
           <Route path="/admin/courses" element={<CourseManagement />} />
           <Route path="/admin/materials" element={<MaterialsManagement />} />
           <Route path="/admin/assessments" element={<AssessmentManagement />} />
+          <Route path="/admin/announcements" element={<AdminAnnouncements />} />
           <Route path="/admin/think" element={<AdminThink />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
           <Route path="/admin/profile" element={<AdminProfile />} />

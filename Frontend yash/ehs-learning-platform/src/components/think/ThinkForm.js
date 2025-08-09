@@ -73,11 +73,21 @@ const ThinkForm = ({ isAuthenticated = false, isPublic = false }) => {
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 4, maxWidth: 800, mx: 'auto' }}>
-      <Typography variant="h4" gutterBottom>
+    <Paper elevation={3} sx={{ 
+      p: { xs: 2, sm: 3, md: 4 }, 
+      maxWidth: 800, 
+      mx: 'auto',
+      m: { xs: 1, sm: 2 }
+    }}>
+      <Typography variant="h5" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
         {isPublic ? 'Share Your Thoughts' : 'Think'}
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography 
+        variant="body1" 
+        color="text.secondary" 
+        paragraph
+        sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+      >
         We value your feedback and are committed to improving your experience on our platform. 
         Please use the form below to share your thoughts, suggestions, or concerns. 
         Your input helps us enhance our services and better meet your needs.
@@ -163,10 +173,13 @@ const ThinkForm = ({ isAuthenticated = false, isPublic = false }) => {
           type="submit"
           variant="contained"
           color="primary"
-          size="large"
           fullWidth
           disabled={loading}
-          sx={{ mt: 2 }}
+          sx={{ 
+            mt: 2,
+            py: { xs: 1, sm: 1.5 },
+            fontSize: { xs: '0.875rem', sm: '1rem' }
+          }}
         >
           {loading ? <CircularProgress size={24} /> : 'Submit'}
         </Button>

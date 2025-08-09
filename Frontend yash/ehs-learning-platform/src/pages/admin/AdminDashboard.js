@@ -183,14 +183,20 @@ const AdminDashboard = () => {
         <Box
           sx={{
             mb: 4,
-            display: { xs: 'flex', sm: 'flex', md: 'flex' },
-            flexDirection: { xs: 'column', sm: 'row' },
-            flexWrap: { xs: 'nowrap', sm: 'wrap', md: 'nowrap' },
-            gap: { xs: 2, sm: 2, md: 3 }
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: 'repeat(3, 1fr)', // 3 columns on mobile
+              sm: 'repeat(5, 1fr)',  // 5 columns on desktop
+            },
+            gridTemplateRows: {
+              xs: 'repeat(2, 1fr)', // 2 rows on mobile
+              sm: '1fr',             // 1 row on desktop
+            },
+            gap: { xs: 1.5, sm: 2, md: 3 }
           }}
         >
           {/* Active Users Card */}
-          <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
+          <Box sx={{ gridColumn: { xs: '1', sm: '1' }, gridRow: { xs: '1', sm: '1' } }}>
             <Paper
               elevation={0}
               sx={{
@@ -248,7 +254,7 @@ const AdminDashboard = () => {
           </Box>
           
           {/* Total Domains Card */}
-          <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
+          <Box sx={{ gridColumn: { xs: '2', sm: '2' }, gridRow: { xs: '1', sm: '1' } }}>
             <Paper
               elevation={0}
               sx={{
@@ -306,7 +312,7 @@ const AdminDashboard = () => {
           </Box>
           
           {/* User Assignments Card */}
-          <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
+          <Box sx={{ gridColumn: { xs: '3', sm: '3' }, gridRow: { xs: '1', sm: '1' } }}>
             <Paper
               elevation={0}
               sx={{
@@ -357,7 +363,7 @@ const AdminDashboard = () => {
           </Box>
           
           {/* Pending Actions Card */}
-          <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
+          <Box sx={{ gridColumn: { xs: '1 / 3', sm: '4' }, gridRow: { xs: '2', sm: '1' } }}>
             <Paper
               elevation={0}
               sx={{
@@ -430,7 +436,7 @@ const AdminDashboard = () => {
           </Box>
           
           {/* Total Courses Card */}
-          <Box sx={{ flex: { xs: 'none', sm: '1 1 45%', md: '1' }, minWidth: { xs: '100%', sm: '200px', md: '0' } }}>
+          <Box sx={{ gridColumn: { xs: '3', sm: '5' }, gridRow: { xs: '2', sm: '1' } }}>
             <Paper
               elevation={0}
               sx={{

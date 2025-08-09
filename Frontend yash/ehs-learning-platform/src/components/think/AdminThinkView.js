@@ -21,7 +21,8 @@ import {
   MenuItem,
   IconButton,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Card
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -161,13 +162,23 @@ const AdminThinkView = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Typography variant="h5" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
         Think
       </Typography>
 
       <Paper sx={{ mb: 3 }}>
-        <Tabs value={activeTab} onChange={handleTabChange} variant="fullWidth">
+        <Tabs 
+          value={activeTab} 
+          onChange={handleTabChange} 
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            '& .MuiTabs-flexContainer': {
+              justifyContent: { sm: 'space-around' }
+            }
+          }}
+        >
           <Tab label="All" />
           <Tab label="Queries" />
           <Tab label="Complaints" />
@@ -175,19 +186,25 @@ const AdminThinkView = () => {
         </Tabs>
       </Paper>
 
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+      <Paper sx={{ p: { xs: 1.5, sm: 2 }, mb: 3 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          gap: { xs: 1, sm: 2 }, 
+          alignItems: 'center',
+          flexDirection: { xs: 'column', sm: 'row' }
+        }}>
           <TextField
             fullWidth
             variant="outlined"
             placeholder="Search submissions..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            size="small"
             InputProps={{
               startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
             }}
           />
-          <IconButton>
+          <IconButton size="small">
             <FilterIcon />
           </IconButton>
         </Box>
@@ -208,68 +225,129 @@ const AdminThinkView = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>User</TableCell>
-                <TableCell>Query</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredSubmissions.map((submission) => (
-                <TableRow key={submission.id}>
-                  <TableCell>{submission.userName || 'Anonymous'}</TableCell>
-                  <TableCell sx={{ maxWidth: 300 }}>
-                    <Typography variant="body2" noWrap>
-                      {submission.subject}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={getTypeLabel(submission.type)}
+        <>
+          {/* Desktop Table View */}
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>User</TableCell>
+                    <TableCell>Query</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredSubmissions.map((submission) => (
+                    <TableRow key={submission.id}>
+                      <TableCell>{submission.userName || 'Anonymous'}</TableCell>
+                      <TableCell sx={{ maxWidth: 300 }}>
+                        <Typography variant="body2" noWrap>
+                          {submission.subject}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={getTypeLabel(submission.type)}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(submission.createdAt), 'yyyy-MM-dd')}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={submission.status}
+                          size="small"
+                          color={getStatusColor(submission.status)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleViewSubmission(submission)}
+                          >
+                            <ViewIcon />
+                          </IconButton>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<ReplyIcon />}
+                            onClick={() => handleOpenResponse(submission)}
+                          >
+                            Respond
+                          </Button>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+
+          {/* Mobile Card View */}
+          <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+            {filteredSubmissions.map((submission) => (
+              <Card key={submission.id} sx={{ mb: 2, p: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
+                    {submission.subject}
+                  </Typography>
+                  <Chip
+                    label={submission.status}
+                    size="small"
+                    color={getStatusColor(submission.status)}
+                    sx={{ ml: 1 }}
+                  />
+                </Box>
+                
+                <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                  <Chip
+                    label={getTypeLabel(submission.type)}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                  />
+                  <Chip
+                    label={submission.userName || 'Anonymous'}
+                    size="small"
+                    variant="outlined"
+                  />
+                </Box>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {format(new Date(submission.createdAt), 'MMM dd, yyyy')}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <IconButton
                       size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(submission.createdAt), 'yyyy-MM-dd')}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={submission.status}
+                      onClick={() => handleViewSubmission(submission)}
+                      sx={{ border: 1, borderColor: 'divider' }}
+                    >
+                      <ViewIcon />
+                    </IconButton>
+                    <Button
+                      variant="contained"
                       size="small"
-                      color={getStatusColor(submission.status)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleViewSubmission(submission)}
-                      >
-                        <ViewIcon />
-                      </IconButton>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<ReplyIcon />}
-                        onClick={() => handleOpenResponse(submission)}
-                      >
-                        Respond
-                      </Button>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                      startIcon={<ReplyIcon />}
+                      onClick={() => handleOpenResponse(submission)}
+                    >
+                      Respond
+                    </Button>
+                  </Box>
+                </Box>
+              </Card>
+            ))}
+          </Box>
+        </>
       )}
 
       {/* View Dialog */}

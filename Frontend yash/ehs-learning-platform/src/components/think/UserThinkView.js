@@ -17,7 +17,8 @@ import {
   DialogActions,
   Alert,
   CircularProgress,
-  Fab
+  Fab,
+  Card
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -92,9 +93,16 @@ const UserThinkView = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'flex-start', sm: 'center' }, 
+        mb: 3,
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: { xs: 2, sm: 0 }
+      }}>
+        <Typography variant="h5" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
           Think - Your Submissions
         </Typography>
         <Button
@@ -102,6 +110,12 @@ const UserThinkView = () => {
           color="primary"
           startIcon={<AddIcon />}
           onClick={() => setFormDialog(true)}
+          sx={{ 
+            minWidth: { sm: 'auto' },
+            width: { xs: '100%', sm: 'auto' },
+            py: { xs: 1, sm: 1.25 },
+            fontSize: { xs: '0.875rem', sm: '1rem' }
+          }}
         >
           New Submission
         </Button>
@@ -139,75 +153,134 @@ const UserThinkView = () => {
           </Button>
         </Paper>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Subject</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Response</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {submissions.map((submission) => (
-                <TableRow key={submission.id}>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {submission.subject}
-                    </Typography>
-                    {submission.isAnonymous && (
-                      <Chip
-                        label="Anonymous"
-                        size="small"
-                        variant="outlined"
-                        sx={{ mt: 0.5 }}
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={getTypeLabel(submission.type)}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(submission.createdAt), 'yyyy-MM-dd')}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={submission.status}
-                      size="small"
-                      color={getStatusColor(submission.status)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {submission.adminResponse ? (
-                      <Chip label="Responded" size="small" color="info" />
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        Pending
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      size="small"
-                      startIcon={<ViewIcon />}
-                      onClick={() => handleViewSubmission(submission)}
-                    >
-                      View
-                    </Button>
-                  </TableCell>
+        <>
+          {/* Desktop Table View */}
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Subject</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Response</TableCell>
+                  <TableCell>Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {submissions.map((submission) => (
+                  <TableRow key={submission.id}>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {submission.subject}
+                      </Typography>
+                      {submission.isAnonymous && (
+                        <Chip
+                          label="Anonymous"
+                          size="small"
+                          variant="outlined"
+                          sx={{ mt: 0.5 }}
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getTypeLabel(submission.type)}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(submission.createdAt), 'yyyy-MM-dd')}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={submission.status}
+                        size="small"
+                        color={getStatusColor(submission.status)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {submission.adminResponse ? (
+                        <Chip label="Responded" size="small" color="info" />
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          Pending
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="small"
+                        startIcon={<ViewIcon />}
+                        onClick={() => handleViewSubmission(submission)}
+                      >
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+
+        {/* Mobile Card View */}
+        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+          {submissions.map((submission) => (
+            <Card key={submission.id} sx={{ mb: 2, p: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
+                  {submission.subject}
+                </Typography>
+                <Chip
+                  label={submission.status}
+                  size="small"
+                  color={getStatusColor(submission.status)}
+                  sx={{ ml: 1 }}
+                />
+              </Box>
+              
+              <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                <Chip
+                  label={getTypeLabel(submission.type)}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                />
+                {submission.isAnonymous && (
+                  <Chip
+                    label="Anonymous"
+                    size="small"
+                    variant="outlined"
+                  />
+                )}
+                {submission.adminResponse ? (
+                  <Chip label="Responded" size="small" color="info" />
+                ) : (
+                  <Chip label="Pending" size="small" color="default" />
+                )}
+              </Box>
+              
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  {format(new Date(submission.createdAt), 'MMM dd, yyyy')}
+                </Typography>
+                <Button
+                  size="small"
+                  startIcon={<ViewIcon />}
+                  onClick={() => handleViewSubmission(submission)}
+                  variant="outlined"
+                >
+                  View
+                </Button>
+              </Box>
+            </Card>
+          ))}
+        </Box>
+        </>
       )}
 
       {/* View Dialog */}

@@ -41,6 +41,7 @@ import AddBoxIcon from '@mui/icons-material/AddBox';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
+import CampaignIcon from '@mui/icons-material/Campaign';
 
 // Constants
 const DRAWER_WIDTH = 240;
@@ -71,6 +72,7 @@ const AdminLayout = () => {
     { path: '/admin/courses', icon: <BookIcon />, label: 'Chapter/Modules' },
     { path: '/admin/materials', icon: <CloudUploadIcon />, label: 'Materials' },
     { path: '/admin/assessments', icon: <AssessmentIcon />, label: 'Assessments' },
+    { path: '/admin/announcements', icon: <CampaignIcon />, label: 'Announcements' },
     { path: '/admin/think', icon: <LightbulbIcon />, label: 'Think' }
   ], []);
 

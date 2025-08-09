@@ -19,7 +19,12 @@ import {
   Avatar,
   Menu,
   MenuItem,
-  Container
+  Container,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
@@ -33,6 +38,8 @@ import logoImage from '../../assets/logo-image.jpg';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import SchoolIcon from '@mui/icons-material/School';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
+import CampaignIcon from '@mui/icons-material/Campaign';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
 // Drawer width
 const drawerWidth = 240;
@@ -46,6 +53,7 @@ const MainLayout = () => {
   
   const [open, setOpen] = useState(!isMobile);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [helpDialog, setHelpDialog] = useState(false);
   const isMenuOpen = Boolean(anchorEl);
 
   // Handle drawer open/close
@@ -78,6 +86,15 @@ const MainLayout = () => {
   const handleProfile = () => {
     handleMenuClose();
     navigate('/profile');
+  };
+
+  // Handle help dialog
+  const handleHelpClick = () => {
+    setHelpDialog(true);
+  };
+
+  const handleHelpClose = () => {
+    setHelpDialog(false);
   };
 
   // Drawer content - matches your design in Image 2
@@ -138,6 +155,20 @@ const MainLayout = () => {
         <ListItem disablePadding>
           <ListItemButton
             component={Link}
+            to="/announcements"
+            selected={location.pathname === '/announcements'}
+            className="sidebar-list-item"
+          >
+            <ListItemIcon>
+              <CampaignIcon />
+            </ListItemIcon>
+            <ListItemText primary="Announcements" />
+          </ListItemButton>
+        </ListItem>
+        
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
             to="/think"
             selected={location.pathname === '/think'}
             className="sidebar-list-item"
@@ -146,6 +177,18 @@ const MainLayout = () => {
               <LightbulbIcon />
             </ListItemIcon>
             <ListItemText primary="Think" />
+          </ListItemButton>
+        </ListItem>
+        
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={handleHelpClick}
+            className="sidebar-list-item"
+          >
+            <ListItemIcon>
+              <HelpOutlineIcon />
+            </ListItemIcon>
+            <ListItemText primary="Help" />
           </ListItemButton>
         </ListItem>
       </List>
@@ -368,6 +411,58 @@ const MainLayout = () => {
           <Outlet />
         </Container>
       </Box>
+
+      {/* Help Dialog */}
+      <Dialog open={helpDialog} onClose={handleHelpClose} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
+          <HelpOutlineIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
+          <Typography variant="h5" component="div">
+            Need Help?
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: 'center', py: 3 }}>
+          <Typography variant="body1" paragraph>
+            For any assistance or technical support, please contact the administrator.
+          </Typography>
+          
+          <Box sx={{ 
+            bgcolor: 'primary.50', 
+            borderRadius: 2, 
+            p: 3, 
+            mt: 2,
+            border: '1px solid',
+            borderColor: 'primary.200'
+          }}>
+            <Typography variant="h6" color="primary" gutterBottom>
+              Administrator Contact
+            </Typography>
+            <Typography variant="h4" component="div" sx={{ 
+              fontWeight: 'bold', 
+              color: 'primary.main',
+              letterSpacing: '0.1em'
+            }}>
+              📞 +91 88300 24093
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              India Standard Time (IST)
+            </Typography>
+          </Box>
+          
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
+            Our administrator will be happy to assist you with any questions or issues you may have.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 3 }}>
+          <Button 
+            onClick={handleHelpClose} 
+            variant="contained" 
+            size="large"
+            sx={{ minWidth: 120 }}
+          >
+            Got it
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
