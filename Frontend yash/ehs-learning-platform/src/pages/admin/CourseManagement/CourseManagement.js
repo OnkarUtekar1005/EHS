@@ -64,28 +64,29 @@ const CourseManagement = () => {
     severity: 'success'
   });
 
-  // Fetch courses
+  // Fetch all courses without pagination for client-side handling
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      // Use v2 endpoint with filters and pagination
+      // Fetch all courses without pagination to handle filtering client-side
       const params = {
-        page: pagination.page,
-        limit: pagination.itemsPerPage
+        page: 1,
+        limit: 1000 // Large limit to get all courses
       };
-      
-      // No server-side filtering needed - we'll filter client-side
       
       const response = await api.get('/v2/admin/courses', { params });
       setCourses(response.data.courses || []);
-      setPagination(response.data.pagination || {
+      
+      // Reset pagination to handle client-side
+      setPagination(prev => ({
+        ...prev,
         page: 1,
         totalPages: 1,
-        totalItems: 0,
-        itemsPerPage: 5
-      });
+        totalItems: response.data.courses ? response.data.courses.length : 0
+      }));
     } catch (error) {
       setCourses([]);
+      setPagination(prev => ({ ...prev, totalItems: 0 }));
     } finally {
       setLoading(false);
     }
@@ -100,10 +101,10 @@ const CourseManagement = () => {
     }
   };
 
-  // Effect for pagination only - filters are client-side
+  // Fetch courses only once on mount - pagination handled client-side
   useEffect(() => {
     fetchCourses();
-  }, [pagination.page]);
+  }, []);
 
   // Fetch domains on mount
   useEffect(() => {
@@ -144,13 +145,26 @@ const CourseManagement = () => {
     return matchesSearch && matchesDomain && matchesStatus;
   });
 
-  // Update pagination to work with filtered results
-  const paginatedCourses = filteredCourses.slice(
-    (pagination.page - 1) * pagination.itemsPerPage,
-    pagination.page * pagination.itemsPerPage
-  );
+  // Client-side pagination of filtered results
+  const startIndex = (pagination.page - 1) * pagination.itemsPerPage;
+  const endIndex = startIndex + pagination.itemsPerPage;
+  const paginatedCourses = filteredCourses.slice(startIndex, endIndex);
+  
+  // Update pagination when filters change
+  const totalFilteredItems = filteredCourses.length;
+  const totalFilteredPages = Math.ceil(totalFilteredItems / pagination.itemsPerPage);
+  
+  // Reset to page 1 if current page is beyond available pages
+  React.useEffect(() => {
+    if (pagination.page > totalFilteredPages && totalFilteredPages > 0) {
+      setPagination(prev => ({ ...prev, page: 1 }));
+    }
+  }, [totalFilteredPages, pagination.page]);
 
-  const totalFilteredPages = Math.ceil(filteredCourses.length / pagination.itemsPerPage);
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [searchQuery, filters.domainId, filters.status]);
 
   const handlePublish = async (courseId) => {
     try {
@@ -574,7 +588,7 @@ const CourseManagement = () => {
             <Box sx={{ mt: 2 }}>
               <TablePagination
                 component="div"
-                count={filteredCourses.length}
+                count={totalFilteredItems}
                 page={pagination.page - 1}
                 onPageChange={handlePageChange}
                 rowsPerPage={pagination.itemsPerPage}
