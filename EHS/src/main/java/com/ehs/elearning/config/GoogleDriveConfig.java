@@ -56,11 +56,6 @@ public class GoogleDriveConfig {
 
 			credentials = GoogleCredentials.fromStream(resource.getInputStream())
 					.createScoped(Collections.singleton(DriveScopes.DRIVE));
-					
-			// Use OAuth delegation to impersonate admin user if configured
-			if (adminEmail != null && !adminEmail.isEmpty()) {
-				credentials = credentials.createDelegated(adminEmail);
-			}
 		} else {
 			// For development, use default credentials (requires gcloud auth
 			// application-default login)
