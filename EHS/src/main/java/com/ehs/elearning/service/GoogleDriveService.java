@@ -67,6 +67,7 @@ public class GoogleDriveService {
             logger.info("Starting upload to Google Drive...");
             File uploadedFile = driveService.files().create(fileMetadata, mediaContent)
                     .setFields("id, name, webViewLink, webContentLink, size")
+                    .setSupportsAllDrives(true)  // THIS IS THE MISSING LINE
                     .execute();
             
             logger.info("File uploaded successfully!");
