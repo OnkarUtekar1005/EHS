@@ -28,6 +28,9 @@ public class GoogleDriveConfig {
 	@Value("${google.drive.application-name:EHS E-Learning Platform}")
 	private String applicationName;
 	
+	@Value("${google.drive.admin-email:}")
+	private String adminEmail;
+	
 	@jakarta.annotation.PostConstruct
 	public void init() {
 		// Google Drive configuration initialized
@@ -51,9 +54,13 @@ public class GoogleDriveConfig {
 				resource = new ClassPathResource(serviceAccountKeyPath);
 			}
 
-			
 			credentials = GoogleCredentials.fromStream(resource.getInputStream())
 					.createScoped(Collections.singleton(DriveScopes.DRIVE));
+					
+			// Use OAuth delegation to impersonate admin user if configured
+			if (adminEmail != null && !adminEmail.isEmpty()) {
+				credentials = credentials.createDelegated(adminEmail);
+			}
 		} else {
 			// For development, use default credentials (requires gcloud auth
 			// application-default login)
