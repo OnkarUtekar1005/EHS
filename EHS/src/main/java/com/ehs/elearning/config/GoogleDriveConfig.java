@@ -37,6 +37,11 @@ public class GoogleDriveConfig {
 	}
 
 	@Bean
+	@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+		name = "google.drive.use-oauth", 
+		havingValue = "false", 
+		matchIfMissing = true
+	)
 	public Drive drive() throws IOException, GeneralSecurityException {
 		
 		HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();

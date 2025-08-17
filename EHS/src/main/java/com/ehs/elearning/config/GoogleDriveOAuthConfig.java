@@ -41,11 +41,11 @@ public class GoogleDriveOAuthConfig {
 
     @Bean
     @Primary
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+        name = "google.drive.use-oauth", 
+        havingValue = "true"
+    )
     public Drive driveOAuth() throws IOException, GeneralSecurityException {
-        if (!useOAuth || oauthCredentialsPath == null || oauthCredentialsPath.isEmpty()) {
-            // Fall back to service account if OAuth not configured
-            return null;
-        }
 
         HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
         JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
