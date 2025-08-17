@@ -67,7 +67,8 @@ public class GoogleDriveService {
             logger.info("Starting upload to Google Drive...");
             File uploadedFile = driveService.files().create(fileMetadata, mediaContent)
                     .setFields("id, name, webViewLink, webContentLink, size")
-                    .setSupportsAllDrives(true)  // THIS IS THE MISSING LINE
+                    .setSupportsAllDrives(true)
+                    .setSupportsTeamDrives(true)  // Legacy support for Team Drives
                     .execute();
             
             logger.info("File uploaded successfully!");
@@ -83,14 +84,20 @@ public class GoogleDriveService {
             permission.setType("anyone");
             permission.setRole("reader");
             permission.setAllowFileDiscovery(false); // This makes it accessible only with the link
-            driveService.permissions().create(uploadedFile.getId(), permission).execute();
+            driveService.permissions().create(uploadedFile.getId(), permission)
+                    .setSupportsAllDrives(true)
+                    .setSupportsTeamDrives(true)
+                    .execute();
             logger.info("Sharing permissions set successfully");
             
             // Also update file metadata to ensure it's viewable
             logger.info("Updating file metadata for viewability...");
             File updatedFile = new File();
             updatedFile.setViewersCanCopyContent(true);
-            driveService.files().update(uploadedFile.getId(), updatedFile).execute();
+            driveService.files().update(uploadedFile.getId(), updatedFile)
+                    .setSupportsAllDrives(true)
+                    .setSupportsTeamDrives(true)
+                    .execute();
             logger.info("File metadata updated");
             
             // Get the proper view URL based on file type
@@ -120,7 +127,10 @@ public class GoogleDriveService {
         logger.info("Deleting file from Google Drive: {}", fileId);
         
         try {
-            driveService.files().delete(fileId).execute();
+            driveService.files().delete(fileId)
+                    .setSupportsAllDrives(true)
+                    .setSupportsTeamDrives(true)
+                    .execute();
             logger.info("File deleted successfully: {}", fileId);
         } catch (IOException e) {
             logger.error("Error deleting file: {}", fileId, e);
@@ -138,7 +148,10 @@ public class GoogleDriveService {
             permission.setRole("reader");
             permission.setAllowFileDiscovery(false);
             
-            driveService.permissions().create(fileId, permission).execute();
+            driveService.permissions().create(fileId, permission)
+                    .setSupportsAllDrives(true)
+                    .setSupportsTeamDrives(true)
+                    .execute();
             logger.info("Permissions fixed for file: {}", fileId);
         } catch (IOException e) {
             logger.error("Error fixing permissions for file: {}", fileId, e);
