@@ -37,6 +37,23 @@ public class GoogleDriveService {
         logger.info("File size: {} bytes", file.getSize());
         logger.info("Parent folder ID: {}", parentFolderId);
         
+        // Validate that we have a folder configured
+        if (parentFolderId == null || parentFolderId.isEmpty()) {
+            throw new IOException("No Google Drive folder configured. Please set GOOGLE_DRIVE_FOLDER_ID to a folder ID.");
+        }
+        
+        // Check if we can access the parent folder
+        try {
+            File parentFolder = driveService.files().get(parentFolderId)
+                    .setSupportsAllDrives(true)
+                    .setSupportsTeamDrives(true)
+                    .execute();
+            logger.info("Parent folder found: {} (owned by: {})", parentFolder.getName(), parentFolder.getOwners());
+        } catch (Exception e) {
+            logger.error("Cannot access parent folder {}: {}", parentFolderId, e.getMessage());
+            throw new IOException("Cannot access parent folder. Check if service account has access to folder: " + parentFolderId);
+        }
+        
         // Create temporary file to upload
         java.io.File tempFile = java.io.File.createTempFile("upload", null);
         logger.info("Created temp file: {}", tempFile.getAbsolutePath());
@@ -51,13 +68,8 @@ public class GoogleDriveService {
             fileMetadata.setName(generatedName);
             logger.info("Generated filename: {}", generatedName);
             
-            // Set parent folder if configured
-            if (parentFolderId != null && !parentFolderId.isEmpty()) {
-                fileMetadata.setParents(Collections.singletonList(parentFolderId));
-                logger.info("Set parent folder: {}", parentFolderId);
-            } else {
-                logger.warn("No parent folder ID configured");
-            }
+            // Try uploading to root drive instead of specific folder to avoid quota issues
+            logger.info("Uploading to root drive to avoid service account quota issues");
             
             // Create media content
             FileContent mediaContent = new FileContent(file.getContentType(), tempFile);
