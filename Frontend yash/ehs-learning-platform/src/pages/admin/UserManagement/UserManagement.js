@@ -4,6 +4,7 @@ import Papa from 'papaparse';
 import { domainService } from '../../../services/api';
 import { useLocation } from 'react-router-dom';
 import { Box, Container, Typography, useTheme } from '@mui/material';
+import DomainAssignModal from './DomainAssignModal';
 
 
 
@@ -26,9 +27,11 @@ const UserManagement = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [domains, setDomains] = useState([]);
-
   const [showAssignDomainModal, setShowAssignDomainModal] = useState(false);
-  const [selectedDomainId, setSelectedDomainId] = useState('');
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const location = useLocation();
 
@@ -97,7 +100,36 @@ useEffect(() => {
     }
     
     setFilteredUsers(result);
+    // Reset to page 1 when filters change
+    setCurrentPage(1);
   }, [selectedRole, selectedDomain, searchTerm, users]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Pagination handlers
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    // Scroll to top of table
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   // Handle add user after successful creation
   const handleAddUser = (backendGeneratedPassword) => {
@@ -231,55 +263,31 @@ useEffect(() => {
     });
   };
 
-  // Handle select all users
+  // Handle select all users (on current page only)
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedUsers(filteredUsers.map(user => user.id));
+      // Select all users on current page
+      const currentPageUserIds = currentUsers.map(user => user.id);
+      setSelectedUsers(prevSelected => {
+        // Merge with already selected users from other pages
+        const merged = new Set([...prevSelected, ...currentPageUserIds]);
+        return Array.from(merged);
+      });
     } else {
-      setSelectedUsers([]);
+      // Deselect all users on current page
+      const currentPageUserIds = currentUsers.map(user => user.id);
+      setSelectedUsers(prevSelected =>
+        prevSelected.filter(id => !currentPageUserIds.includes(id))
+      );
     }
   };
 
-  // Add this function to handle domain assignment
-  const handleAssignDomains = async () => {
-    if (selectedUsers.length === 0) {
-      console.warn('Please select users first');
-      return;
-    }
-  
-    if (!selectedDomainId) {
-      console.warn('Please select a domain to assign');
-      return;
-    }
-
-    // Filter out admin users from domain assignment
-    const selectedUserData = filteredUsers.filter(user => selectedUsers.includes(user.id));
-    const adminUsers = selectedUserData.filter(user => user.role === 'ADMIN');
-    const nonAdminUsers = selectedUserData.filter(user => user.role !== 'ADMIN');
-
-    if (adminUsers.length > 0) {
-      console.warn(`Cannot assign domains to ${adminUsers.length} admin user(s). Admin users have global access.`);
-    }
-
-    if (nonAdminUsers.length === 0) {
-      console.warn('No eligible users selected. Domain assignment only applies to non-admin users.');
-      return;
-    }
-  
-    try {
-      await userService.assignBulkDomains({
-        userIds: nonAdminUsers.map(user => user.id),
-        domainIds: [selectedDomainId] // Pass as array with single value
-      });
-      
-      // Refresh users to show updated domain assignments
-      fetchUsers();
-      setShowAssignDomainModal(false);
-      console.log(`Domain assigned successfully to ${nonAdminUsers.length} user(s).${adminUsers.length > 0 ? ` ${adminUsers.length} admin user(s) were skipped.` : ''}`);
-    } catch (error) {
-      console.error('Error assigning domain:', error);
-      console.error('Failed to assign domain');
-    }
+  // Callback for when domains are successfully assigned
+  const handleDomainsAssigned = () => {
+    // Refresh users to show updated domain assignments
+    fetchUsers();
+    // Clear selected users
+    setSelectedUsers([]);
   };
 
 
@@ -762,13 +770,16 @@ const handleExportCSV = async () => {
                   cursor: 'pointer'
                 }} onClick={(e) => {
                   e.preventDefault();
-                  const syntheticEvent = { target: { checked: !(selectedUsers.length > 0 && selectedUsers.length === filteredUsers.length) } };
+                  // Check if all current page users are selected
+                  const allCurrentPageSelected = currentUsers.length > 0 &&
+                    currentUsers.every(user => selectedUsers.includes(user.id));
+                  const syntheticEvent = { target: { checked: !allCurrentPageSelected } };
                   handleSelectAll(syntheticEvent);
                 }}>
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     onChange={handleSelectAll}
-                    checked={selectedUsers.length > 0 && selectedUsers.length === filteredUsers.length}
+                    checked={currentUsers.length > 0 && currentUsers.every(user => selectedUsers.includes(user.id))}
                     style={{
                       width: '16px',
                       height: '16px',
@@ -807,7 +818,7 @@ const handleExportCSV = async () => {
                 </td>
               </tr>
             ) : (
-              filteredUsers.map((user) => (
+              currentUsers.map((user) => (
                 <tr key={user.id} style={{ 
                   backgroundColor: selectedUsers.includes(user.id) ? '#f0f9ff' : 'white',
                   transition: 'background-color 0.2s ease',
@@ -865,7 +876,129 @@ const handleExportCSV = async () => {
           </tbody>
           </table>
         </Box>
-        
+
+        {/* Pagination Controls */}
+        {filteredUsers.length > itemsPerPage && (
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '20px',
+            padding: '16px 20px',
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}>
+            {/* Showing X-Y of Z */}
+            <Box sx={{ fontSize: '14px', color: '#6b7280' }}>
+              Showing <strong>{indexOfFirstItem + 1}</strong> to{' '}
+              <strong>{Math.min(indexOfLastItem, filteredUsers.length)}</strong> of{' '}
+              <strong>{filteredUsers.length}</strong> users
+            </Box>
+
+            {/* Pagination Buttons */}
+            <Box sx={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {/* Previous Button */}
+              <button
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: currentPage === 1 ? '#f3f4f6' : '#3b82f6',
+                  color: currentPage === 1 ? '#9ca3af' : 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                ← Previous
+              </button>
+
+              {/* Page Numbers */}
+              <Box sx={{ display: 'flex', gap: '4px' }}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                  // Show first page, last page, current page, and pages around current
+                  const showPage =
+                    pageNum === 1 ||
+                    pageNum === totalPages ||
+                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1);
+
+                  // Show ellipsis
+                  const showEllipsisBefore = pageNum === currentPage - 2 && currentPage > 3;
+                  const showEllipsisAfter = pageNum === currentPage + 2 && currentPage < totalPages - 2;
+
+                  if (showEllipsisBefore || showEllipsisAfter) {
+                    return (
+                      <span key={pageNum} style={{ padding: '8px 4px', color: '#9ca3af' }}>
+                        ...
+                      </span>
+                    );
+                  }
+
+                  if (!showPage) return null;
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      style={{
+                        padding: '8px 12px',
+                        minWidth: '40px',
+                        backgroundColor: currentPage === pageNum ? '#3b82f6' : 'white',
+                        color: currentPage === pageNum ? 'white' : '#374151',
+                        border: currentPage === pageNum ? 'none' : '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: currentPage === pageNum ? '600' : '500',
+                        fontSize: '14px',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (currentPage !== pageNum) {
+                          e.target.style.backgroundColor = '#f9fafb';
+                          e.target.style.borderColor = '#9ca3af';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (currentPage !== pageNum) {
+                          e.target.style.backgroundColor = 'white';
+                          e.target.style.borderColor = '#d1d5db';
+                        }
+                      }}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </Box>
+
+              {/* Next Button */}
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: currentPage === totalPages ? '#f3f4f6' : '#3b82f6',
+                  color: currentPage === totalPages ? '#9ca3af' : 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                Next →
+              </button>
+            </Box>
+          </Box>
+        )}
+
         {/* Selection Actions */}
         {selectedUsers.length > 0 && (
           <Box sx={{
@@ -906,80 +1039,6 @@ const handleExportCSV = async () => {
             >
               ASSIGN BOOKS
             </button>
-
-{showAssignDomainModal && (
-  <div style={styles.modal}>
-    <div style={styles.modalContent}>
-      <div style={styles.modalHeader}>
-        <h3 style={{ margin: 0 }}>Assign Books</h3>
-        <button 
-          style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}
-          onClick={() => setShowAssignDomainModal(false)}
-        >
-          ×
-        </button>
-      </div>
-      <div style={styles.modalBody}>
-        {(() => {
-          const selectedUserData = filteredUsers.filter(user => selectedUsers.includes(user.id));
-          const adminUsers = selectedUserData.filter(user => user.role === 'ADMIN');
-          const nonAdminUsers = selectedUserData.filter(user => user.role !== 'ADMIN');
-          
-          return (
-            <>
-              <p>Select books to assign to {selectedUsers.length} selected user(s):</p>
-              
-              {adminUsers.length > 0 && (
-                <div style={{ 
-                  padding: '12px', 
-                  backgroundColor: 'rgba(255, 152, 0, 0.1)', 
-                  color: '#f57c00',
-                  borderRadius: '4px',
-                  marginBottom: '16px',
-                  fontSize: '14px'
-                }}>
-                  ⚠️ <strong>Warning:</strong> {adminUsers.length} admin user(s) will be skipped. 
-                  Admin users have global access and don't need book assignments.
-                  <br/>Only {nonAdminUsers.length} employee user(s) will receive book assignments.
-                </div>
-              )}
-              
-              <div style={styles.formGroup}>
-                <select 
-                  style={styles.formSelect}
-                  value={selectedDomainId}
-                  onChange={(e) => setSelectedDomainId(e.target.value)}
-                >
-                  <option value="">Select a book</option>
-                  {domains.map(domain => (
-                    <option key={domain.id} value={domain.id}>
-                      {domain.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </>
-          );
-        })()}
-      </div>
-      <div style={styles.modalFooter}>
-        <button 
-          style={{ padding: '8px 16px', backgroundColor: '#f5f5f5', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          onClick={() => setShowAssignDomainModal(false)}
-        >
-          Cancel
-        </button>
-        <button 
-          style={styles.btnPrimary}
-          onClick={handleAssignDomains}
-          disabled={!selectedDomainId}
-        >
-          Assign Books
-        </button>
-      </div>
-    </div>
-  </div>
-)}
             <button 
               style={{ 
                 ...styles.btnOutline,
@@ -1225,6 +1284,15 @@ const handleExportCSV = async () => {
           </div>
         </div>
       )}
+
+      {/* Domain Assignment Modal - Supports Multiple Domain Selection */}
+      <DomainAssignModal
+        open={showAssignDomainModal}
+        onClose={() => setShowAssignDomainModal(false)}
+        selectedUsers={selectedUsers}
+        selectedUserObjects={filteredUsers.filter(user => selectedUsers.includes(user.id))}
+        onAssigned={handleDomainsAssigned}
+      />
       </Container>
     </Box>
   );

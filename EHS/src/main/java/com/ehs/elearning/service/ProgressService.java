@@ -49,40 +49,52 @@ public class ProgressService {
         // Check if already enrolled
         Optional<UserCourseProgress> existingProgress = courseProgressRepository
             .findByUserIdAndCourseId(userId, courseId);
-            
+
         if (existingProgress.isPresent()) {
             // Ensure all component progress entries exist
             ensureAllComponentProgressExists(userId, courseId);
             return existingProgress.get();
         }
-        
+
         // Get user and course
         Users user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
         Course course = courseRepository.findById(courseId)
             .orElseThrow(() -> new RuntimeException("Course not found"));
-            
+
         // Check if course is published
         if (course.getStatus() != Course.CourseStatus.PUBLISHED) {
             throw new RuntimeException("Cannot enroll in unpublished course");
         }
-        
+
+        // Validate domain access - user must have the course's domain assigned
+        boolean hasDomainAccess = user.getDomains().stream()
+            .anyMatch(domain -> domain.getId().equals(course.getDomain().getId()));
+
+        if (!hasDomainAccess) {
+            throw new RuntimeException(
+                "ACCESS_DENIED: You do not have access to this course's domain. " +
+                "Please contact an administrator to request access to the '" +
+                course.getDomain().getName() + "' domain."
+            );
+        }
+
         // Create enrollment
         UserCourseProgress progress = new UserCourseProgress(user, course);
         progress = courseProgressRepository.save(progress);
-        
+
         // Initialize component progress for each course component
         for (CourseComponent component : course.getComponents()) {
             // Check if component progress already exists before creating
             Optional<ComponentProgress> existingComponentProgress = componentProgressRepository
                 .findByUserIdAndComponentId(userId, component.getId());
-            
+
             if (!existingComponentProgress.isPresent()) {
                 ComponentProgress componentProgress = new ComponentProgress(user, component, course);
                 componentProgressRepository.save(componentProgress);
             }
         }
-        
+
         return progress;
     }
     

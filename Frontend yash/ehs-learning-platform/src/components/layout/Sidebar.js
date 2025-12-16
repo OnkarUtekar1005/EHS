@@ -117,9 +117,9 @@ const Sidebar = ({ isOpen, drawerWidth }) => {
           
           {/* My Courses */}
           <ListItem disablePadding>
-            <ListItemButton 
-              component={Link} 
-              to="/my-courses" 
+            <ListItemButton
+              component={Link}
+              to="/my-courses"
               selected={selectedItem === '/my-courses'}
               onClick={() => setSelectedItem('/my-courses')}
               sx={{
@@ -148,7 +148,7 @@ const Sidebar = ({ isOpen, drawerWidth }) => {
               <ListItemText primary="My Courses" />
             </ListItemButton>
           </ListItem>
-          
+
           {/* Reports */}
           <ListItem disablePadding>
             <ListItemButton

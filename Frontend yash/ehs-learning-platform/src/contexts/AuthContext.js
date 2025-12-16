@@ -45,6 +45,20 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(userData));
     }
   };
+
+  // Force refresh user data from the backend
+  const refreshUser = async () => {
+    try {
+      const response = await authService.getCurrentUser();
+      const freshUserData = response.data;
+      setCurrentUser(freshUserData);
+      localStorage.setItem('user', JSON.stringify(freshUserData));
+      return freshUserData;
+    } catch (err) {
+      console.error('Failed to refresh user data:', err);
+      return null;
+    }
+  };
   
   const isAdmin = () => {
     if (!currentUser) {
@@ -72,7 +86,7 @@ export const AuthProvider = ({ children }) => {
         const response = await authService.getCurrentUser();
         setCurrentUser(response.data);
       } catch (err) {
-        
+
         const userStr = localStorage.getItem('user');
         if (userStr) {
           try {
@@ -99,6 +113,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateUserData,
+    refreshUser,
     isAdmin
   };
 

@@ -6,6 +6,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 @Service
 public class EmailService {
 
@@ -15,11 +18,14 @@ public class EmailService {
     @Value("${app.email.enabled:false}")
     private boolean emailEnabled;
 
-    @Value("${app.frontend.url:http://localhost:3000}")
+    @Value("${app.frontend.url:http://localhost:3000/}")
     private String frontendUrl;
 
-    @Value("${spring.mail.username:noreply@ehs-learning.com}")
+    @Value("${spring.mail.username}")
     private String fromEmail;
+
+    @Value("${app.enquiry.email}")
+    private String enquiryRecipientEmail;
 
     /**
      * Sends a password reset email with a reset link
@@ -66,6 +72,72 @@ public class EmailService {
             mailSender.send(message);
             return true;
         } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Sends a course enquiry notification email to staff
+     *
+     * @param courseName Name of the course enquired about
+     * @param fullName Full name of the enquirer
+     * @param email Email of the enquirer
+     * @param phone Phone number of the enquirer
+     * @param enquiryMessage The enquiry message
+     * @return true if email was sent successfully, false otherwise
+     */
+    public boolean sendCourseEnquiryEmail(String courseName, String fullName, String email,
+                                          String phone, String enquiryMessage) {
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+        // Log to console (always)
+        System.out.println("\n========================================");
+        System.out.println("    NEW COURSE ENQUIRY RECEIVED");
+        System.out.println("========================================");
+        System.out.println("Timestamp: " + timestamp);
+        System.out.println("Course: " + courseName);
+        System.out.println("Name: " + fullName);
+        System.out.println("Email: " + email);
+        System.out.println("Phone: " + phone);
+        System.out.println("Message: " + enquiryMessage);
+        System.out.println("========================================\n");
+
+        // If email is not enabled, just return true (console logging done above)
+        if (!emailEnabled) {
+            System.out.println("[Email Service] Email disabled - enquiry logged to console only");
+            return true;
+        }
+
+        if (mailSender == null) {
+            System.out.println("[Email Service] Mail sender not configured - enquiry logged to console only");
+            return true;
+        }
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(enquiryRecipientEmail);
+            message.setSubject("New Course Enquiry: " + courseName);
+            message.setText(
+                "========================================\n" +
+                "    NEW COURSE ENQUIRY RECEIVED\n" +
+                "========================================\n\n" +
+                "Course: " + courseName + "\n" +
+                "Name: " + fullName + "\n" +
+                "Email: " + email + "\n" +
+                "Phone: " + phone + "\n\n" +
+                "Message:\n" + enquiryMessage + "\n\n" +
+                "----------------------------------------\n" +
+                "Timestamp: " + timestamp + "\n" +
+                "----------------------------------------\n\n" +
+                "This is an automated message from the EHS Learning Platform."
+            );
+
+            mailSender.send(message);
+            System.out.println("[Email Service] Course enquiry email sent successfully to " + enquiryRecipientEmail);
+            return true;
+        } catch (Exception e) {
+            System.err.println("[Email Service] Failed to send course enquiry email: " + e.getMessage());
             return false;
         }
     }

@@ -46,12 +46,19 @@ import {
   Engineering,
   Visibility,
   SearchRounded,
-  KeyboardArrowDown
+  KeyboardArrowDown,
+  Lock as LockIcon,
+  People as PeopleIcon,
+  Explore as ExploreIcon
 } from '@mui/icons-material';
 import { courseService, progressService, assessmentService } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import IncompleteAttemptWarning from '../../components/assessment/IncompleteAttemptWarning';
 import MarqueeText from '../../components/common/MarqueeText';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import './MyCourses.css';
 
 const MyCourses = () => {
@@ -62,6 +69,7 @@ const MyCourses = () => {
   const { currentUser } = useAuth();
   const [courses, setCourses] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
+  const [exploreCourses, setExploreCourses] = useState([]); // All published courses for Explore tab
   const [userProgress, setUserProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -74,6 +82,9 @@ const MyCourses = () => {
   const [selectedDomain, setSelectedDomain] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [availableDomains, setAvailableDomains] = useState([]);
+  // Locked course dialog state
+  const [lockedDialogOpen, setLockedDialogOpen] = useState(false);
+  const [selectedLockedCourse, setSelectedLockedCourse] = useState(null);
 
   useEffect(() => {
     loadUserCourses();
@@ -99,7 +110,7 @@ const MyCourses = () => {
       setLoading(true);
       setError(null);
 
-      // Get user courses with domain filter
+      // Get user courses with domain filter (user's domain courses)
       const params = {
         showAll: showAllDomains,
         page: 1,
@@ -109,13 +120,32 @@ const MyCourses = () => {
       const coursesData = coursesResponse.data.courses || [];
       setAllCourses(coursesData);
       setCourses(coursesData);
-      
-      // Extract unique domains from courses
-      const domains = [...new Set(coursesData
-        .filter(course => course.domain?.name)
-        .map(course => course.domain.name)
-      )];
-      setAvailableDomains(domains);
+
+      // Fetch all courses for Explore tab (with showAll=true)
+      try {
+        const exploreResponse = await courseService.browseAllCourses({
+          page: 1,
+          limit: 100,
+          sortBy: 'popular'
+        });
+        const exploreData = exploreResponse.data.courses || [];
+        setExploreCourses(exploreData);
+
+        // Extract unique domains from ALL courses (explore courses)
+        const domains = [...new Set(exploreData
+          .filter(course => course.domain?.name)
+          .map(course => course.domain.name)
+        )];
+        setAvailableDomains(domains);
+      } catch (exploreErr) {
+        // Fallback to domain courses for domains list
+        const domains = [...new Set(coursesData
+          .filter(course => course.domain?.name)
+          .map(course => course.domain.name)
+        )];
+        setAvailableDomains(domains);
+        setExploreCourses([]);
+      }
 
       // Get user progress for all courses
       try {
@@ -394,13 +424,296 @@ const MyCourses = () => {
     );
   };
 
+  // Handle locked course click - show contact admin dialog
+  const handleLockedCourseClick = (course) => {
+    setSelectedLockedCourse(course);
+    setLockedDialogOpen(true);
+  };
+
+  // Render course card for Explore tab (shows locked/unlocked status)
+  const renderExploreCourseCard = (course) => {
+    if (!course || !course.id) {
+      return null;
+    }
+
+    const progress = userProgress[course.id];
+    const status = getCourseStatus(course);
+    const isLocked = course.isLocked === true;
+    const canEnroll = course.canEnroll === true;
+    const enrolledUsers = course.enrolledUsers || 0;
+
+    return (
+      <Card
+        key={course.id}
+        className="course-card"
+        sx={{
+          height: { xs: 'auto', sm: '420px !important', md: '420px !important' },
+          minHeight: { sm: '420px', md: '420px' },
+          maxHeight: { sm: '420px', md: '420px' },
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          borderRadius: { xs: 2, sm: 3 },
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          transition: 'all 0.25s ease-in-out',
+          position: 'relative',
+          cursor: 'pointer',
+          opacity: isLocked ? 0.85 : 1,
+          '&:hover': {
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            transform: isMobile ? 'none' : 'translateY(-4px)'
+          }
+        }}
+        onClick={() => isLocked ? handleLockedCourseClick(course) : handleStartCourse(course.id)}
+      >
+        {/* Header with Icon */}
+        <Box
+          sx={{
+            height: { xs: 100, sm: 120 },
+            position: 'relative',
+            background: isLocked
+              ? `linear-gradient(135deg, ${theme.palette.grey[300]}40, ${theme.palette.grey[400]}20)`
+              : `linear-gradient(135deg, ${theme.palette.primary.light}20, ${theme.palette.primary.main}10)`,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            p: { xs: 1.5, sm: 2 }
+          }}
+        >
+          <Avatar
+            sx={{
+              width: { xs: 60, sm: 80 },
+              height: { xs: 60, sm: 80 },
+              bgcolor: 'white',
+              color: isLocked ? theme.palette.grey[500] : theme.palette.primary.main,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              position: 'absolute',
+              bottom: { xs: -30, sm: -40 },
+              border: { xs: '3px solid white', sm: '4px solid white' }
+            }}
+          >
+            {isLocked ? <LockIcon /> : getCourseIcon(course)}
+          </Avatar>
+
+          {/* Lock Badge for locked courses */}
+          {isLocked && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: { xs: 8, sm: 16 },
+                right: { xs: 8, sm: 16 },
+                bgcolor: theme.palette.grey[600],
+                color: 'white',
+                borderRadius: '50%',
+                width: { xs: 24, sm: 32 },
+                height: { xs: 24, sm: 32 },
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <LockIcon fontSize={isMobile ? 'small' : 'medium'} />
+            </Box>
+          )}
+
+          {/* Completed Badge for unlocked completed courses */}
+          {!isLocked && status === 'COMPLETED' && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: { xs: 8, sm: 16 },
+                right: { xs: 8, sm: 16 },
+                bgcolor: theme.palette.success.main,
+                color: 'white',
+                borderRadius: '50%',
+                width: { xs: 24, sm: 32 },
+                height: { xs: 24, sm: 32 },
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <CheckCircle fontSize={isMobile ? 'small' : 'medium'} />
+            </Box>
+          )}
+
+          {/* Enrollment count badge */}
+          {enrolledUsers > 0 && (
+            <Chip
+              icon={<PeopleIcon sx={{ fontSize: 14 }} />}
+              label={`${enrolledUsers} enrolled`}
+              size="small"
+              sx={{
+                position: 'absolute',
+                top: { xs: 8, sm: 16 },
+                left: { xs: 8, sm: 16 },
+                bgcolor: 'rgba(255,255,255,0.95)',
+                fontSize: '0.7rem',
+                height: 24,
+                '& .MuiChip-icon': {
+                  color: theme.palette.primary.main
+                }
+              }}
+            />
+          )}
+        </Box>
+
+        {/* Content */}
+        <CardContent
+          className="course-card-content"
+          sx={{
+            pt: { xs: 4, sm: 6 },
+            flexGrow: 1,
+            px: { xs: 2, sm: 3 },
+            pb: { xs: 1, sm: 2 },
+            display: 'flex',
+            flexDirection: 'column',
+            height: { xs: 'auto', sm: 'calc(100% - 120px - 72px)' },
+            overflow: 'hidden'
+          }}
+        >
+          {/* Title Section */}
+          <Box
+            textAlign="center"
+            sx={{
+              mb: 2,
+              height: { xs: 'auto', sm: 100 },
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              alignItems: 'center'
+            }}
+          >
+            <MarqueeText
+              text={course.title || 'Untitled Course'}
+              variant={isMobile ? "subtitle1" : "h6"}
+              sx={{
+                fontWeight: 600,
+                fontSize: { xs: '1rem', sm: '1.25rem' },
+                lineHeight: { xs: 1.3, sm: 1.4 },
+                mb: 1,
+                maxWidth: '100%',
+                color: isLocked ? theme.palette.grey[700] : 'inherit',
+                container: {
+                  maxHeight: { xs: 'auto', sm: '3.6em' },
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }
+              }}
+            />
+
+            {course.domain?.name && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '90%'
+                }}
+              >
+                {course.domain.name}
+              </Typography>
+            )}
+
+            {/* Locked status indicator */}
+            {isLocked && (
+              <Chip
+                label="Contact Admin for Access"
+                size="small"
+                sx={{
+                  mt: 1,
+                  bgcolor: alpha(theme.palette.warning.main, 0.1),
+                  color: theme.palette.warning.dark,
+                  fontSize: '0.7rem',
+                  height: 22
+                }}
+              />
+            )}
+          </Box>
+
+          {/* Progress Section (only for unlocked courses with progress) */}
+          <Box sx={{ mt: 'auto', pt: 2 }}>
+            {!isLocked && progress && (
+              <Box>
+                <Box display="flex" justifyContent="space-between" mb={1} alignItems="center">
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+                  >
+                    Progress
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    fontWeight="bold"
+                    color="primary.main"
+                    sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+                  >
+                    {Math.round(progress.overallProgress || 0)}%
+                  </Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={progress.overallProgress || 0}
+                  sx={{
+                    height: { xs: 4, sm: 6 },
+                    borderRadius: 3,
+                    bgcolor: alpha(theme.palette.primary.main, 0.1)
+                  }}
+                />
+              </Box>
+            )}
+          </Box>
+        </CardContent>
+
+        {/* Action Button */}
+        <CardActions
+          className="course-card-actions"
+          sx={{
+            p: { xs: 2, sm: 3 },
+            pt: 0,
+            mt: 'auto'
+          }}
+        >
+          <Button
+            variant={isLocked ? "outlined" : "contained"}
+            startIcon={isLocked ? <LockIcon /> : (status === 'COMPLETED' ? <CheckCircle /> : <PlayArrow />)}
+            fullWidth
+            size={isMobile ? "medium" : "large"}
+            sx={{
+              borderRadius: { xs: 2, sm: 6 },
+              py: { xs: 1, sm: 1.5 },
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+              bgcolor: isLocked ? 'transparent' : (status === 'COMPLETED' ? theme.palette.success.main : theme.palette.primary.main),
+              borderColor: isLocked ? theme.palette.grey[400] : undefined,
+              color: isLocked ? theme.palette.grey[600] : 'white',
+              '&:hover': {
+                bgcolor: isLocked ? alpha(theme.palette.grey[400], 0.1) : (status === 'COMPLETED' ? theme.palette.success.dark : theme.palette.primary.dark)
+              }
+            }}
+          >
+            {isLocked ? 'Request Access' :
+              status === 'NOT_ENROLLED' ? 'Enroll' :
+                status === 'COMPLETED' ? 'Review' :
+                  status === 'IN_PROGRESS' ? 'Continue' : 'Start'}
+          </Button>
+        </CardActions>
+      </Card>
+    );
+  };
+
   const filterCourses = () => {
-    let filtered = [...allCourses];
+    // Use explore courses for Explore tab, otherwise use user's domain courses
+    let filtered = activeTab === 3 ? [...exploreCourses] : [...allCourses];
 
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(course => 
+      filtered = filtered.filter(course =>
         course.title?.toLowerCase().includes(query) ||
         course.domain?.name?.toLowerCase().includes(query) ||
         course.description?.toLowerCase().includes(query)
@@ -423,7 +736,14 @@ const MyCourses = () => {
       case 2: // Completed
         filtered = filtered.filter(course => getCourseStatus(course) === 'COMPLETED');
         break;
-      default: // All
+      case 3: // Explore - show only courses user hasn't enrolled in
+        filtered = filtered.filter(course => {
+          const status = getCourseStatus(course);
+          // Exclude courses the user has already enrolled in (any progress exists)
+          return status === 'NOT_ENROLLED';
+        });
+        break;
+      default: // All (tab 0)
         break;
     }
 
@@ -434,6 +754,9 @@ const MyCourses = () => {
       filtered = filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
     } else if (sortBy === 'domain') {
       filtered = filtered.sort((a, b) => (a.domain?.name || '').localeCompare(b.domain?.name || ''));
+    } else if (sortBy === 'popular' && activeTab === 3) {
+      // Sort by enrollment count for Explore tab
+      filtered = filtered.sort((a, b) => (b.enrolledUsers || 0) - (a.enrolledUsers || 0));
     }
 
     setCourses(filtered);
@@ -585,17 +908,20 @@ const MyCourses = () => {
               <Tabs
                 value={activeTab}
                 onChange={(e, v) => setActiveTab(v)}
-                variant="fullWidth"
+                variant="scrollable"
+                scrollButtons="auto"
                 sx={{
                   bgcolor: theme.palette.grey[50],
                   borderRadius: 2,
                   '& .MuiTab-root': {
                     minHeight: 44,
-                    fontSize: '0.875rem',
+                    fontSize: '0.75rem',
                     fontWeight: 600,
                     textTransform: 'none',
                     borderRadius: 2,
-                    mx: 0.5,
+                    mx: 0.25,
+                    px: 1.5,
+                    minWidth: 'auto',
                     '&.Mui-selected': {
                       bgcolor: 'white',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
@@ -612,6 +938,17 @@ const MyCourses = () => {
                   return status === 'IN_PROGRESS' || status === 'ENROLLED';
                 }).length})`} />
                 <Tab label={`Done (${allCourses.filter(c => getCourseStatus(c) === 'COMPLETED').length})`} />
+                <Tab
+                  icon={<ExploreIcon sx={{ fontSize: 16, mr: 0.5 }} />}
+                  iconPosition="start"
+                  label={`Explore (${exploreCourses.filter(c => getCourseStatus(c) === 'NOT_ENROLLED').length})`}
+                  sx={{
+                    '&.Mui-selected': {
+                      bgcolor: alpha(theme.palette.info.main, 0.1),
+                      color: theme.palette.info.main
+                    }
+                  }}
+                />
               </Tabs>
 
               {/* Filters Row */}
@@ -643,6 +980,7 @@ const MyCourses = () => {
                     <MenuItem value="recent">Recent</MenuItem>
                     <MenuItem value="alphabetical">A-Z</MenuItem>
                     <MenuItem value="domain">Domain</MenuItem>
+                    {activeTab === 3 && <MenuItem value="popular">Most Popular</MenuItem>}
                   </Select>
                 </FormControl>
               </Box>
@@ -676,6 +1014,16 @@ const MyCourses = () => {
                   return status === 'IN_PROGRESS' || status === 'ENROLLED';
                 }).length})`} />
                 <Tab label={`Completed (${allCourses.filter(c => getCourseStatus(c) === 'COMPLETED').length})`} />
+                <Tab
+                  icon={<ExploreIcon sx={{ fontSize: 18, mr: 0.5 }} />}
+                  iconPosition="start"
+                  label={`Explore (${exploreCourses.filter(c => getCourseStatus(c) === 'NOT_ENROLLED').length})`}
+                  sx={{
+                    '&.Mui-selected': {
+                      color: theme.palette.info.main
+                    }
+                  }}
+                />
               </Tabs>
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -706,6 +1054,7 @@ const MyCourses = () => {
                     <MenuItem value="recent">Recently Published</MenuItem>
                     <MenuItem value="alphabetical">Alphabetical</MenuItem>
                     <MenuItem value="domain">By Books</MenuItem>
+                    {activeTab === 3 && <MenuItem value="popular">Most Popular</MenuItem>}
                   </Select>
                 </FormControl>
 
@@ -718,7 +1067,7 @@ const MyCourses = () => {
         {displayCourses.length > 0 ? (
           <Box sx={{ width: '100%' }}>
             <Box className="course-grid-container">
-              {displayCourses.map(course => renderCourseCard(course))}
+              {displayCourses.map(course => activeTab === 3 ? renderExploreCourseCard(course) : renderCourseCard(course))}
             </Box>
           </Box>
         ) : (
@@ -779,6 +1128,7 @@ const MyCourses = () => {
               {searchQuery ? "Try adjusting your search terms or filters to find what you're looking for." :
                activeTab === 1 ? "Start exploring courses to begin your safety training journey." :
                activeTab === 2 ? "Complete some courses to see them here." :
+               activeTab === 3 ? "No courses are currently available to explore." :
                "New courses will appear here when they become available."}
             </Typography>
 
@@ -827,6 +1177,85 @@ const MyCourses = () => {
         open={showIncompleteWarning}
         onClose={() => setShowIncompleteWarning(false)}
       />
+
+      {/* Locked Course Dialog - Contact Admin */}
+      <Dialog
+        open={lockedDialogOpen}
+        onClose={() => setLockedDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            p: 1
+          }
+        }}
+      >
+        <DialogTitle sx={{ textAlign: 'center', pt: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <Avatar
+              sx={{
+                width: 64,
+                height: 64,
+                bgcolor: alpha(theme.palette.warning.main, 0.1),
+                color: theme.palette.warning.main
+              }}
+            >
+              <LockIcon sx={{ fontSize: 32 }} />
+            </Avatar>
+            <Typography variant="h6" fontWeight={700}>
+              Course Access Required
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: 'center', pb: 2 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+            You don't have access to the domain required for this course:
+          </Typography>
+          {selectedLockedCourse && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
+                {selectedLockedCourse.title}
+              </Typography>
+              <Chip
+                icon={<DomainIcon />}
+                label={selectedLockedCourse.domain?.name || 'Unknown Domain'}
+                sx={{
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main,
+                  fontWeight: 500
+                }}
+              />
+            </Box>
+          )}
+          <Alert severity="info" sx={{ textAlign: 'left', borderRadius: 2 }}>
+            <Typography variant="body2">
+              Please contact your administrator to request access to the{' '}
+              <strong>{selectedLockedCourse?.domain?.name}</strong> domain.
+              Once approved, you'll be able to enroll in this course.
+            </Typography>
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 3, gap: 2 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setLockedDialogOpen(false)}
+            sx={{ borderRadius: 2, px: 3 }}
+          >
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setLockedDialogOpen(false);
+              // Could add email or contact functionality here
+            }}
+            sx={{ borderRadius: 2, px: 3 }}
+          >
+            I Understand
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

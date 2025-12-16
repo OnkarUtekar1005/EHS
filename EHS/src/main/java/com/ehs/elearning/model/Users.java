@@ -26,19 +26,19 @@ public class Users {
     @NotBlank
     @Size(max = 50)
     private String username;
-    
+
     @NotBlank
     @Size(max = 100)
     private String password;
-    
+
     @NotBlank
     @Size(max = 100)
     @Email
     private String email;
-    
+
     @Enumerated(EnumType.STRING)
     private Role role;
-    
+
     private String firstName;
     private String lastName;
     private String jobTitle;

@@ -176,7 +176,15 @@ export const courseService = {
   
   // User course endpoints
   getUserCourses: (params) => api.get('/v2/user/courses', { params }),
-  getUserCourseById: (id) => api.get(`/v2/user/courses/${id}`)
+  getUserCourseById: (id) => api.get(`/v2/user/courses/${id}`),
+
+  // Browse all courses - get recommended/popular courses
+  getRecommendedCourses: (limit = 5) => api.get('/v2/user/courses/recommended', { params: { limit } }),
+
+  // Browse all courses with filters
+  browseAllCourses: (params) => api.get('/v2/user/courses', {
+    params: { ...params, showAll: true }
+  })
 };
 
 // Progress services
@@ -311,6 +319,14 @@ export const reportsService = {
 
   // Get chart data for reports
   getUserChartData: () => api.get('/v2/user/reports/charts')
+};
+
+// Public services (no authentication required)
+export const publicService = {
+  // Get published courses for landing page
+  getPublishedCourses: (limit = 10) => api.get('/public/courses', { params: { limit } }),
+  // Submit course enquiry form
+  submitCourseEnquiry: (data) => api.post('/public/course-enquiry', data)
 };
 
 export default api;

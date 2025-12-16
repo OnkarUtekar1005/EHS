@@ -116,9 +116,29 @@ const CertificateViewer = ({ open, onClose, courseId, courseName }) => {
     }
   };
 
-  const handleView = () => {
-    if (certificate?.certificateId) {
-      window.open(`${api.defaults.baseURL}/v2/certificates/view/${certificate.certificateId}`, '_blank');
+  const handleView = async () => {
+    if (!certificate?.certificateId) return;
+
+    try {
+      // Fetch the PDF blob (includes auth headers)
+      const response = await api.get(`/v2/certificates/view/${certificate.certificateId}`, {
+        responseType: 'blob'
+      });
+
+      // Create a temporary URL from the blob
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+
+      // Open in new tab
+      window.open(url, '_blank');
+
+      // Clean up the URL after a delay (give browser time to load it)
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 100);
+    } catch (err) {
+      console.error('Error opening certificate:', err);
+      setError('Failed to open certificate in new tab');
     }
   };
 

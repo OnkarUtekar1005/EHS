@@ -28,7 +28,11 @@ public class CourseResponse {
     private String enrollmentStatus;
     private Boolean hasBeenPublished;
     private LocalDateTime firstPublishedAt;
-    
+
+    // Browse all courses feature - lock status fields
+    private Boolean isLocked;           // true if user doesn't have domain access
+    private Boolean canEnroll;          // true if unlocked AND not already enrolled
+
     // Constructor from Course entity
     public CourseResponse(Course course) {
         this.id = course.getId();
@@ -221,6 +225,23 @@ public class CourseResponse {
     
     public void setFirstPublishedAt(LocalDateTime firstPublishedAt) {
         this.firstPublishedAt = firstPublishedAt;
+    }
+
+    // Getters and setters for browse all courses feature
+    public Boolean getIsLocked() {
+        return isLocked;
+    }
+
+    public void setIsLocked(Boolean isLocked) {
+        this.isLocked = isLocked;
+    }
+
+    public Boolean getCanEnroll() {
+        return canEnroll;
+    }
+
+    public void setCanEnroll(Boolean canEnroll) {
+        this.canEnroll = canEnroll;
     }
 
 	public CourseResponse() {

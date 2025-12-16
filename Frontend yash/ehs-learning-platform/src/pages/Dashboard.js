@@ -18,9 +18,9 @@ import {
   useMediaQuery,
   Avatar
 } from '@mui/material';
-import { 
-  Download as DownloadIcon, 
-  School as SchoolIcon, 
+import {
+  Download as DownloadIcon,
+  School as SchoolIcon,
   CheckCircle as CheckCircleIcon,
   DateRange as DateRangeIcon,
   Timer as TimerIcon,
@@ -30,7 +30,8 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import IncompleteAttemptWarning from '../components/assessment/IncompleteAttemptWarning';
 import CertificateViewer from '../components/certificate/CertificateViewer';
-import { assessmentService, certificateService, courseService, progressService } from '../services/api';
+import ProfileCompletionModal from '../components/common/ProfileCompletionModal';
+import { assessmentService, certificateService, courseService, progressService, userService } from '../services/api';
 import MarqueeText from '../components/common/MarqueeText';
 
 const Dashboard = () => {
@@ -43,16 +44,45 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewCertificate, setViewCertificate] = useState(null);
+  const [showProfileCompletion, setShowProfileCompletion] = useState(false);
+  const [fullUserData, setFullUserData] = useState(null); // Full user data from /users/{id} API
   const [stats, setStats] = useState({
     completedCount: 0,
     inProgressCount: 0,
     certificatesCount: 0
   });
-  
+
   useEffect(() => {
     checkIncompleteAttempts();
     loadCourses();
   }, []);
+
+  // Check if profile is incomplete by querying the /users/{id} API
+  // This API returns the full user data including firstName and lastName
+  useEffect(() => {
+    const checkProfileCompletion = async () => {
+      if (currentUser && currentUser.id) {
+        try {
+          // Query the user API to get full user data including firstName/lastName
+          const response = await userService.getById(currentUser.id);
+          const userData = response.data;
+          setFullUserData(userData);
+
+          // Check if firstName or lastName is missing/null/empty
+          const isProfileIncomplete = !userData.firstName || !userData.lastName;
+          setShowProfileCompletion(isProfileIncomplete);
+        } catch (error) {
+          console.error('Failed to fetch user data for profile check:', error);
+          // Don't show modal if we can't fetch user data
+          setShowProfileCompletion(false);
+        }
+      } else {
+        setShowProfileCompletion(false);
+      }
+    };
+
+    checkProfileCompletion();
+  }, [currentUser]); // Re-run when currentUser changes
   
   const checkIncompleteAttempts = async () => {
     try {
@@ -435,15 +465,15 @@ const Dashboard = () => {
 
           {/* Main Content */}
           <Box sx={{ mb: 4 }}>
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                mb: 3 
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                mb: 3
               }}
             >
               <CheckCircleIcon color="success" sx={{ mr: 1.5, fontSize: 28 }} />
-              <Typography 
+              <Typography
                 variant="h5" 
                 component="h2" 
                 sx={{ 
@@ -674,10 +704,16 @@ const Dashboard = () => {
           courseName={viewCertificate.courseName}
         />
       )}
-      
-      <IncompleteAttemptWarning 
-        open={showIncompleteWarning} 
+
+      <IncompleteAttemptWarning
+        open={showIncompleteWarning}
         onClose={() => setShowIncompleteWarning(false)}
+      />
+
+      <ProfileCompletionModal
+        open={showProfileCompletion}
+        onClose={() => setShowProfileCompletion(false)}
+        currentUser={fullUserData}
       />
     </>
   );

@@ -515,14 +515,12 @@ public class UserController {
             for (UUID domainId : domainIds) {
                 domainRepository.findById(domainId).ifPresent(domains::add);
             }
-            
+
             List<Users> updatedUsers = new ArrayList<>();
             for (UUID userId : userIds) {
                 userRepository.findById(userId).ifPresent(user -> {
-                    // Get existing domains and add new ones
-                    Set<Domain> existingDomains = user.getDomains();
-                    existingDomains.addAll(domains);
-                    user.setDomains(existingDomains);
+                    // Replace domains with the new set (allows adding AND removing domains)
+                    user.setDomains(domains);
                     updatedUsers.add(userRepository.save(user));
                 });
             }

@@ -95,6 +95,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/auth/reset-password").permitAll()
                     .requestMatchers("/api/auth/reset-password/validate").permitAll()
                     .requestMatchers("/api/think/public/**").permitAll() // Public Think submissions
+                    .requestMatchers("/api/public/**").permitAll() // Public endpoints for landing page
                     .requestMatchers("/api/test/**").permitAll() // Test endpoints
                     .requestMatchers("/v3/api-docs/**").permitAll()
                     .requestMatchers("/swagger-ui/**").permitAll()

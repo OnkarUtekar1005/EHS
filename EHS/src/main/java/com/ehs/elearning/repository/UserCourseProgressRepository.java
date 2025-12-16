@@ -44,9 +44,13 @@ public interface UserCourseProgressRepository extends JpaRepository<UserCoursePr
     @Query("SELECT COUNT(ucp) FROM UserCourseProgress ucp " +
            "WHERE ucp.course.id = :courseId " +
            "AND ucp.status = :status")
-    Long countByCourseIdAndStatus(@Param("courseId") UUID courseId, 
+    Long countByCourseIdAndStatus(@Param("courseId") UUID courseId,
                                   @Param("status") ProgressStatus status);
-    
+
+    // Count total enrollments for a course (regardless of status) - for browse all courses feature
+    @Query("SELECT COUNT(ucp) FROM UserCourseProgress ucp WHERE ucp.course.id = :courseId")
+    Long countByCourseId(@Param("courseId") UUID courseId);
+
     // Dashboard query methods
     List<UserCourseProgress> findTop5ByOrderByUpdatedAtDesc();
     

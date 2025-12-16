@@ -83,12 +83,12 @@ const Header = ({ toggleSidebar, sidebarOpen, drawerWidth }) => {
         >
           <MenuIcon />
         </IconButton>
-        
-        <Typography 
-          variant="h6" 
-          noWrap 
-          component="div" 
-          sx={{ 
+
+        <Typography
+          variant="h6"
+          noWrap
+          component="div"
+          sx={{
             flexGrow: 1,
             fontSize: { xs: '1rem', sm: '1.25rem' },
             display: { xs: 'none', sm: 'block' }
@@ -96,13 +96,13 @@ const Header = ({ toggleSidebar, sidebarOpen, drawerWidth }) => {
         >
           Protecther E-Learning Platform
         </Typography>
-        
+
         {/* Mobile title - shorter version */}
-        <Typography 
-          variant="h6" 
-          noWrap 
-          component="div" 
-          sx={{ 
+        <Typography
+          variant="h6"
+          noWrap
+          component="div"
+          sx={{
             flexGrow: 1,
             fontSize: '1rem',
             display: { xs: 'block', sm: 'none' }
