@@ -1,10 +1,10 @@
 // src/pages/Dashboard.js
 import React, { useState, useEffect } from 'react';
 import {
-  Container, 
-  Grid, 
-  Paper, 
-  Typography, 
+  Container,
+  Grid,
+  Paper,
+  Typography,
   Box,
   Button,
   Divider,
@@ -14,10 +14,15 @@ import {
   Card,
   CardContent,
   CardActions,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   useTheme,
   useMediaQuery,
   Avatar
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
   Download as DownloadIcon,
   School as SchoolIcon,
@@ -25,7 +30,9 @@ import {
   DateRange as DateRangeIcon,
   Timer as TimerIcon,
   Assessment as AssessmentIcon,
-  Domain as DomainIcon
+  Domain as DomainIcon,
+  Lock as LockIcon,
+  People as PeopleIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import IncompleteAttemptWarning from '../components/assessment/IncompleteAttemptWarning';
@@ -51,6 +58,10 @@ const Dashboard = () => {
     inProgressCount: 0,
     certificatesCount: 0
   });
+  const [availableCourses, setAvailableCourses] = useState([]);
+  const [displayCount, setDisplayCount] = useState(6);
+  const [lockedDialogOpen, setLockedDialogOpen] = useState(false);
+  const [selectedLockedCourse, setSelectedLockedCourse] = useState(null);
 
   useEffect(() => {
     checkIncompleteAttempts();
@@ -99,9 +110,10 @@ const Dashboard = () => {
     try {
       setLoading(true);
 
-      // Get user courses and their progress - limit to 6 for dashboard display
+      // showAll:true + sortBy:popular returns all published courses ordered by enrollment.
+      // isLocked=true marks courses outside the user's assigned domains.
       const [coursesResponse, progressResponse] = await Promise.all([
-        courseService.getUserCourses({ showAll: true, limit: 6 }),
+        courseService.getUserCourses({ showAll: true, limit: 200, sortBy: 'popular' }),
         progressService.getUserCourseProgress().catch(() => ({ data: { progresses: [] } }))
       ]);
 
@@ -164,6 +176,15 @@ const Dashboard = () => {
       );
 
       setCompletedCourses(coursesWithCertificates);
+
+      // isLocked=true = user's domains don't include this course.
+      // Already sorted by popularity from backend; cap at 50.
+      const unassigned = publishedCourses
+        .filter(c => c.isLocked === true)
+        .sort((a, b) => (b.enrolledUsers || 0) - (a.enrolledUsers || 0))
+        .slice(0, 50);
+      setAvailableCourses(unassigned);
+      setDisplayCount(6); // reset pagination when data reloads
 
       // Calculate stats
       const inProgressCourses = publishedCourses.filter(course => {
@@ -242,6 +263,11 @@ const Dashboard = () => {
       courseId: course.courseId,
       courseName: course.courseName
     });
+  };
+
+  const handleOpenLockedDialog = (course) => {
+    setSelectedLockedCourse(course);
+    setLockedDialogOpen(true);
   };
 
   return (
@@ -463,7 +489,210 @@ const Dashboard = () => {
             </Box>
           </Box>
 
-          {/* Main Content */}
+          {/* Available / Unassigned Courses */}
+          {availableCourses.length > 0 && (
+            <Box sx={{ mb: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <LockIcon sx={{ mr: 1.5, fontSize: 28, color: 'text.secondary' }} />
+                <Box>
+                  <Typography
+                    variant="h5"
+                    component="h2"
+                    sx={{ fontWeight: 600, color: theme.palette.text.primary, lineHeight: 1.2 }}
+                  >
+                    More Courses Available
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {availableCourses.length} course{availableCourses.length !== 1 ? 's' : ''} you haven't been assigned to yet — sorted by most enrolled. Request access from the administrator.
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(2, 1fr)',
+                    md: 'repeat(3, 1fr)'
+                  },
+                  gap: { xs: 2, sm: 2, md: 3 },
+                  width: '100%'
+                }}
+              >
+                {availableCourses.slice(0, displayCount).map((course) => (
+                  <Card
+                    key={course.id}
+                    elevation={0}
+                    sx={{
+                      height: { xs: 300, sm: 340 },
+                      display: 'flex',
+                      flexDirection: 'column',
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      border: '1px dashed rgba(0,0,0,0.15)',
+                      opacity: 0.9,
+                      transition: 'all 0.3s ease-in-out',
+                      '&:hover': {
+                        opacity: 1,
+                        boxShadow: '0 6px 20px rgba(0,0,0,0.1)',
+                        transform: 'translateY(-4px)'
+                      }
+                    }}
+                  >
+                    {/* Header */}
+                    <Box
+                      sx={{
+                        height: 110,
+                        position: 'relative',
+                        background: `linear-gradient(135deg, ${theme.palette.grey[100]}, ${theme.palette.grey[200]})`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderBottom: '1px solid rgba(0,0,0,0.08)'
+                      }}
+                    >
+                      <Avatar
+                        sx={{
+                          width: 64,
+                          height: 64,
+                          bgcolor: 'white',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                          border: '2px solid rgba(0,0,0,0.08)'
+                        }}
+                      >
+                        <SchoolIcon sx={{ fontSize: 36, color: theme.palette.grey[500] }} />
+                      </Avatar>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 10,
+                          right: 10,
+                          bgcolor: 'rgba(0,0,0,0.5)',
+                          color: 'white',
+                          borderRadius: '10px',
+                          px: 1.5,
+                          py: 0.5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          fontSize: '0.7rem',
+                          fontWeight: 600
+                        }}
+                      >
+                        <LockIcon sx={{ fontSize: 12 }} />
+                        Not Assigned
+                      </Box>
+
+                      {(course.enrolledUsers > 0) && (
+                        <Chip
+                          icon={<PeopleIcon sx={{ fontSize: 13 }} />}
+                          label={`${course.enrolledUsers} enrolled`}
+                          size="small"
+                          sx={{
+                            position: 'absolute',
+                            top: 10,
+                            left: 10,
+                            bgcolor: 'rgba(255,255,255,0.92)',
+                            fontSize: '0.68rem',
+                            height: 22,
+                            '& .MuiChip-icon': { color: theme.palette.primary.main }
+                          }}
+                        />
+                      )}
+                    </Box>
+
+                    {/* Content */}
+                    <CardContent sx={{ flexGrow: 1, p: 2.5, display: 'flex', flexDirection: 'column' }}>
+                      <Typography
+                        variant="subtitle1"
+                        component="h3"
+                        sx={{
+                          fontWeight: 700,
+                          mb: 1,
+                          color: theme.palette.text.primary,
+                          overflow: 'hidden',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical'
+                        }}
+                      >
+                        {course.title}
+                      </Typography>
+
+                      {course.domain?.name && (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 0.5 }}
+                        >
+                          <DomainIcon fontSize="small" />
+                          {course.domain.name}
+                        </Typography>
+                      )}
+
+                      <Box sx={{ flexGrow: 1 }} />
+
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        size="medium"
+                        startIcon={<LockIcon />}
+                        onClick={() => handleOpenLockedDialog(course)}
+                        sx={{
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          mt: 1,
+                          borderColor: theme.palette.grey[400],
+                          color: theme.palette.grey[600],
+                          '&:hover': {
+                            bgcolor: alpha(theme.palette.grey[400], 0.1)
+                          }
+                        }}
+                      >
+                        Request Access
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
+
+              {/* Show More / Show Less controls */}
+              {availableCourses.length > 6 && (
+                <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Showing {Math.min(displayCount, availableCourses.length)} of {availableCourses.length} courses
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    {displayCount < availableCourses.length && (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => setDisplayCount(c => Math.min(c + 6, availableCourses.length))}
+                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, px: 3 }}
+                      >
+                        Show More
+                      </Button>
+                    )}
+                    {displayCount > 6 && (
+                      <Button
+                        variant="text"
+                        size="small"
+                        onClick={() => setDisplayCount(6)}
+                        sx={{ borderRadius: 2, textTransform: 'none', color: 'text.secondary', px: 3 }}
+                      >
+                        Show Less
+                      </Button>
+                    )}
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          )}
+
+          {/* Completed Courses */}
           <Box sx={{ mb: 4 }}>
             <Box
               sx={{
@@ -715,6 +944,73 @@ const Dashboard = () => {
         onClose={() => setShowProfileCompletion(false)}
         currentUser={fullUserData}
       />
+
+      {/* Locked Course Dialog — same as My Courses page */}
+      <Dialog
+        open={lockedDialogOpen}
+        onClose={() => setLockedDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
+      >
+        <DialogTitle sx={{ textAlign: 'center', pt: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={{
+              width: 64,
+              height: 64,
+              bgcolor: alpha(theme.palette.warning.main, 0.1),
+              color: theme.palette.warning.main
+            }}>
+              <LockIcon sx={{ fontSize: 32 }} />
+            </Avatar>
+            <Typography variant="h6" fontWeight={700}>Course Access Required</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: 'center', pb: 2 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+            You don't have access to the domain required for this course:
+          </Typography>
+          {selectedLockedCourse && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
+                {selectedLockedCourse.title}
+              </Typography>
+              <Chip
+                icon={<DomainIcon />}
+                label={selectedLockedCourse.domain?.name || 'Unknown Domain'}
+                sx={{
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main,
+                  fontWeight: 500
+                }}
+              />
+            </Box>
+          )}
+          <Alert severity="info" sx={{ textAlign: 'left', borderRadius: 2 }}>
+            <Typography variant="body2">
+              Please contact your administrator to request access to the{' '}
+              <strong>{selectedLockedCourse?.domain?.name}</strong> domain.
+              Once approved, you'll be able to enroll in this course.
+            </Typography>
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 3, gap: 2 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setLockedDialogOpen(false)}
+            sx={{ borderRadius: 2, px: 3 }}
+          >
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => setLockedDialogOpen(false)}
+            sx={{ borderRadius: 2, px: 3 }}
+          >
+            I Understand
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
